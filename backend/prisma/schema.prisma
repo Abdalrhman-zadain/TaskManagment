@@ -1,0 +1,161 @@
+// This is the TeamTask database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── ROLES ──────────────────────────────────────────────
+enum Role {
+  CEO
+  MANAGER
+  EMPLOYEE
+}
+
+// ── LEVELS ─────────────────────────────────────────────
+enum Level {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+// ── TASK STATUS ────────────────────────────────────────
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  PENDING_APPROVAL
+  DONE
+  LATE
+}
+
+// ── APPROVAL STATUS ────────────────────────────────
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ── USERS ──────────────────────────────────────────────
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role
+  createdAt   DateTime @default(now())
+
+  // Section relationship
+  sectionId   Int?
+  section     Section? @relation("SectionMembers", fields: [sectionId], references: [id])
+
+  // If user is a manager, they manage one section
+  managedSection Section? @relation("SectionManager")
+
+  // Tasks this user created
+  createdTasks  Task[] @relation("TaskCreator")
+
+  // Tasks assigned to this user
+  assignedTasks Task[] @relation("TaskAssignee")
+
+  // Performance
+  scores        Score[]
+  stars         Int     @default(0)
+  level         Level   @default(BRONZE)
+  onTimeCount   Int     @default(0)
+
+  // Notifications
+  notifications Notification[]
+}
+
+// ── SECTIONS ───────────────────────────────────────────
+model Section {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  // One manager per section
+  managerId Int?     @unique
+  manager   User?    @relation("SectionManager", fields: [managerId], references: [id])
+
+  // Members of this section
+  members   User[]   @relation("SectionMembers")
+
+  // Tasks belonging to this section
+  tasks     Task[]
+}
+
+// ── TASKS ──────────────────────────────────────────────
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    String     @default("medium") // low | medium | high
+  deadline    DateTime
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+
+  // Who created this task (CEO or Manager)
+  creatorId   Int
+  creator     User       @relation("TaskCreator", fields: [creatorId], references: [id])
+
+  // Who this task is assigned to
+  assigneeId  Int
+  assignee    User       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  // Which section this task belongs to
+  sectionId   Int
+  section     Section    @relation(fields: [sectionId], references: [id])
+
+  // Parent task (if this is a subtask)
+  parentId    Int?
+  parent      Task?      @relation("SubTasks", fields: [parentId], references: [id])
+  subtasks    Task[]     @relation("SubTasks")
+
+  // Score for this task
+  score       Score?
+
+  // Task evidence (uploaded file)
+  evidenceUrl String?      // path to uploaded file (photo/video)
+  evidenceUploadedAt DateTime?
+
+  // CEO approval tracking
+  approvalStatus ApprovalStatus @default(PENDING)
+  approvalComment String?
+  approvalBy     Int?
+  approvalAt     DateTime?
+}
+
+// ── SCORES ─────────────────────────────────────────────
+model Score {
+  id          Int      @id @default(autoincrement())
+  value       Int      // 1–10
+  isOnTime    Boolean
+  createdAt   DateTime @default(now())
+
+  // Manually adjusted by manager
+  adjusted    Boolean  @default(false)
+  adjustedBy  Int?
+
+  taskId      Int      @unique
+  task        Task     @relation(fields: [taskId], references: [id])
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+// ── NOTIFICATIONS ──────────────────────────────────────
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // task_assigned | task_done | deadline_missed | level_up
+  message   String
+  read      Boolean  @default(false)
+  taskId    Int?
+  createdAt DateTime @default(now())
+}
