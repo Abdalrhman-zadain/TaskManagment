@@ -9,10 +9,15 @@ const prisma = new PrismaClient();
 router.use(authMiddleware);
 
 // ── POST /api/users ───────────────────────────────────
-// CEO can create manager/employee accounts
-router.post('/', requireRole('CEO'), async (req, res) => {
-  const { name, email, password, role, sectionId } = req.body;
-  const parsedSectionId = sectionId ? parseInt(sectionId) : null;
+// CEO and Manager can create accounts
+router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  let { name, email, password, role, sectionId } = req.body;
+  let parsedSectionId = sectionId ? parseInt(sectionId) : null;
+
+  if (req.user.role === 'MANAGER') {
+    if (role !== 'EMPLOYEE') return res.status(403).json({ error: 'Managers can only create Employee accounts' });
+    parsedSectionId = req.user.sectionId; // Force manager scope
+  }
 
   try {
     if (!name || !email || !password || !role) {
@@ -118,6 +123,35 @@ router.get('/:id', async (req, res) => {
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/users/:id ─────────────────────────────
+router.delete('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  try {
+    const targetId = parseInt(req.params.id);
+    const targetUser = await prisma.user.findUnique({ where: { id: targetId } });
+
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+    if (targetUser.role === 'CEO') return res.status(403).json({ error: 'Cannot delete CEO' });
+
+    if (req.user.role === 'MANAGER') {
+      if (targetUser.role !== 'EMPLOYEE' || targetUser.sectionId !== req.user.sectionId) {
+        return res.status(403).json({ error: 'Managers can only delete employees within their scope' });
+      }
+    }
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { userId: targetId } }),
+      prisma.score.deleteMany({ where: { userId: targetId } }),
+      prisma.task.deleteMany({ where: { assigneeId: targetId } }),
+      prisma.task.deleteMany({ where: { creatorId: targetId } }),
+      prisma.user.delete({ where: { id: targetId } })
+    ]);
+
+    res.json({ message: 'User deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

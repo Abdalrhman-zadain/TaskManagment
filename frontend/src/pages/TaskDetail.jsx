@@ -475,7 +475,7 @@ export default function TaskDetail() {
 
                 {/* Approve */}
                 <div className="mb-3">
-                  {user.role === "CEO" && (
+                  {['CEO', 'MANAGER'].includes(user.role) && (
                     <input
                       type="number"
                       min="1"

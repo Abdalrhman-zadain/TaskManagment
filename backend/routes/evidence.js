@@ -125,7 +125,7 @@ router.patch('/:id/approve', requireRole('CEO', 'MANAGER'), async (req, res) => 
         let scoreValue;
         let isOnTime = false;
 
-        if (req.user.role === 'CEO' && customScore !== undefined && customScore !== null && customScore !== '') {
+        if (['CEO', 'MANAGER'].includes(req.user.role) && customScore !== undefined && customScore !== null && customScore !== '') {
             const parsedScore = Number(customScore);
             if (parsedScore < 1 || parsedScore > 10) {
                 return res.status(400).json({ error: 'Score must be between 1 and 10' });

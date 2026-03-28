@@ -33,11 +33,10 @@ export default function Sidebar({ role }) {
     return (
       <div
         onClick={() => navigate(path)}
-        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${
-          active
-            ? "text-blue-300 bg-blue-500/10 border-blue-500"
-            : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
-        }`}
+        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${active
+          ? "text-blue-300 bg-blue-500/10 border-blue-500"
+          : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
+          }`}
       >
         <div
           className={`w-2 h-2 rounded-full ${active ? "bg-blue-400" : dot}`}
@@ -68,6 +67,7 @@ export default function Sidebar({ role }) {
 
       {role === "Manager" && navItem("Dashboard", "/manager")}
       {role === "Manager" && navItem("Assign Task", "/tasks/new")}
+      {role === "Manager" && navItem("Team", "/users")}
 
       {role === "Employee" && navItem("My Tasks", "/employee")}
 
@@ -79,11 +79,10 @@ export default function Sidebar({ role }) {
       {/* Notifications link with unread badge */}
       <div
         onClick={() => navigate("/notifications")}
-        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${
-          location.pathname === "/notifications"
-            ? "text-blue-300 bg-blue-500/10 border-blue-500"
-            : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
-        }`}
+        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${location.pathname === "/notifications"
+          ? "text-blue-300 bg-blue-500/10 border-blue-500"
+          : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
+          }`}
       >
         <div
           className={`w-2 h-2 rounded-full ${location.pathname === "/notifications" ? "bg-blue-400" : "bg-slate-500"}`}

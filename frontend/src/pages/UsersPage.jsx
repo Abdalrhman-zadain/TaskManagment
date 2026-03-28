@@ -5,6 +5,7 @@ import api from "../api/client";
 
 export default function UsersPage() {
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const [users, setUsers] = useState([]);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,18 @@ export default function UsersPage() {
     }
   }
 
+  async function deleteUser(id, e) {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this user? All their tasks and history will be permanently lost.")) return;
+
+    try {
+      await api.delete(`/users/${id}`);
+      await loadData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error deleting user");
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
@@ -83,11 +96,11 @@ export default function UsersPage() {
 
   return (
     <div className="flex min-h-screen bg-[#0F1D3A]">
-      <Sidebar role="CEO" />
+      <Sidebar role={currentUser.role === 'MANAGER' ? 'Manager' : 'CEO'} />
 
       <main className="flex-1 p-7 overflow-y-auto">
         <div className="mb-7">
-          <h1 className="text-xl font-bold">Users Management</h1>
+          <h1 className="text-xl font-bold">{currentUser.role === 'MANAGER' ? 'Team Management' : 'Users Management'}</h1>
           <p className="text-sm text-slate-400 mt-0.5">
             Create manager and employee accounts
           </p>
@@ -142,37 +155,41 @@ export default function UsersPage() {
               />
             </div>
 
-            <div className="mb-3">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Role
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-              >
-                <option value="EMPLOYEE">Employee</option>
-                <option value="MANAGER">Manager</option>
-              </select>
-            </div>
+            {currentUser.role === 'CEO' && (
+              <>
+                <div className="mb-3">
+                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
+                    Role
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="EMPLOYEE">Employee</option>
+                    <option value="MANAGER">Manager</option>
+                  </select>
+                </div>
 
-            <div className="mb-4">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Section (optional)
-              </label>
-              <select
-                value={sectionId}
-                onChange={(e) => setSectionId(e.target.value)}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-              >
-                <option value="">Unassigned</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div className="mb-4">
+                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
+                    Section (optional)
+                  </label>
+                  <select
+                    value={sectionId}
+                    onChange={(e) => setSectionId(e.target.value)}
+                    className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Unassigned</option>
+                    {sections.map((section) => (
+                      <option key={section.id} value={section.id}>
+                        {section.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
@@ -195,7 +212,7 @@ export default function UsersPage() {
               <strong className="text-white">{employees.length}</strong>
             </div>
 
-            {users.map((user) => {
+            {users.filter(u => u.id !== currentUser.id).map((user) => {
               const uScores = user.scores || [];
               const totalScore = uScores.reduce((sum, sc) => sum + sc.value, 0);
 
@@ -226,15 +243,25 @@ export default function UsersPage() {
                       </div>
                       <span
                         className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${user.role === "MANAGER"
-                            ? "bg-teal-500/15 text-teal-300"
-                            : user.role === "EMPLOYEE"
-                              ? "bg-blue-500/15 text-blue-300"
-                              : "bg-white/10 text-slate-300"
+                          ? "bg-teal-500/15 text-teal-300"
+                          : user.role === "EMPLOYEE"
+                            ? "bg-blue-500/15 text-blue-300"
+                            : "bg-white/10 text-slate-300"
                           }`}
                       >
                         {user.role}
                       </span>
                     </div>
+
+                    {((currentUser.role === 'CEO' && user.role !== 'CEO') || (currentUser.role === 'MANAGER' && user.role === 'EMPLOYEE')) && (
+                      <button
+                        onClick={(e) => deleteUser(user.id, e)}
+                        className="ml-3 px-2 py-1 text-xs rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition"
+                        title="Delete user"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               )
