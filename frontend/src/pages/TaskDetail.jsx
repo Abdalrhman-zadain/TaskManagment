@@ -10,6 +10,7 @@ export default function TaskDetail() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [approvalComment, setApprovalComment] = useState("");
+  const [customScore, setCustomScore] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -62,9 +63,15 @@ export default function TaskDetail() {
   }
 
   async function approveTask() {
+    if (customScore !== "" && (Number(customScore) < 1 || Number(customScore) > 10)) {
+      alert("Score must be between 1 and 10");
+      return;
+    }
+
     try {
       const res = await api.patch(`/evidence/${id}/approve`, {
         approvalComment,
+        customScore: customScore !== "" ? Number(customScore) : null,
       });
       alert(`Task approved! Score: ${res.data.score.value}/10`);
       loadTask();
@@ -153,17 +160,16 @@ export default function TaskDetail() {
               <div className="flex items-start justify-between gap-4 mb-5">
                 <h1 className="text-xl font-bold leading-snug">{task.title}</h1>
                 <span
-                  className={`text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 ${
-                    task.status === "DONE"
-                      ? "bg-green-500/15 text-green-400"
-                      : task.status === "PENDING_APPROVAL"
-                        ? "bg-amber-500/15 text-amber-400"
-                        : task.status === "IN_PROGRESS"
-                          ? "bg-blue-500/15 text-blue-400"
-                          : task.status === "LATE"
-                            ? "bg-red-500/15 text-red-400"
-                            : "bg-white/8 text-slate-400"
-                  }`}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 ${task.status === "DONE"
+                    ? "bg-green-500/15 text-green-400"
+                    : task.status === "PENDING_APPROVAL"
+                      ? "bg-amber-500/15 text-amber-400"
+                      : task.status === "IN_PROGRESS"
+                        ? "bg-blue-500/15 text-blue-400"
+                        : task.status === "LATE"
+                          ? "bg-red-500/15 text-red-400"
+                          : "bg-white/8 text-slate-400"
+                    }`}
                 >
                   {task.status.replace("_", " ")}
                 </span>
@@ -240,13 +246,12 @@ export default function TaskDetail() {
                     ✓ Approval Status
                   </div>
                   <div
-                    className={`p-3 rounded-lg text-sm ${
-                      task.approvalStatus === "APPROVED"
-                        ? "bg-green-500/10 border border-green-500/20"
-                        : task.approvalStatus === "REJECTED"
-                          ? "bg-red-500/10 border border-red-500/20"
-                          : "bg-white/5 border border-white/10"
-                    }`}
+                    className={`p-3 rounded-lg text-sm ${task.approvalStatus === "APPROVED"
+                      ? "bg-green-500/10 border border-green-500/20"
+                      : task.approvalStatus === "REJECTED"
+                        ? "bg-red-500/10 border border-red-500/20"
+                        : "bg-white/5 border border-white/10"
+                      }`}
                   >
                     <div className="font-semibold capitalize">
                       {task.approvalStatus}
@@ -344,11 +349,10 @@ export default function TaskDetail() {
                       className="flex items-center gap-3 py-2 border-b border-white/8 last:border-0"
                     >
                       <div
-                        className={`w-4 h-4 rounded flex items-center justify-center text-[10px] border flex-shrink-0 ${
-                          sub.status === "DONE"
-                            ? "bg-green-500 border-green-500 text-white"
-                            : "border-white/20"
-                        }`}
+                        className={`w-4 h-4 rounded flex items-center justify-center text-[10px] border flex-shrink-0 ${sub.status === "DONE"
+                          ? "bg-green-500 border-green-500 text-white"
+                          : "border-white/20"
+                          }`}
                       >
                         {sub.status === "DONE" ? "✓" : ""}
                       </div>
@@ -371,23 +375,21 @@ export default function TaskDetail() {
                   <div className="text-sm font-bold mb-2">Score</div>
                   <div className="flex items-baseline gap-2">
                     <span
-                      className={`text-4xl font-bold ${
-                        task.score.value >= 8
-                          ? "text-green-400"
-                          : task.score.value >= 5
-                            ? "text-amber-400"
-                            : "text-red-400"
-                      }`}
+                      className={`text-4xl font-bold ${task.score.value >= 8
+                        ? "text-green-400"
+                        : task.score.value >= 5
+                          ? "text-amber-400"
+                          : "text-red-400"
+                        }`}
                     >
                       {task.score.value}
                     </span>
                     <span className="text-slate-400">/10</span>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ml-2 ${
-                        task.score.isOnTime
-                          ? "bg-green-500/15 text-green-400"
-                          : "bg-red-500/15 text-red-400"
-                      }`}
+                      className={`text-xs px-2 py-1 rounded-full ml-2 ${task.score.isOnTime
+                        ? "bg-green-500/15 text-green-400"
+                        : "bg-red-500/15 text-red-400"
+                        }`}
                     >
                       {task.score.isOnTime ? "✓ On time" : "✗ Late"}
                     </span>
@@ -473,6 +475,17 @@ export default function TaskDetail() {
 
                 {/* Approve */}
                 <div className="mb-3">
+                  {user.role === "CEO" && (
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      placeholder="Custom Score (1-10, overrides auto-score)"
+                      value={customScore}
+                      onChange={(e) => setCustomScore(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-500 mb-2 focus:outline-none focus:border-green-500"
+                    />
+                  )}
                   <textarea
                     placeholder="Approval comment (optional)"
                     value={approvalComment}

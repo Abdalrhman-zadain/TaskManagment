@@ -5,7 +5,7 @@ import TaskCard from '../components/TaskCard'
 import api from '../api/client'
 
 export default function EmployeeDashboard() {
-  const [tasks, setTasks]     = useState([])
+  const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadTasks() }, [])
@@ -26,10 +26,10 @@ export default function EmployeeDashboard() {
     } catch (err) { alert(err.response?.data?.error || 'Error') }
   }
 
-  const done      = tasks.filter(t => t.status === 'DONE')
-  const active    = tasks.filter(t => t.status !== 'DONE')
-  const overdue   = tasks.filter(t => new Date(t.deadline) < new Date() && t.status !== 'DONE').length
-  const avgScore  = done.length && done.some(t => t.score)
+  const done = tasks.filter(t => t.status === 'DONE')
+  const active = tasks.filter(t => t.status !== 'DONE')
+  const overdue = tasks.filter(t => new Date(t.deadline) < new Date() && t.status !== 'DONE').length
+  const avgScore = done.length && done.some(t => t.score)
     ? (done.filter(t => t.score).reduce((s, t) => s + t.score.value, 0) / done.filter(t => t.score).length).toFixed(1)
     : '—'
 
@@ -46,10 +46,10 @@ export default function EmployeeDashboard() {
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-7">
-          <StatCard label="Assigned to Me" value={tasks.length}  sub="Total tasks"    color="blue"  />
-          <StatCard label="Completed"      value={done.length}   sub="All time"        color="green" />
-          <StatCard label="Avg Score"      value={avgScore}      sub="Out of 10"       color="amber" />
-          <StatCard label="Overdue"        value={overdue}       sub={overdue === 0 ? 'All clear! 🎉' : 'Needs attention'} color={overdue > 0 ? 'red' : 'green'} />
+          <StatCard label="Assigned to Me" value={tasks.length} sub="Total tasks" color="blue" />
+          <StatCard label="Completed" value={done.length} sub="All time" color="green" />
+          <StatCard label="Avg Score" value={avgScore} sub="Out of 10" color="amber" />
+          <StatCard label="Overdue" value={overdue} sub={overdue === 0 ? 'All clear! 🎉' : 'Needs attention'} color={overdue > 0 ? 'red' : 'green'} />
         </div>
 
         <div className="grid grid-cols-2 gap-5">

@@ -102,9 +102,23 @@ teamtask/
     │   └── api/client.js      ← API connection
     └── package.json
 ```
-# you are a joke 
-```html
-yaaaaaahh
 
+---
 
+## Troubleshooting: Login Issues
+
+If you see a "Login failed" error even after seeding the database:
+
+- Make sure your frontend is correctly proxying API requests to your backend.
+- By default, the Vite config (frontend/vite.config.js) should have:
+
+```js
+proxy: {
+  '/api': 'http://localhost:5000' // Forward API calls to backend
+}
 ```
+
+- If it was set to a network IP (e.g., 'http://192.168.1.251:5000'), change it to 'http://localhost:5000' for local development.
+- After making this change, restart your frontend server.
+
+This ensures your frontend can communicate with your backend and resolves most local login issues.

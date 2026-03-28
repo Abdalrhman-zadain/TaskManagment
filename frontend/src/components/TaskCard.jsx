@@ -1,17 +1,17 @@
 import { useNavigate } from 'react-router-dom'
 
 const statusStyles = {
-  TODO:        'bg-white/8 text-slate-400',
+  TODO: 'bg-white/8 text-slate-400',
   IN_PROGRESS: 'bg-blue-500/15 text-blue-300',
-  DONE:        'bg-green-500/15 text-green-400',
-  LATE:        'bg-red-500/15 text-red-400'
+  DONE: 'bg-green-500/15 text-green-400',
+  LATE: 'bg-red-500/15 text-red-400'
 }
 
 const statusDot = {
-  TODO:        'bg-white/30',
+  TODO: 'bg-white/30',
   IN_PROGRESS: 'bg-blue-400',
-  DONE:        'bg-green-400',
-  LATE:        'bg-red-500'
+  DONE: 'bg-green-400',
+  LATE: 'bg-red-500'
 }
 
 export default function TaskCard({ task, onMarkDone }) {
@@ -35,11 +35,10 @@ export default function TaskCard({ task, onMarkDone }) {
 
       <div className="flex items-center gap-2 flex-shrink-0">
         {task.score && (
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            task.score.value >= 8 ? 'bg-green-500/15 text-green-400' :
-            task.score.value >= 5 ? 'bg-amber-500/15 text-amber-400' :
-                                    'bg-red-500/15 text-red-400'
-          }`}>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${task.score.value >= 8 ? 'bg-green-500/15 text-green-400' :
+              task.score.value >= 5 ? 'bg-amber-500/15 text-amber-400' :
+                'bg-red-500/15 text-red-400'
+            }`}>
             {task.score.value}/10
           </span>
         )}

@@ -115,6 +115,8 @@ router.patch('/:id/approve', requireRole('CEO', 'MANAGER'), async (req, res) => 
             return res.status(400).json({ error: 'Task is not pending approval' });
         }
 
+        const { approvalComment, customScore } = req.body;
+
         // Auto-score the task (same logic as mark done, but via approval)
         const deadline = new Date(task.deadline);
         const now = new Date();
@@ -123,15 +125,24 @@ router.patch('/:id/approve', requireRole('CEO', 'MANAGER'), async (req, res) => 
         let scoreValue;
         let isOnTime = false;
 
-        if (diffDays <= 0) {
-            scoreValue = Math.floor(Math.random() * 3) + 8;
-            isOnTime = true;
-        } else if (diffDays <= 2) {
-            scoreValue = Math.floor(Math.random() * 3) + 5;
-        } else if (diffDays <= 5) {
-            scoreValue = Math.floor(Math.random() * 3) + 2;
+        if (req.user.role === 'CEO' && customScore !== undefined && customScore !== null && customScore !== '') {
+            const parsedScore = Number(customScore);
+            if (parsedScore < 1 || parsedScore > 10) {
+                return res.status(400).json({ error: 'Score must be between 1 and 10' });
+            }
+            scoreValue = parsedScore;
+            isOnTime = diffDays <= 0;
         } else {
-            scoreValue = 1;
+            if (diffDays <= 0) {
+                scoreValue = Math.floor(Math.random() * 3) + 8;
+                isOnTime = true;
+            } else if (diffDays <= 2) {
+                scoreValue = Math.floor(Math.random() * 3) + 5;
+            } else if (diffDays <= 5) {
+                scoreValue = Math.floor(Math.random() * 3) + 2;
+            } else {
+                scoreValue = 1;
+            }
         }
 
         // Update task approval
