@@ -294,14 +294,71 @@ router.patch('/:id/done', async (req, res) => {
   }
 });
 
+// ── PATCH /api/tasks/:id ───────────────────────────────
+// Managers/CEO can update task details (priority, deadline, etc.)
+router.patch('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { title, description, deadline, priority, status } = req.body;
+
+  try {
+    const originalTask = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { creatorId: true, assigneeId: true, title: true }
+    });
+
+    if (!originalTask) return res.status(404).json({ error: 'Task not found' });
+    if (originalTask.creatorId !== req.user.id && req.user.role !== 'CEO') {
+      return res.status(403).json({ error: 'Only the creator or CEO can edit this task' });
+    }
+
+    const task = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        title,
+        description,
+        deadline: deadline ? new Date(deadline) : undefined,
+        priority,
+        status
+      }
+    });
+
+    // Notify the assignee about the update
+    await createNotification({
+      userId: originalTask.assigneeId,
+      type: 'task_updated',
+      message: `Task details updated for: "${task.title}"`,
+      taskId: taskId
+    });
+
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── PATCH /api/tasks/:id/status ───────────────────────
 router.patch('/:id/status', async (req, res) => {
   const { status } = req.body;
+  const taskId = parseInt(req.params.id);
   try {
+    const originalTask = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!originalTask) return res.status(404).json({ error: 'Task not found' });
+
     const task = await prisma.task.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id: taskId },
       data: { status }
     });
+
+    // Notify the creator about status update
+    if (originalTask.creatorId !== req.user.id) {
+      await createNotification({
+        userId: originalTask.creatorId,
+        type: 'task_status_changed',
+        message: `Task "${task.title}" status changed to ${status}`,
+        taskId: taskId
+      });
+    }
+
     res.json(task);
   } catch (err) {
     res.status(500).json({ error: err.message });

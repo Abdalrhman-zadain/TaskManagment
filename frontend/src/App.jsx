@@ -11,6 +11,9 @@ import SectionsPage from "./pages/SectionsPage";
 import UsersPage from "./pages/UsersPage";
 import NotificationsPage from "./pages/NotificationsPage";
 
+import { useEffect } from "react";
+import { connectSocket, disconnectSocket } from "./socket";
+
 // Helper: read logged-in user from localStorage
 function getUser() {
   const u = localStorage.getItem("user");
@@ -36,6 +39,14 @@ function Protected({ children, roles }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const user = getUser();
+    if (user) {
+      connectSocket(user.id);
+    }
+    return () => disconnectSocket();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

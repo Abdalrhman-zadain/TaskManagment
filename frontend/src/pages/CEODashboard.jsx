@@ -34,7 +34,7 @@ export default function CEODashboard() {
   }, []);
 
   const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = tasks.filter((t) => t.status === "IN_PROGRESS").length;
+  const progress = tasks.filter((t) => ["TODO", "IN_PROGRESS"].includes(t.status)).length;
   const overdue = tasks.filter(
     (t) => new Date(t.deadline) < new Date() && t.status !== "DONE",
   ).length;
@@ -47,7 +47,8 @@ export default function CEODashboard() {
 
   const filteredTasks = tasks.filter((t) => {
     if (filter === "ALL") return true;
-    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS";
+    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS" || t.status === "TODO";
+    if (filter === "PENDING_APPROVAL") return t.status === "PENDING_APPROVAL";
     if (filter === "DONE") return t.status === "DONE";
     if (filter === "OVERDUE") return new Date(t.deadline) < new Date() && t.status !== "DONE";
     return true;
@@ -214,18 +215,20 @@ export default function CEODashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold">Recent Tasks</h2>
                 <div className="flex gap-1 bg-white/4 rounded-lg p-0.5">
-                  {["ALL", "IN_PROGRESS", "DONE", "OVERDUE"].map((f) => (
+                  {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       className={`px-3 py-1 text-[10px] rounded-md font-medium transition ${filter === f
-                          ? "bg-blue-600 text-white"
-                          : "text-slate-400 hover:text-white"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-400 hover:text-white"
                         }`}
                     >
                       {f === "IN_PROGRESS"
-                        ? "In Progress"
-                        : f.charAt(0) + f.slice(1).toLowerCase()}
+                        ? "Waiting Response"
+                        : f === "PENDING_APPROVAL"
+                          ? "Pending Review"
+                          : f.charAt(0) + f.slice(1).toLowerCase()}
                     </button>
                   ))}
                 </div>

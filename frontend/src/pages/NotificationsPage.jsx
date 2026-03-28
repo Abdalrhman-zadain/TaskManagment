@@ -2,10 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
+import { socket } from "../socket";
 
 const TYPE_LABELS = {
   task_assigned: "Task Assigned",
   task_done: "Task Completed",
+  task_approved: "Task Approved",
+  task_rejected: "Task Rejected",
+  task_pending_approval: "Pending Approval",
+  task_updated: "Task Updated",
+  task_status_changed: "Status Updated",
+  points_awarded: "Points Awarded",
   deadline_missed: "Deadline Missed",
   level_up: "Level Up",
 };
@@ -13,6 +20,12 @@ const TYPE_LABELS = {
 const TYPE_COLORS = {
   task_assigned: "bg-blue-500/20 text-blue-300",
   task_done: "bg-green-500/20 text-green-300",
+  task_approved: "bg-teal-500/20 text-teal-300",
+  task_rejected: "bg-pink-500/20 text-pink-300",
+  task_pending_approval: "bg-amber-500/20 text-amber-300",
+  task_updated: "bg-indigo-500/20 text-indigo-300",
+  task_status_changed: "bg-cyan-500/20 text-cyan-300",
+  points_awarded: "bg-purple-500/20 text-purple-300",
   deadline_missed: "bg-red-500/20 text-red-300",
   level_up: "bg-yellow-500/20 text-yellow-300",
 };
@@ -40,6 +53,14 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     load();
+
+    socket.on("notification", (newNotif) => {
+      setNotifications((prev) => [newNotif, ...prev]);
+    });
+
+    return () => {
+      socket.off("notification");
+    };
   }, []);
 
   async function markRead(id) {
@@ -100,11 +121,10 @@ export default function NotificationsPage() {
                   if (!n.read) markRead(n.id);
                   if (n.taskId) navigate(`/tasks/${n.taskId}`);
                 }}
-                className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition ${
-                  n.read
+                className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition ${n.read
                     ? "bg-white/3 border-white/5 opacity-60"
                     : "bg-white/5 border-white/10 hover:bg-white/8"
-                }`}
+                  }`}
               >
                 {/* Unread indicator */}
                 <div className="pt-1 flex-shrink-0">
@@ -118,9 +138,8 @@ export default function NotificationsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        TYPE_COLORS[n.type] || "bg-slate-500/20 text-slate-300"
-                      }`}
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${TYPE_COLORS[n.type] || "bg-slate-500/20 text-slate-300"
+                        }`}
                     >
                       {TYPE_LABELS[n.type] || n.type}
                     </span>

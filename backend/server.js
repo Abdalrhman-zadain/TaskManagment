@@ -63,9 +63,14 @@ async function markLateTasks() {
 }
 
 // ── Start server ───────────────────────────────────────
+const http = require('http');
+const { initSocket } = require('./socket');
+const server = http.createServer(app);
+const io = initSocket(server);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-console.log(`✓ Server running on http://0.0.0.0:${PORT} (LAN: http://192.168.1.251:${PORT})`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✓ Server running on http://0.0.0.0:${PORT} (LAN: http://192.168.1.251:${PORT})`);
   markLateTasks();
   setInterval(markLateTasks, 15 * 60 * 1000); // every 15 min
 });

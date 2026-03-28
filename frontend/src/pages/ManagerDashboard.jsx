@@ -41,7 +41,7 @@ export default function ManagerDashboard() {
   }
 
   const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = tasks.filter((t) => t.status === "IN_PROGRESS").length;
+  const progress = tasks.filter((t) => ["TODO", "IN_PROGRESS"].includes(t.status)).length;
   const overdue = tasks.filter(
     (t) => new Date(t.deadline) < new Date() && t.status !== "DONE",
   );
@@ -50,10 +50,12 @@ export default function ManagerDashboard() {
     filter === "ALL"
       ? tasks
       : filter === "IN_PROGRESS"
-        ? tasks.filter((t) => t.status === "IN_PROGRESS")
-        : filter === "DONE"
-          ? tasks.filter((t) => t.status === "DONE")
-          : overdue;
+        ? tasks.filter((t) => t.status === "IN_PROGRESS" || t.status === "TODO")
+        : filter === "PENDING_APPROVAL"
+          ? tasks.filter((t) => t.status === "PENDING_APPROVAL")
+          : filter === "DONE"
+            ? tasks.filter((t) => t.status === "DONE")
+            : overdue;
 
   if (loading)
     return (
@@ -137,18 +139,20 @@ export default function ManagerDashboard() {
             {/* Task list with filter tabs */}
             <div className="bg-white/4 border border-white/8 rounded-xl p-4">
               <div className="flex gap-1 mb-4 bg-white/4 rounded-lg p-1">
-                {["ALL", "IN_PROGRESS", "DONE", "OVERDUE"].map((f) => (
+                {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
                     className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filter === f
-                        ? "bg-teal-500 text-white"
-                        : "text-slate-400 hover:text-white"
+                      ? "bg-teal-500 text-white"
+                      : "text-slate-400 hover:text-white"
                       }`}
                   >
                     {f === "IN_PROGRESS"
-                      ? "In Progress"
-                      : f.charAt(0) + f.slice(1).toLowerCase()}
+                      ? "Waiting Response"
+                      : f === "PENDING_APPROVAL"
+                        ? "Pending Review"
+                        : f.charAt(0) + f.slice(1).toLowerCase()}
                   </button>
                 ))}
               </div>
@@ -205,10 +209,10 @@ export default function ManagerDashboard() {
                     <div className="text-sm font-bold">{emp.onTimeCount} ✓</div>
                     <div
                       className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${emp.level === "GOLD"
-                          ? "bg-yellow-500/15 text-yellow-400"
-                          : emp.level === "SILVER"
-                            ? "bg-slate-400/15 text-slate-300"
-                            : "bg-amber-800/20 text-amber-600"
+                        ? "bg-yellow-500/15 text-yellow-400"
+                        : emp.level === "SILVER"
+                          ? "bg-slate-400/15 text-slate-300"
+                          : "bg-amber-800/20 text-amber-600"
                         }`}
                     >
                       {emp.level === "GOLD"

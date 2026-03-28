@@ -289,9 +289,9 @@ router.delete('/:id', async (req, res) => {
             return res.status(403).json({ error: 'You can only delete evidence for your own tasks' });
         }
 
-        // Can only delete if task is PENDING_APPROVAL (not yet approved)
-        if (task.status !== 'PENDING_APPROVAL') {
-            return res.status(400).json({ error: 'Can only delete evidence for tasks awaiting approval' });
+        // Can only delete if task is not yet fully approved (DONE)
+        if (task.status === 'DONE') {
+            return res.status(400).json({ error: 'Cannot delete evidence for a completed task' });
         }
 
         // Delete the file from uploads folder

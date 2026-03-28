@@ -9,13 +9,18 @@ const prisma = new PrismaClient();
  * @param {string} opts.message    - human-readable message
  * @param {number} [opts.taskId]   - optional related task ID
  */
+const { sendToUser } = require('../socket');
+
 async function createNotification({ userId, type, message, taskId = null }) {
     try {
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
             data: { userId, type, message, taskId }
         });
+
+        // Emit real-time notification
+        sendToUser(userId, 'notification', notification);
     } catch (err) {
-        // Notifications are non-critical — log but don't crash
+        // Notifications are non-critical
         console.error('Failed to create notification:', err.message);
     }
 }

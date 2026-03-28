@@ -43,7 +43,8 @@ export default function TasksPage() {
 
   const filteredTasks = tasks.filter((t) => {
     if (filter === "ALL") return true;
-    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS";
+    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS" || t.status === "TODO";
+    if (filter === "PENDING_APPROVAL") return t.status === "PENDING_APPROVAL";
     if (filter === "DONE") return t.status === "DONE";
     if (filter === "OVERDUE") return new Date(t.deadline) < new Date() && t.status !== "DONE";
     return true;
@@ -80,8 +81,8 @@ export default function TasksPage() {
         </div>
 
         <div className="bg-white/4 border border-white/8 rounded-xl p-6">
-          <div className="flex gap-1 mb-6 bg-white/4 rounded-lg p-1 max-w-md">
-            {["ALL", "IN_PROGRESS", "DONE", "OVERDUE"].map((f) => (
+          <div className="flex gap-1 mb-6 bg-white/4 rounded-lg p-1 max-w-2xl">
+            {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -91,8 +92,10 @@ export default function TasksPage() {
                   }`}
               >
                 {f === "IN_PROGRESS"
-                  ? "In Progress"
-                  : f.charAt(0) + f.slice(1).toLowerCase()}
+                  ? "Waiting Response"
+                  : f === "PENDING_APPROVAL"
+                    ? "Pending Review"
+                    : f.charAt(0) + f.slice(1).toLowerCase()}
               </button>
             ))}
           </div>

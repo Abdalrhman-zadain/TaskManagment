@@ -56,10 +56,20 @@ router.patch('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
   }
 
   try {
+    const { createNotification } = require('../utils/notify');
     const score = await prisma.score.update({
       where: { id: parseInt(req.params.id) },
-      data: { value, adjusted: true, adjustedBy: req.user.id }
+      data: { value, adjusted: true, adjustedBy: req.user.id },
+      include: { task: { select: { title: true } } }
     });
+
+    await createNotification({
+      userId: score.userId,
+      type: 'points_awarded',
+      message: `Your score for "${score.task.title}" has been adjusted to ${value}/10`,
+      taskId: score.taskId
+    });
+
     res.json(score);
   } catch (err) {
     res.status(500).json({ error: err.message });

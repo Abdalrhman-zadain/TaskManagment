@@ -31,6 +31,11 @@ export default function TaskDetail() {
   }
 
   async function markDone() {
+    if (!task.evidenceUrl) {
+      alert("Please upload evidence (photo or video) first before marking the task as complete.");
+      return;
+    }
+
     try {
       const res = await api.patch(`/tasks/${id}/done`);
       alert("Task marked as complete. Waiting for approval.");
@@ -193,7 +198,7 @@ export default function TaskDetail() {
                       >
                         📖 View Full
                       </button>
-                      {isAssignee && task.status === "PENDING_APPROVAL" && (
+                      {isAssignee && (task.status === "PENDING_APPROVAL" || task.status === "IN_PROGRESS" || task.status === "TODO") && (
                         <button
                           onClick={deleteEvidence}
                           disabled={uploading}
@@ -431,6 +436,23 @@ export default function TaskDetail() {
               </div>
             </div>
 
+            {/* Evidence Upload (Now before Mark Complete) */}
+            {isAssignee && (task.status === "TODO" || task.status === "IN_PROGRESS" || task.status === "PENDING_APPROVAL") && !task.evidenceUrl && (
+              <div className="bg-white/4 border border-white/8 rounded-xl p-4">
+                <div className="text-sm font-bold mb-3">📎 Upload Evidence</div>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="w-full text-xs text-slate-300 file:bg-blue-600 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1.5 file:cursor-pointer file:hover:bg-blue-700 disabled:opacity-50"
+                />
+                <div className="text-xs text-slate-400 mt-2">
+                  JPG, PNG, MP4, MOV (max 100MB)
+                </div>
+              </div>
+            )}
+
             {/* Mark Done / Upload Evidence */}
             {isAssignee &&
               (task.status === "TODO" || task.status === "IN_PROGRESS") && (
@@ -448,23 +470,6 @@ export default function TaskDetail() {
                   </div>
                 </div>
               )}
-
-            {/* Evidence Upload */}
-            {isPendingApproval && isAssignee && !task.evidenceUrl && (
-              <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-                <div className="text-sm font-bold mb-3">📎 Upload Evidence</div>
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                  className="w-full text-xs text-slate-300 file:bg-blue-600 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1.5 file:cursor-pointer file:hover:bg-blue-700 disabled:opacity-50"
-                />
-                <div className="text-xs text-slate-400 mt-2">
-                  JPG, PNG, MP4, MOV (max 100MB)
-                </div>
-              </div>
-            )}
 
             {/* Approval Panel (for creator) */}
             {isPendingApproval && isCreator && task.evidenceUrl && (
@@ -601,7 +606,7 @@ export default function TaskDetail() {
                   >
                     🔄 Refresh
                   </button>
-                  {isAssignee && task.status === "PENDING_APPROVAL" && (
+                  {isAssignee && (task.status === "PENDING_APPROVAL" || task.status === "IN_PROGRESS" || task.status === "TODO") && (
                     <button
                       onClick={deleteEvidence}
                       disabled={uploading}
