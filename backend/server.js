@@ -17,7 +17,7 @@ const app = express();
 const prisma = new PrismaClient();
 
 // ── Middleware ─────────────────────────────────────────
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'] }));
+app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'http://192.168.1.251:5173', 'http://192.168.1.251:5173', 'http://0.0.0.0:5173'] }));
 app.use(express.json());
 
 // Ensure uploads directory exists
@@ -64,8 +64,8 @@ async function markLateTasks() {
 
 // ── Start server ───────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✓ Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+console.log(`✓ Server running on http://0.0.0.0:${PORT} (LAN: http://192.168.1.251:${PORT})`);
   markLateTasks();
   setInterval(markLateTasks, 15 * 60 * 1000); // every 15 min
 });
