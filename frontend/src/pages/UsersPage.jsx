@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
 export default function UsersPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,36 +195,50 @@ export default function UsersPage() {
               <strong className="text-white">{employees.length}</strong>
             </div>
 
-            {users.map((user) => (
-              <div
-                key={user.id}
-                className="py-3 border-b border-white/8 last:border-0 flex items-center justify-between gap-3"
-              >
-                <div>
-                  <div className="text-sm font-medium">{user.name}</div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    {user.email}
-                  </div>
-                </div>
+            {users.map((user) => {
+              const uScores = user.scores || [];
+              const totalScore = uScores.reduce((sum, sc) => sum + sc.value, 0);
 
-                <div className="text-right">
-                  <div className="text-xs text-slate-400">
-                    {user.section?.name || "No section"}
+              return (
+                <div
+                  key={user.id}
+                  onClick={() => navigate(`/users/${user.id}`)}
+                  className="py-3 border-b border-white/8 last:border-0 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 px-3 -mx-3 rounded-lg transition"
+                >
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-blue-100 group-hover:text-blue-400 transition">{user.name}</div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      {user.email}
+                    </div>
                   </div>
-                  <span
-                    className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${
-                      user.role === "MANAGER"
-                        ? "bg-teal-500/15 text-teal-300"
-                        : user.role === "EMPLOYEE"
-                          ? "bg-blue-500/15 text-blue-300"
-                          : "bg-white/10 text-slate-300"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
+
+                  <div className="text-right flex items-center gap-6">
+                    {user.role !== 'CEO' && (
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white">{totalScore} <span className="text-[10px] font-normal text-slate-500">Pts</span></div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{uScores.length} Tasks</div>
+                      </div>
+                    )}
+
+                    <div className="text-right w-24">
+                      <div className="text-xs text-slate-400 break-words line-clamp-1">
+                        {user.section?.name || "No section"}
+                      </div>
+                      <span
+                        className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${user.role === "MANAGER"
+                            ? "bg-teal-500/15 text-teal-300"
+                            : user.role === "EMPLOYEE"
+                              ? "bg-blue-500/15 text-blue-300"
+                              : "bg-white/10 text-slate-300"
+                          }`}
+                      >
+                        {user.role}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </main>

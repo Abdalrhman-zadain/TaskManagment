@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import api from '../api/client'
 
 export default function Profile() {
+  const { id } = useParams()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const role = user.role === 'CEO' ? 'CEO' : user.role === 'MANAGER' ? 'Manager' : 'Employee'
 
   useEffect(() => {
-    api.get('/users/me')
+    api.get(id ? `/users/${id}` : '/users/me')
       .then(res => setProfile(res.data))
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -19,7 +21,7 @@ export default function Profile() {
   if (!profile) return null
 
   const scores = profile.scores || []
-  const avgScore = scores.length ? (scores.reduce((s, sc) => s + sc.value, 0) / scores.length).toFixed(1) : '—'
+  const totalScore = scores.reduce((s, sc) => s + sc.value, 0)
   const onTime = scores.filter(s => s.isOnTime).length
 
   const milestones = [
@@ -73,7 +75,7 @@ export default function Profile() {
                 <div className="w-full border-t border-white/8 mt-5 pt-5">
                   <div className="flex justify-around">
                     {[
-                      { val: avgScore, label: 'Avg Score' },
+                      { val: totalScore, label: 'Total Score' },
                       { val: profile.onTimeCount, label: 'On Time' },
                       { val: scores.length, label: 'Total Tasks' },
                     ].map(s => (

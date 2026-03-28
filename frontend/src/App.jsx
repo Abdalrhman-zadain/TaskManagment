@@ -124,6 +124,15 @@ export default function App() {
         />
 
         <Route
+          path="/users/:id"
+          element={
+            <Protected roles={["CEO", "MANAGER"]}>
+              <Profile />
+            </Protected>
+          }
+        />
+
+        <Route
           path="/notifications"
           element={
             <Protected>

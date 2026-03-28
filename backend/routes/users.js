@@ -94,7 +94,8 @@ router.get('/', async (req, res) => {
       select: {
         id: true, name: true, email: true, role: true,
         stars: true, level: true, onTimeCount: true,
-        section: { select: { id: true, name: true } }
+        section: { select: { id: true, name: true } },
+        scores: { select: { value: true, isOnTime: true } }
       }
     });
     res.json(users);

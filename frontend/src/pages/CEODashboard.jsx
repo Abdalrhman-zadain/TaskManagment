@@ -39,8 +39,10 @@ export default function CEODashboard() {
   ).length;
   const onTimeRate = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
 
-  // Top performers sorted by avg score
-  const employees = users.filter((u) => u.role === "EMPLOYEE");
+  // Top performers sorted by on time count
+  const allPerformers = [...users]
+    .filter((u) => u.role === "EMPLOYEE" || u.role === "MANAGER")
+    .sort((a, b) => b.onTimeCount - a.onTimeCount);
 
   if (loading)
     return (
@@ -247,63 +249,64 @@ export default function CEODashboard() {
             )}
 
             {/* Top Performers */}
-            <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold">Top Performers</h2>
-                <button className="text-xs text-blue-400">Full report →</button>
+            <div className="bg-white/4 border border-white/8 rounded-xl p-4 flex flex-col max-h-[500px]">
+              <div className="flex items-center justify-between mb-3 shrink-0">
+                <h2 className="text-sm font-bold">Team Performance</h2>
+                <button onClick={() => navigate('/users')} className="text-xs text-blue-400">All users →</button>
               </div>
-              {employees.slice(0, 5).map((emp, i) => (
-                <div
-                  key={emp.id}
-                  className="flex items-center gap-2.5 py-2.5 border-b border-white/8 last:border-0"
-                >
+              <div className="overflow-y-auto pr-2 -mr-2">
+                {allPerformers.map((emp, i) => (
                   <div
-                    className={`text-sm font-bold w-5 text-center ${
-                      i === 0
+                    key={emp.id}
+                    onClick={() => navigate(`/users/${emp.id}`)}
+                    className="flex items-center gap-2.5 py-2.5 border-b border-white/8 last:border-0 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-lg transition"
+                  >
+                    <div
+                      className={`text-sm font-bold w-5 text-center ${i === 0
                         ? "text-yellow-400"
                         : i === 1
                           ? "text-slate-300"
                           : i === 2
                             ? "text-amber-700"
                             : "text-slate-500"
-                    }`}
-                  >
-                    {i + 1}
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-300">
-                    {emp.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{emp.name}</div>
-                    <div className="text-xs text-slate-400">
-                      {emp.section?.name}
+                        }`}
+                    >
+                      {i + 1}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold">{emp.onTimeCount}</div>
-                    <div
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${
-                        emp.level === "GOLD"
+                    <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-300">
+                      {emp.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{emp.name}</div>
+                      <div className="text-xs text-slate-400">
+                        {emp.role === "MANAGER" ? 'Manager' : 'Employee'} · {emp.section?.name || 'No Section'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-white">{emp.onTimeCount}</div>
+                      <div
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${emp.level === "GOLD"
                           ? "bg-yellow-500/15 text-yellow-400"
                           : emp.level === "SILVER"
                             ? "bg-slate-400/15 text-slate-300"
                             : "bg-amber-800/20 text-amber-600"
-                      }`}
-                    >
-                      {emp.level === "GOLD"
-                        ? "🥇"
-                        : emp.level === "SILVER"
-                          ? "🥈"
-                          : "🥉"}{" "}
-                      {emp.level}
+                          }`}
+                      >
+                        {emp.level === "GOLD"
+                          ? "🥇"
+                          : emp.level === "SILVER"
+                            ? "🥈"
+                            : "🥉"}{" "}
+                        {emp.level}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
