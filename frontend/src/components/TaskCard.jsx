@@ -27,23 +27,23 @@ export default function TaskCard({ task, onMarkDone }) {
       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot[task.status]}`} />
 
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium truncate">{task.title}</div>
-        <div className="text-xs text-slate-400 mt-0.5">
+        <div className="text-base font-medium truncate">{task.title}</div>
+        <div className="text-sm text-slate-400 mt-0.5">
           {task.assignee?.name} · {task.section?.name}
         </div>
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
         {task.score && (
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${task.score.value >= 8 ? 'bg-green-500/15 text-green-400' :
-              task.score.value >= 5 ? 'bg-amber-500/15 text-amber-400' :
-                'bg-red-500/15 text-red-400'
+          <span className={`text-sm font-semibold px-2.5 py-1 rounded-full ${task.score.value >= 8 ? 'bg-green-500/15 text-green-400' :
+            task.score.value >= 5 ? 'bg-amber-500/15 text-amber-400' :
+              'bg-red-500/15 text-red-400'
             }`}>
             {task.score.value}/10
           </span>
         )}
 
-        <span className={`text-xs ${isOverdue ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
+        <span className={`text-sm ${isOverdue ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
           {isOverdue ? '⚠ ' : ''}
           {new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
         </span>

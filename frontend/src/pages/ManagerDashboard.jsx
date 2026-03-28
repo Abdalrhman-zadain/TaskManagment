@@ -141,11 +141,10 @@ export default function ManagerDashboard() {
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${
-                      filter === f
+                    className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filter === f
                         ? "bg-teal-500 text-white"
                         : "text-slate-400 hover:text-white"
-                    }`}
+                      }`}
                   >
                     {f === "IN_PROGRESS"
                       ? "In Progress"
@@ -170,6 +169,12 @@ export default function ManagerDashboard() {
             <div className="bg-white/4 border border-white/8 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold">My Team</h2>
+                <button
+                  onClick={() => navigate("/users")}
+                  className="text-xs text-blue-400"
+                >
+                  Full team →
+                </button>
               </div>
               {team.map((emp) => (
                 <div
@@ -199,13 +204,12 @@ export default function ManagerDashboard() {
                   <div className="text-right">
                     <div className="text-sm font-bold">{emp.onTimeCount} ✓</div>
                     <div
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${
-                        emp.level === "GOLD"
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${emp.level === "GOLD"
                           ? "bg-yellow-500/15 text-yellow-400"
                           : emp.level === "SILVER"
                             ? "bg-slate-400/15 text-slate-300"
                             : "bg-amber-800/20 text-amber-600"
-                      }`}
+                        }`}
                     >
                       {emp.level === "GOLD"
                         ? "🥇"
@@ -234,10 +238,10 @@ export default function ManagerDashboard() {
                   label: "On-time rate",
                   value: tasks.length
                     ? Math.round(
-                        (tasks.filter((t) => t.score?.isOnTime).length /
-                          tasks.length) *
-                          100,
-                      )
+                      (tasks.filter((t) => t.score?.isOnTime).length /
+                        tasks.length) *
+                      100,
+                    )
                     : 0,
                   color: "bg-green-400",
                 },

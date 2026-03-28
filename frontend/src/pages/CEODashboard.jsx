@@ -10,6 +10,7 @@ export default function CEODashboard() {
   const [sections, setSections] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("ALL");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +44,14 @@ export default function CEODashboard() {
   const allPerformers = [...users]
     .filter((u) => u.role === "EMPLOYEE" || u.role === "MANAGER")
     .sort((a, b) => b.onTimeCount - a.onTimeCount);
+
+  const filteredTasks = tasks.filter((t) => {
+    if (filter === "ALL") return true;
+    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS";
+    if (filter === "DONE") return t.status === "DONE";
+    if (filter === "OVERDUE") return new Date(t.deadline) < new Date() && t.status !== "DONE";
+    return true;
+  });
 
   if (loading)
     return (
@@ -202,18 +211,41 @@ export default function CEODashboard() {
 
             {/* Recent Tasks */}
             <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold">Recent Tasks</h2>
+                <div className="flex gap-1 bg-white/4 rounded-lg p-0.5">
+                  {["ALL", "IN_PROGRESS", "DONE", "OVERDUE"].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`px-3 py-1 text-[10px] rounded-md font-medium transition ${filter === f
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-400 hover:text-white"
+                        }`}
+                    >
+                      {f === "IN_PROGRESS"
+                        ? "In Progress"
+                        : f.charAt(0) + f.slice(1).toLowerCase()}
+                    </button>
+                  ))}
+                </div>
                 <button
                   onClick={() => navigate("/tasks")}
-                  className="text-xs text-blue-400"
+                  className="text-xs text-blue-400 ml-2"
                 >
                   View all →
                 </button>
               </div>
-              {tasks.slice(0, 6).map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
+              <div className="flex flex-col gap-1">
+                {filteredTasks.slice(0, 10).map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
+                {filteredTasks.length === 0 && (
+                  <div className="text-center py-6 text-xs text-slate-500">
+                    No tasks found in this category
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
