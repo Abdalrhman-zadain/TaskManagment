@@ -122,3 +122,74 @@ proxy: {
 - After making this change, restart your frontend server.
 
 This ensures your frontend can communicate with your backend and resolves most local login issues.
+
+Redesign the GUI/UX for my web app called TeamTask.
+
+This is a role-based team task management platform for organizations. It has 3 roles:
+
+1. CEO
+2. Manager
+3. Employee
+
+Core purpose:
+
+- Manage teams and sections
+- Assign tasks from CEO to managers
+- Assign subtasks from managers to employees
+- Track progress and deadlines
+- Upload evidence (photo/video) before marking a task complete
+- Approve or reject completed work
+- Score completed tasks out of 10
+- Show user performance, stars, levels, and notifications
+
+Main pages:
+
+- Login
+- CEO Dashboard
+- Manager Dashboard
+- Employee Dashboard
+- Tasks list page
+- Task detail page
+- Create task page
+- Sections management page
+- Users management page
+- Profile page
+- Notifications page
+
+Important workflows:
+
+- CEO creates sections and assigns managers
+- CEO assigns main tasks to managers
+- Managers assign subtasks to employees in their own section
+- Employees upload evidence and submit for approval
+- Managers/CEO approve or reject work
+- Users receive points, stars, and level progression based on performance
+
+Current design:
+
+- Dark navy dashboard UI
+- Left sidebar navigation
+- Glass-effect cards
+- Blue/teal highlights
+- Many cards, stats, badges, and task rows
+
+Problems to solve:
+
+- Make it look more modern and premium
+- Improve visual hierarchy
+- Reduce clutter and make information easier to scan
+- Improve dashboard layouts
+- Improve task detail page UX
+- Make forms cleaner and more user-friendly
+- Improve mobile responsiveness
+- Keep it professional for company use
+
+Please give me:
+
+- A full UI/UX redesign direction
+- Color palette
+- Typography suggestions
+- Dashboard layout ideas for each role
+- Better component ideas for tasks, stats, notifications, profile, and forms
+- Suggestions for spacing, icons, cards, tables, filters, and empty states
+- A cleaner and more modern design system

@@ -41,7 +41,9 @@ export default function ManagerDashboard() {
   }
 
   const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = tasks.filter((t) => ["TODO", "IN_PROGRESS"].includes(t.status)).length;
+  const progress = tasks.filter((t) =>
+    ["TODO", "IN_PROGRESS"].includes(t.status),
+  ).length;
   const overdue = tasks.filter(
     (t) => new Date(t.deadline) < new Date() && t.status !== "DONE",
   );
@@ -138,23 +140,38 @@ export default function ManagerDashboard() {
 
             {/* Task list with filter tabs */}
             <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-              <div className="flex gap-1 mb-4 bg-white/4 rounded-lg p-1">
-                {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${filter === f
-                      ? "bg-teal-500 text-white"
-                      : "text-slate-400 hover:text-white"
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-1 bg-white/4 rounded-lg p-1">
+                  {[
+                    "ALL",
+                    "IN_PROGRESS",
+                    "PENDING_APPROVAL",
+                    "DONE",
+                    "OVERDUE",
+                  ].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${
+                        filter === f
+                          ? "bg-teal-500 text-white"
+                          : "text-slate-400 hover:text-white"
                       }`}
-                  >
-                    {f === "IN_PROGRESS"
-                      ? "Waiting Response"
-                      : f === "PENDING_APPROVAL"
-                        ? "Pending Review"
-                        : f.charAt(0) + f.slice(1).toLowerCase()}
-                  </button>
-                ))}
+                    >
+                      {f === "IN_PROGRESS"
+                        ? "Waiting Response"
+                        : f === "PENDING_APPROVAL"
+                          ? "Pending Review"
+                          : f.charAt(0) + f.slice(1).toLowerCase()}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => navigate("/tasks")}
+                  className="text-xs text-blue-400 ml-2"
+                >
+                  View all →
+                </button>
               </div>
               {filtered.length === 0 ? (
                 <p className="text-sm text-slate-400 text-center py-4">
@@ -208,12 +225,13 @@ export default function ManagerDashboard() {
                   <div className="text-right">
                     <div className="text-sm font-bold">{emp.onTimeCount} ✓</div>
                     <div
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${emp.level === "GOLD"
-                        ? "bg-yellow-500/15 text-yellow-400"
-                        : emp.level === "SILVER"
-                          ? "bg-slate-400/15 text-slate-300"
-                          : "bg-amber-800/20 text-amber-600"
-                        }`}
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${
+                        emp.level === "GOLD"
+                          ? "bg-yellow-500/15 text-yellow-400"
+                          : emp.level === "SILVER"
+                            ? "bg-slate-400/15 text-slate-300"
+                            : "bg-amber-800/20 text-amber-600"
+                      }`}
                     >
                       {emp.level === "GOLD"
                         ? "🥇"
@@ -242,10 +260,10 @@ export default function ManagerDashboard() {
                   label: "On-time rate",
                   value: tasks.length
                     ? Math.round(
-                      (tasks.filter((t) => t.score?.isOnTime).length /
-                        tasks.length) *
-                      100,
-                    )
+                        (tasks.filter((t) => t.score?.isOnTime).length /
+                          tasks.length) *
+                          100,
+                      )
                     : 0,
                   color: "bg-green-400",
                 },

@@ -44,10 +44,11 @@ export default function Sidebar({ role }) {
     return (
       <div
         onClick={() => navigate(path)}
-        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${active
-          ? "text-blue-300 bg-blue-500/10 border-blue-500"
-          : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
-          }`}
+        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${
+          active
+            ? "text-blue-300 bg-blue-500/10 border-blue-500"
+            : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
+        }`}
       >
         <div
           className={`w-2 h-2 rounded-full ${active ? "bg-blue-400" : dot}`}
@@ -70,7 +71,6 @@ export default function Sidebar({ role }) {
       {/* Navigation Area - Scrollable */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="pb-4">
-
           {/* Navigation */}
           <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-5 mb-1.5">
             Overview
@@ -81,10 +81,12 @@ export default function Sidebar({ role }) {
           {role === "CEO" && navItem("Users", "/users")}
 
           {role === "Manager" && navItem("Dashboard", "/manager")}
+          {role === "Manager" && navItem("Tasks", "/tasks")}
           {role === "Manager" && navItem("Assign Task", "/tasks/new")}
           {role === "Manager" && navItem("Team", "/users")}
 
           {role === "Employee" && navItem("My Tasks", "/employee")}
+          {role === "Employee" && navItem("Tasks", "/tasks")}
 
           <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-5 mb-1.5 mt-4">
             Account
@@ -94,10 +96,11 @@ export default function Sidebar({ role }) {
           {/* Notifications link with unread badge */}
           <div
             onClick={() => navigate("/notifications")}
-            className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${location.pathname === "/notifications"
-              ? "text-blue-300 bg-blue-500/10 border-blue-500"
-              : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
-              }`}
+            className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${
+              location.pathname === "/notifications"
+                ? "text-blue-300 bg-blue-500/10 border-blue-500"
+                : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
+            }`}
           >
             <div
               className={`w-2 h-2 rounded-full ${location.pathname === "/notifications" ? "bg-blue-400" : "bg-slate-500"}`}
@@ -109,7 +112,6 @@ export default function Sidebar({ role }) {
               </span>
             )}
           </div>
-
         </div>
       </div>
 
