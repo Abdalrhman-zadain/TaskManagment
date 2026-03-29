@@ -10,6 +10,7 @@ import TaskCreate from "./pages/TaskCreate";
 import SectionsPage from "./pages/SectionsPage";
 import UsersPage from "./pages/UsersPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import ClientDashboard from "./pages/ClientDashboard";
 
 import { useEffect } from "react";
 import { connectSocket, disconnectSocket } from "./socket";
@@ -151,6 +152,8 @@ export default function App() {
             </Protected>
           }
         />
+
+        <Route path="/client" element={<ClientDashboard />} />
       </Routes>
     </BrowserRouter>
   );
