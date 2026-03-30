@@ -82,6 +82,7 @@ After running `npm run seed`, you can sign in at http://localhost:5173 with:
 - CEO: `ceo@teamtask.com` / `admin123`
 - Manager: `manager@teamtask.com` / `admin123`
 - Employee: `employee1@teamtask.com` / `admin123`
+- Client: `client@teamtask.com` / `admin123`
 
 ---
 

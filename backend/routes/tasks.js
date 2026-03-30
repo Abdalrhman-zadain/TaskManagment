@@ -11,7 +11,7 @@ router.use(authMiddleware);
 
 // ── GET /api/tasks ─────────────────────────────────────
 // CEO sees all tasks, Manager sees their section, Employee sees their own
-router.get('/', async (req, res) => {
+router.get('/', requireRole('CEO', 'MANAGER', 'EMPLOYEE'), async (req, res) => {
   try {
     let where = {};
 
@@ -27,6 +27,7 @@ router.get('/', async (req, res) => {
         assignee: { select: { id: true, name: true, role: true } },
         creator: { select: { id: true, name: true, role: true } },
         section: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, status: true } },
         score: true,
         subtasks: true
       },
@@ -40,7 +41,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── GET /api/tasks/:id ─────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireRole('CEO', 'MANAGER', 'EMPLOYEE'), async (req, res) => {
   try {
     const task = await prisma.task.findUnique({
       where: { id: parseInt(req.params.id) },
@@ -48,6 +49,7 @@ router.get('/:id', async (req, res) => {
         assignee: { select: { id: true, name: true, role: true, level: true, stars: true } },
         creator: { select: { id: true, name: true, role: true } },
         section: true,
+        project: { select: { id: true, name: true, status: true, client: { select: { id: true, name: true } } } },
         score: true,
         subtasks: { include: { assignee: { select: { id: true, name: true } } } },
         parent: { select: { id: true, title: true } }
@@ -64,13 +66,14 @@ router.get('/:id', async (req, res) => {
 // ── POST /api/tasks ────────────────────────────────────
 // CEO or Manager can create tasks
 router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
-  const { title, description, assigneeId, sectionId, deadline, priority, parentId } = req.body;
+  const { title, description, assigneeId, sectionId, deadline, priority, parentId, projectId } = req.body;
   const parsedAssigneeId = parseInt(assigneeId);
   const parsedSectionId = parseInt(sectionId);
   const parsedParentId = parentId ? parseInt(parentId) : null;
+  const parsedProjectId = parseInt(projectId);
 
   try {
-    if (!title || !deadline || Number.isNaN(parsedAssigneeId) || Number.isNaN(parsedSectionId)) {
+    if (!title || !deadline || Number.isNaN(parsedAssigneeId) || Number.isNaN(parsedSectionId) || Number.isNaN(parsedProjectId)) {
       return res.status(400).json({ error: 'Missing or invalid task fields' });
     }
 
@@ -91,9 +94,18 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       return res.status(400).json({ error: 'Cannot assign tasks to the CEO' });
     }
 
-    const section = await prisma.section.findUnique({ where: { id: parsedSectionId } });
+    const [section, project] = await Promise.all([
+      prisma.section.findUnique({ where: { id: parsedSectionId } }),
+      prisma.project.findUnique({ where: { id: parsedProjectId }, select: { id: true, sectionId: true, managerId: true } })
+    ]);
     if (!section) {
       return res.status(404).json({ error: 'Section not found' });
+    }
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (project.sectionId !== parsedSectionId) {
+      return res.status(400).json({ error: 'Project must belong to the selected section' });
     }
 
     if (req.user.role === 'CEO') {
@@ -107,6 +119,9 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
 
       if (!section.managerId || section.managerId !== parsedAssigneeId) {
         return res.status(400).json({ error: 'Selected assignee must be the manager of the selected section' });
+      }
+      if (project.managerId !== parsedAssigneeId) {
+        return res.status(400).json({ error: 'Selected assignee must be the manager for this project' });
       }
     }
 
@@ -143,6 +158,9 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       if (parentTask.sectionId !== parsedSectionId) {
         return res.status(400).json({ error: 'Parent task must belong to the same section' });
       }
+      if (parentTask.projectId !== parsedProjectId) {
+        return res.status(400).json({ error: 'Parent task must belong to the same project' });
+      }
 
       if (req.user.role === 'MANAGER') {
         if (parentTask.creator.role !== 'CEO') {
@@ -168,7 +186,8 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         creatorId: req.user.id,
         deadline: new Date(deadline),
         priority: priority || 'medium',
-        parentId: parsedParentId
+        parentId: parsedParentId,
+        projectId: parsedProjectId
       }
     });
 
@@ -188,7 +207,7 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
 
 // ── PATCH /api/tasks/:id/done ──────────────────────────
 // Employee marks their task as done → auto-scores it
-router.patch('/:id/done', async (req, res) => {
+router.patch('/:id/done', requireRole('EMPLOYEE'), async (req, res) => {
   const taskId = parseInt(req.params.id);
 
   try {
@@ -337,7 +356,7 @@ router.patch('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
 });
 
 // ── PATCH /api/tasks/:id/status ───────────────────────
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireRole('CEO', 'MANAGER', 'EMPLOYEE'), async (req, res) => {
   const { status } = req.body;
   const taskId = parseInt(req.params.id);
   try {

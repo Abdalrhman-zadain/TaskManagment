@@ -93,6 +93,8 @@ export default function UsersPage() {
 
   const managers = users.filter((u) => u.role === "MANAGER");
   const employees = users.filter((u) => u.role === "EMPLOYEE");
+  const clients = users.filter((u) => u.role === "CLIENT");
+  const shouldShowSectionPicker = currentUser.role === "CEO" && role !== "CLIENT";
 
   return (
     <div className="flex min-h-screen bg-[#0F1D3A]">
@@ -102,7 +104,9 @@ export default function UsersPage() {
         <div className="mb-7">
           <h1 className="text-xl font-bold">{currentUser.role === 'MANAGER' ? 'Team Management' : 'Users Management'}</h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            Create manager and employee accounts
+            {currentUser.role === 'MANAGER'
+              ? 'Create employee accounts for your section'
+              : 'Create manager, employee, and client accounts'}
           </p>
         </div>
 
@@ -168,26 +172,29 @@ export default function UsersPage() {
                   >
                     <option value="EMPLOYEE">Employee</option>
                     <option value="MANAGER">Manager</option>
+                    <option value="CLIENT">Client</option>
                   </select>
                 </div>
 
-                <div className="mb-4">
-                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                    Section (optional)
-                  </label>
-                  <select
-                    value={sectionId}
-                    onChange={(e) => setSectionId(e.target.value)}
-                    className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="">Unassigned</option>
-                    {sections.map((section) => (
-                      <option key={section.id} value={section.id}>
-                        {section.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {shouldShowSectionPicker && (
+                  <div className="mb-4">
+                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
+                      Section (optional)
+                    </label>
+                    <select
+                      value={sectionId}
+                      onChange={(e) => setSectionId(e.target.value)}
+                      className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">Unassigned</option>
+                      {sections.map((section) => (
+                        <option key={section.id} value={section.id}>
+                          {section.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </>
             )}
 
@@ -210,6 +217,9 @@ export default function UsersPage() {
               <strong className="text-white">{managers.length}</strong> |
               Employees:{" "}
               <strong className="text-white">{employees.length}</strong>
+              {" | "}
+              Clients:{" "}
+              <strong className="text-white">{clients.length}</strong>
             </div>
 
             {users.filter(u => u.id !== currentUser.id).map((user) => {
@@ -230,7 +240,7 @@ export default function UsersPage() {
                   </div>
 
                   <div className="text-right flex items-center gap-6">
-                    {user.role !== 'CEO' && (
+                    {user.role !== 'CEO' && user.role !== 'CLIENT' && (
                       <div className="text-right">
                         <div className="text-sm font-bold text-white">{totalScore} <span className="text-[10px] font-normal text-slate-500">Pts</span></div>
                         <div className="text-[10px] text-slate-400 mt-0.5">{uScores.length} Tasks</div>
@@ -246,6 +256,8 @@ export default function UsersPage() {
                           ? "bg-teal-500/15 text-teal-300"
                           : user.role === "EMPLOYEE"
                             ? "bg-blue-500/15 text-blue-300"
+                            : user.role === "CLIENT"
+                              ? "bg-amber-500/15 text-amber-300"
                             : "bg-white/10 text-slate-300"
                           }`}
                       >

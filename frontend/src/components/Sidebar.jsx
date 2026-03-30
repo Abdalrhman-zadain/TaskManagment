@@ -76,17 +76,21 @@ export default function Sidebar({ role }) {
             Overview
           </div>
           {role === "CEO" && navItem("Dashboard", "/ceo")}
+          {role === "CEO" && navItem("Projects", "/projects")}
           {role === "CEO" && navItem("Tasks", "/tasks")}
           {role === "CEO" && navItem("Sections", "/sections")}
           {role === "CEO" && navItem("Users", "/users")}
 
           {role === "Manager" && navItem("Dashboard", "/manager")}
+          {role === "Manager" && navItem("Projects", "/projects")}
           {role === "Manager" && navItem("Tasks", "/tasks")}
           {role === "Manager" && navItem("Assign Task", "/tasks/new")}
           {role === "Manager" && navItem("Team", "/users")}
 
           {role === "Employee" && navItem("My Tasks", "/employee")}
           {role === "Employee" && navItem("Tasks", "/tasks")}
+
+          {role === "Client" && navItem("Dashboard", "/client")}
 
           <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-5 mb-1.5 mt-4">
             Account

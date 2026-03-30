@@ -33,6 +33,7 @@ const TYPE_COLORS = {
 function roleLabel(user) {
   if (user.role === "CEO") return "CEO";
   if (user.role === "MANAGER") return "Manager";
+  if (user.role === "CLIENT") return "Client";
   return "Employee";
 }
 

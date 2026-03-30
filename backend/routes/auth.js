@@ -11,6 +11,14 @@ router.post('/register', async (req, res) => {
   const { name, email, password, role, sectionId } = req.body;
 
   try {
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!['CEO', 'MANAGER', 'EMPLOYEE', 'CLIENT'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
     // Check if email already exists
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(400).json({ error: 'Email already in use' });
@@ -20,7 +28,13 @@ router.post('/register', async (req, res) => {
 
     // Create user
     const user = await prisma.user.create({
-      data: { name, email, password: hashed, role, sectionId: sectionId || null }
+      data: {
+        name,
+        email,
+        password: hashed,
+        role,
+        sectionId: role === 'CLIENT' ? null : sectionId || null
+      }
     });
 
     res.status(201).json({ message: 'User created', userId: user.id });

@@ -11,6 +11,7 @@ import SectionsPage from "./pages/SectionsPage";
 import UsersPage from "./pages/UsersPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ClientDashboard from "./pages/ClientDashboard";
+import ProjectsPage from "./pages/ProjectsPage";
 
 import { useEffect } from "react";
 import { connectSocket, disconnectSocket } from "./socket";
@@ -28,6 +29,7 @@ function RoleRoute() {
   if (user.role === "CEO") return <Navigate to="/ceo" />;
   if (user.role === "MANAGER") return <Navigate to="/manager" />;
   if (user.role === "EMPLOYEE") return <Navigate to="/employee" />;
+  if (user.role === "CLIENT") return <Navigate to="/client" />;
   return <Navigate to="/login" />;
 }
 
@@ -84,7 +86,7 @@ export default function App() {
         <Route
           path="/tasks/:id"
           element={
-            <Protected>
+            <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
               <TaskDetail />
             </Protected>
           }
@@ -93,7 +95,7 @@ export default function App() {
         <Route
           path="/tasks"
           element={
-            <Protected>
+            <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
               <TasksPage />
             </Protected>
           }
@@ -113,6 +115,15 @@ export default function App() {
           element={
             <Protected roles={["CEO"]}>
               <SectionsPage />
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/projects"
+          element={
+            <Protected roles={["CEO", "MANAGER"]}>
+              <ProjectsPage />
             </Protected>
           }
         />
@@ -153,7 +164,14 @@ export default function App() {
           }
         />
 
-        <Route path="/client" element={<ClientDashboard />} />
+        <Route
+          path="/client"
+          element={
+            <Protected roles={["CLIENT"]}>
+              <ClientDashboard />
+            </Protected>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

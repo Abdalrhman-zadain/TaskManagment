@@ -12,6 +12,8 @@ const sectionRoutes = require('./routes/sections');
 const scoreRoutes = require('./routes/scores');
 const notificationRoutes = require('./routes/notifications');
 const evidenceRoutes = require('./routes/evidence');
+const projectRoutes = require('./routes/projects');
+const clientRoutes = require('./routes/client');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -37,6 +39,8 @@ app.use('/api/sections', sectionRoutes);
 app.use('/api/scores', scoreRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/evidence', evidenceRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/client', clientRoutes);
 
 // ── Health check ───────────────────────────────────────
 app.get('/', (req, res) => {

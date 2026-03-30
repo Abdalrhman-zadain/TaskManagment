@@ -24,8 +24,12 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    if (!['MANAGER', 'EMPLOYEE'].includes(role)) {
-      return res.status(400).json({ error: 'Role must be MANAGER or EMPLOYEE' });
+    if (!['MANAGER', 'EMPLOYEE', 'CLIENT'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be MANAGER, EMPLOYEE, or CLIENT' });
+    }
+
+    if (role === 'CLIENT') {
+      parsedSectionId = null;
     }
 
     if (password.length < 6) {
@@ -92,7 +96,14 @@ router.get('/me', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     let where = {};
-    if (req.user.role === 'MANAGER') where.sectionId = req.user.sectionId;
+    if (req.user.role === 'MANAGER') {
+      where = {
+        OR: [
+          { sectionId: req.user.sectionId },
+          { role: 'CLIENT' }
+        ]
+      };
+    }
 
     const users = await prisma.user.findMany({
       where,
@@ -143,8 +154,22 @@ router.delete('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
       }
     }
 
+    const [managedProject, clientProject] = await Promise.all([
+      prisma.project.findFirst({ where: { managerId: targetId }, select: { id: true, name: true } }),
+      prisma.project.findFirst({ where: { clientId: targetId }, select: { id: true, name: true } }),
+    ]);
+
+    if (managedProject) {
+      return res.status(400).json({ error: `Cannot delete user while managing project "${managedProject.name}"` });
+    }
+
+    if (clientProject) {
+      return res.status(400).json({ error: `Cannot delete client while linked to project "${clientProject.name}"` });
+    }
+
     await prisma.$transaction([
       prisma.notification.deleteMany({ where: { userId: targetId } }),
+      prisma.projectComment.deleteMany({ where: { userId: targetId } }),
       prisma.score.deleteMany({ where: { userId: targetId } }),
       prisma.task.deleteMany({ where: { assigneeId: targetId } }),
       prisma.task.deleteMany({ where: { creatorId: targetId } }),

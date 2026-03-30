@@ -14,6 +14,7 @@ export default function TaskCreate() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [projectId, setProjectId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [sectionId, setSectionId] = useState(
     user.sectionId ? String(user.sectionId) : "",
@@ -25,6 +26,7 @@ export default function TaskCreate() {
   const [users, setUsers] = useState([]);
   const [sections, setSections] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -32,14 +34,16 @@ export default function TaskCreate() {
   useEffect(() => {
     async function load() {
       try {
-        const [usersRes, sectionsRes, tasksRes] = await Promise.all([
+        const [usersRes, sectionsRes, tasksRes, projectsRes] = await Promise.all([
           api.get("/users"),
           api.get("/sections"),
           api.get("/tasks"),
+          api.get("/projects"),
         ]);
         setUsers(usersRes.data);
         setSections(sectionsRes.data);
         setTasks(tasksRes.data);
+        setProjects(projectsRes.data);
       } catch (err) {
         setError(
           err.response?.data?.error || "Failed to load users and sections",
@@ -72,22 +76,28 @@ export default function TaskCreate() {
     return eligible.filter((u) => u.section?.id === Number(sectionId));
   }, [users, sections, sectionId, user.role]);
 
+  const projectOptions = useMemo(() => {
+    if (!sectionId) return [];
+    return projects.filter((project) => project.sectionId === Number(sectionId));
+  }, [projects, sectionId]);
+
   const parentTaskOptions = useMemo(() => {
-    if (user.role !== "MANAGER" || !sectionId) return [];
+    if (user.role !== "MANAGER" || !sectionId || !projectId) return [];
     return tasks.filter(
       (t) =>
         t.sectionId === Number(sectionId) &&
+        t.project?.id === Number(projectId) &&
         !t.parentId &&
         t.assigneeId === user.id &&
         t.creator?.role === "CEO",
     );
-  }, [tasks, sectionId, user.role, user.id]);
+  }, [tasks, sectionId, projectId, user.role, user.id]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    if (!title || !assigneeId || !sectionId || !deadline) {
+    if (!title || !assigneeId || !sectionId || !projectId || !deadline) {
       setError("Please fill all required fields");
       return;
     }
@@ -104,6 +114,7 @@ export default function TaskCreate() {
         description,
         assigneeId,
         sectionId,
+        projectId,
         deadline,
         priority,
         parentId: user.role === "MANAGER" ? parentId : null,
@@ -175,7 +186,9 @@ export default function TaskCreate() {
                 value={sectionId}
                 onChange={(e) => {
                   setSectionId(e.target.value);
+                  setProjectId("");
                   setAssigneeId("");
+                  setParentId("");
                 }}
                 className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
                 required
@@ -184,6 +197,28 @@ export default function TaskCreate() {
                 {allowedSections.map((section) => (
                   <option key={section.id} value={section.id}>
                     {section.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
+                Project
+              </label>
+              <select
+                value={projectId}
+                onChange={(e) => {
+                  setProjectId(e.target.value);
+                  setParentId("");
+                }}
+                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                required
+              >
+                <option value="">Select project</option>
+                {projectOptions.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
                   </option>
                 ))}
               </select>
@@ -212,11 +247,10 @@ export default function TaskCreate() {
                 ))}
               </select>
               {user.role === "CEO" &&
-                sectionId &&
+                projectId &&
                 assigneeOptions.length === 0 && (
                   <p className="text-xs text-amber-400 mt-1.5">
-                    This section has no assigned manager. Assign one in Sections
-                    first.
+                    This project's section has no assigned manager. Assign one in Projects or Sections first.
                   </p>
                 )}
             </div>
