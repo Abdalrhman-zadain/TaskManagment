@@ -168,11 +168,11 @@ export default function ClientDashboard() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-white text-slate-400">Loading client dashboard...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">Loading client dashboard...</div>;
   }
 
   if (error && !dashboard) {
-    return <div className="min-h-screen flex items-center justify-center bg-white text-rose-500">{error}</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-rose-300">{error}</div>;
   }
 
   function renderHome() {
@@ -453,23 +453,23 @@ export default function ClientDashboard() {
   const pageTitle = navItems.find((item) => item.id === activePage)?.label || "Dashboard";
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.12),_transparent_30%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] text-slate-100">
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="w-full border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:border-b-0 lg:border-r">
-          <div className="border-b border-slate-200 px-6 py-6">
-            <div className="text-2xl font-bold text-slate-900">Client<span className="text-cyan-500">View</span></div>
-            <p className="mt-1 text-sm text-slate-500">Connected to live project data</p>
+        <aside className="w-full border-b border-white/10 bg-slate-950/70 backdrop-blur lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:border-b-0 lg:border-r">
+          <div className="border-b border-white/10 px-6 py-6">
+            <div className="text-2xl font-bold text-white">Client<span className="text-cyan-300">View</span></div>
+            <p className="mt-1 text-sm text-slate-400">Connected to live project data</p>
           </div>
 
           <div className="px-4 py-5 lg:flex-1">
-            <div className="mb-3 px-3 text-xs uppercase tracking-[0.25em] text-slate-400">Navigation</div>
+            <div className="mb-3 px-3 text-xs uppercase tracking-[0.25em] text-slate-500">Navigation</div>
             <nav className="space-y-1">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActivePage(item.id)}
                   className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm transition ${
-                    activePage === item.id ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    activePage === item.id ? "bg-sky-500/15 text-white ring-1 ring-sky-400/30" : "text-slate-400 hover:bg-white/5 hover:text-white"
                   }`}
                 >
                   <span>{item.label}</span>
@@ -482,13 +482,13 @@ export default function ClientDashboard() {
           </div>
 
           <div className="px-4 pb-6 lg:mt-auto">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="text-sm font-medium text-slate-900">{clientProfile.name}</div>
-              <div className="text-xs text-slate-500">{clientProfile.email}</div>
+            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <div className="text-sm font-medium text-white">{clientProfile.name}</div>
+              <div className="text-xs text-slate-400">{clientProfile.email}</div>
             </div>
             <button
               onClick={signOut}
-              className="mt-3 w-full text-left text-xs text-slate-500 hover:text-red-500 transition py-1"
+              className="mt-3 w-full text-left text-xs text-slate-400 hover:text-red-400 transition py-1"
             >
               Sign out →
             </button>
@@ -496,11 +496,11 @@ export default function ClientDashboard() {
         </aside>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-6 flex flex-col gap-4 border-b border-white/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-sm uppercase tracking-[0.25em] text-cyan-600">Client Portal</div>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-900">{pageTitle}</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <div className="text-sm uppercase tracking-[0.25em] text-cyan-300/80">Client Portal</div>
+              <h1 className="mt-2 text-3xl font-semibold text-white">{pageTitle}</h1>
+              <p className="mt-1 text-sm text-slate-400">
                 {selectedProject ? `Currently focused on ${selectedProject.name}` : "Viewing all linked projects"}
               </p>
             </div>
