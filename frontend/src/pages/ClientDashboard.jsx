@@ -3,30 +3,96 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Too
 import { useNavigate } from "react-router-dom";
 import api from "../api/client";
 
-const navItems = [
-  { id: "home", label: "Dashboard" },
-  { id: "projects", label: "Projects" },
-  { id: "deliverables", label: "Deliverables" },
-  { id: "reports", label: "Reports" },
-  { id: "notifications", label: "Notifications" },
-  { id: "profile", label: "Profile" },
-];
+const baseNavItems = ["home", "projects", "deliverables", "reports", "notifications", "profile"];
 
-function formatDate(date) {
-  if (!date) return "Not set";
-  return new Date(date).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function formatStatus(status) {
-  return String(status)
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
+const copy = {
+  en: {
+    nav: {
+      home: "Dashboard",
+      projects: "Projects",
+      deliverables: "Deliverables",
+      reports: "Reports",
+      notifications: "Notifications",
+      profile: "Profile",
+    },
+    language: "Language",
+    clientPortal: "Client Portal",
+    connected: "Connected to live project data",
+    navigation: "Navigation",
+    signOut: "Sign out →",
+    loading: "Loading client dashboard...",
+    loadError: "Failed to load client dashboard",
+    notSet: "Not set",
+    status: {
+      COMPLETED: "Completed",
+      APPROVED: "Approved",
+      AT_RISK: "At Risk",
+      REJECTED: "Rejected",
+      PENDING: "Pending",
+      TODO: "To Do",
+      IN_PROGRESS: "In Progress",
+      DONE: "Done",
+      PENDING_APPROVAL: "Pending Approval",
+      CEO: "CEO",
+      MANAGER: "Manager",
+      EMPLOYEE: "Employee",
+      CLIENT: "Client",
+      task_assigned: "Task Assigned",
+      task_done: "Task Done",
+      task_approved: "Task Approved",
+      task_rejected: "Task Rejected",
+      task_pending_approval: "Pending Approval",
+      task_updated: "Task Updated",
+      task_status_changed: "Status Updated",
+      points_awarded: "Points Awarded",
+      deadline_missed: "Deadline Missed",
+      level_up: "Level Up",
+    },
+  },
+  ar: {
+    nav: {
+      home: "لوحة التحكم",
+      projects: "المشاريع",
+      deliverables: "التسليمات",
+      reports: "التقارير",
+      notifications: "الإشعارات",
+      profile: "الملف الشخصي",
+    },
+    language: "اللغة",
+    clientPortal: "بوابة العميل",
+    connected: "متصل ببيانات المشروع المباشرة",
+    navigation: "التنقل",
+    signOut: "تسجيل الخروج ←",
+    loading: "جاري تحميل لوحة العميل...",
+    loadError: "فشل تحميل لوحة العميل",
+    notSet: "غير محدد",
+    status: {
+      COMPLETED: "مكتمل",
+      APPROVED: "موافق عليه",
+      AT_RISK: "معرض للخطر",
+      REJECTED: "مرفوض",
+      PENDING: "قيد الانتظار",
+      TODO: "للعمل",
+      IN_PROGRESS: "قيد التنفيذ",
+      DONE: "منجز",
+      PENDING_APPROVAL: "بانتظار الموافقة",
+      CEO: "المدير التنفيذي",
+      MANAGER: "مدير",
+      EMPLOYEE: "موظف",
+      CLIENT: "عميل",
+      task_assigned: "تم إسناد مهمة",
+      task_done: "تم إنجاز المهمة",
+      task_approved: "تمت الموافقة على المهمة",
+      task_rejected: "تم رفض المهمة",
+      task_pending_approval: "بانتظار الموافقة",
+      task_updated: "تم تحديث المهمة",
+      task_status_changed: "تم تحديث الحالة",
+      points_awarded: "تم منح نقاط",
+      deadline_missed: "تم تجاوز الموعد النهائي",
+      level_up: "ترقية مستوى",
+    },
+  },
+};
 
 function statusTone(status) {
   if (status === "COMPLETED" || status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700";
@@ -59,6 +125,7 @@ function chartTooltipStyle() {
 export default function ClientDashboard() {
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const navigate = useNavigate();
+  const [language, setLanguage] = useState(localStorage.getItem("clientDashboardLanguage") || "en");
   const [activePage, setActivePage] = useState("home");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [dashboard, setDashboard] = useState(null);
@@ -66,6 +133,25 @@ export default function ClientDashboard() {
   const [error, setError] = useState("");
   const [newComment, setNewComment] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
+  const isArabic = language === "ar";
+  const t = copy[language];
+
+  function formatDate(date) {
+    if (!date) return t.notSet;
+    return new Date(date).toLocaleDateString(isArabic ? "ar" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function formatStatus(status) {
+    return t.status[status] || String(status).replaceAll("_", " ");
+  }
+
+  useEffect(() => {
+    localStorage.setItem("clientDashboardLanguage", language);
+  }, [language]);
 
   async function loadDashboard() {
     setLoading(true);
@@ -76,7 +162,7 @@ export default function ClientDashboard() {
         setSelectedProjectId(res.data.projects[0].id);
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to load client dashboard");
+      setError(err.response?.data?.error || t.loadError);
     } finally {
       setLoading(false);
     }
@@ -94,6 +180,7 @@ export default function ClientDashboard() {
     email: storedUser.email,
     joined: null,
   };
+  const navItems = baseNavItems.map((id) => ({ id, label: t.nav[id] }));
 
   const selectedProject =
     projects.find((project) => project.id === selectedProjectId) || projects[0] || null;
@@ -146,16 +233,16 @@ export default function ClientDashboard() {
               projectName: project.name,
               text:
                 task.approvalStatus === "APPROVED"
-                  ? `${task.title} was approved`
+                  ? (isArabic ? `تمت الموافقة على ${task.title}` : `${task.title} was approved`)
                   : task.evidenceUrl
-                    ? `${task.title} has a new deliverable ready`
-                    : `${task.title} is in progress`,
+                    ? (isArabic ? `يوجد تسليم جديد جاهز لـ ${task.title}` : `${task.title} has a new deliverable ready`)
+                    : (isArabic ? `${task.title} قيد التنفيذ` : `${task.title} is in progress`),
               time: task.evidenceUploadedAt || task.completedAt || task.createdAt || project.createdAt,
             })),
         )
         .sort((a, b) => new Date(b.time) - new Date(a.time))
         .slice(0, 6),
-    [projects],
+    [projects, isArabic],
   );
 
   async function addComment() {
@@ -168,7 +255,7 @@ export default function ClientDashboard() {
       setNewComment("");
       await loadDashboard();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add comment");
+      setError(err.response?.data?.error || t.loadError);
     } finally {
       setCommentSaving(false);
     }
@@ -181,7 +268,7 @@ export default function ClientDashboard() {
   }
 
   if (loading) {
-    return <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">Loading client dashboard...</div>;
+    return <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">{t.loading}</div>;
   }
 
   if (error && !dashboard) {
@@ -192,16 +279,16 @@ export default function ClientDashboard() {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <ClientStatCard label="Projects" value={summary.total} subtext="Visible to this client" accent="bg-[#1275e2]" />
-          <ClientStatCard label="Completed" value={summary.completed} subtext="Closed successfully" accent="bg-emerald-400" />
-          <ClientStatCard label="At Risk" value={summary.atRisk} subtext="Needs extra attention" accent="bg-[#c55b00]" />
-          <ClientStatCard label="Avg Progress" value={`${summary.avgProgress}%`} subtext="Across all linked work" accent="bg-[#5f78a3]" />
+          <ClientStatCard label={isArabic ? "المشاريع" : "Projects"} value={summary.total} subtext={isArabic ? "مرئية لهذا العميل" : "Visible to this client"} accent="bg-[#1275e2]" />
+          <ClientStatCard label={isArabic ? "المكتملة" : "Completed"} value={summary.completed} subtext={isArabic ? "أغلقت بنجاح" : "Closed successfully"} accent="bg-emerald-400" />
+          <ClientStatCard label={isArabic ? "المعرضة للخطر" : "At Risk"} value={summary.atRisk} subtext={isArabic ? "تحتاج إلى اهتمام إضافي" : "Needs extra attention"} accent="bg-[#c55b00]" />
+          <ClientStatCard label={isArabic ? "متوسط التقدم" : "Avg Progress"} value={`${summary.avgProgress}%`} subtext={isArabic ? "عبر جميع الأعمال المرتبطة" : "Across all linked work"} accent="bg-[#5f78a3]" />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
           <section className="app-panel p-5">
-            <h2 className="text-lg font-semibold text-slate-900">Project Progress</h2>
-            <p className="mt-1 text-sm text-slate-500">Real progress calculated from linked project tasks.</p>
+            <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "تقدم المشروع" : "Project Progress"}</h2>
+            <p className="mt-1 text-sm text-slate-500">{isArabic ? "تقدم حقيقي محسوب من مهام المشروع المرتبطة." : "Real progress calculated from linked project tasks."}</p>
             <div className="mt-4 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={projectChartData}>
@@ -216,7 +303,7 @@ export default function ClientDashboard() {
           </section>
 
           <section className="app-panel p-5">
-            <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "أحدث النشاطات" : "Recent Activity"}</h2>
             <div className="mt-4 space-y-3">
               {recentActivity.map((item) => (
                 <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
@@ -224,7 +311,7 @@ export default function ClientDashboard() {
                   <div className="mt-1 text-xs text-slate-500">{item.projectName} · {formatDate(item.time)}</div>
                 </div>
               ))}
-              {recentActivity.length === 0 && <p className="text-sm text-slate-500">No activity yet.</p>}
+              {recentActivity.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا يوجد نشاط بعد." : "No activity yet."}</p>}
             </div>
           </section>
         </div>
@@ -250,15 +337,15 @@ export default function ClientDashboard() {
                 <div>
                   <div className="text-lg font-semibold text-slate-900">{project.name}</div>
                   <div className="mt-1 text-sm text-slate-500">
-                    Manager: {project.manager.name} · Section: {project.section.name}
+                    {isArabic ? "المدير" : "Manager"}: {project.manager.name} · {isArabic ? "القسم" : "Section"}: {project.section.name}
                   </div>
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(project.status)}`}>{formatStatus(project.status)}</span>
               </div>
               {project.description && <p className="mt-3 text-sm text-slate-600">{project.description}</p>}
               <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                <span>Deadline: {formatDate(project.deadline)}</span>
-                <span>{project.progress}% complete</span>
+                <span>{isArabic ? "الموعد النهائي" : "Deadline"}: {formatDate(project.deadline)}</span>
+                <span>{project.progress}% {isArabic ? "مكتمل" : "complete"}</span>
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
                 <div className="h-full rounded-full bg-[#1275e2]" style={{ width: `${project.progress}%` }} />
@@ -269,26 +356,26 @@ export default function ClientDashboard() {
 
         <section className="app-panel p-5">
           {!selectedProject ? (
-            <p className="text-sm text-slate-500">No project selected.</p>
+            <p className="text-sm text-slate-500">{isArabic ? "لم يتم اختيار مشروع." : "No project selected."}</p>
           ) : (
             <>
               <h2 className="text-xl font-semibold text-slate-900">{selectedProject.name}</h2>
-              <p className="mt-1 text-sm text-slate-500">{selectedProject.description || "No project description yet."}</p>
+              <p className="mt-1 text-sm text-slate-500">{selectedProject.description || (isArabic ? "لا يوجد وصف للمشروع حتى الآن." : "No project description yet.")}</p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Budget</div>
-                  <div className="mt-2 text-sm text-slate-900">{selectedProject.budget || "Not set"}</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "الميزانية" : "Budget"}</div>
+                  <div className="mt-2 text-sm text-slate-900">{selectedProject.budget || t.notSet}</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Deadline</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "الموعد النهائي" : "Deadline"}</div>
                   <div className="mt-2 text-sm text-slate-900">{formatDate(selectedProject.deadline)}</div>
                 </div>
               </div>
 
               <div className="mt-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-900">Task Feed</h3>
-                  <span className="text-xs text-slate-500">{selectedProject.tasks.length} linked tasks</span>
+                  <h3 className="text-lg font-semibold text-slate-900">{isArabic ? "سجل المهام" : "Task Feed"}</h3>
+                  <span className="text-xs text-slate-500">{selectedProject.tasks.length} {isArabic ? "مهام مرتبطة" : "linked tasks"}</span>
                 </div>
                 <div className="mt-4 space-y-3">
                   {selectedProject.tasks.map((task) => (
@@ -297,19 +384,19 @@ export default function ClientDashboard() {
                         <div>
                           <div className="text-sm font-medium text-slate-900">{task.title}</div>
                           <div className="mt-1 text-xs text-slate-500">
-                            Assigned to {task.assignee?.name || "Unknown"} · Due {formatDate(task.deadline)}
+                            {isArabic ? "مُسند إلى" : "Assigned to"} {task.assignee?.name || (isArabic ? "غير معروف" : "Unknown")} · {isArabic ? "ينتهي في" : "Due"} {formatDate(task.deadline)}
                           </div>
                         </div>
                         <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(task.status)}`}>{formatStatus(task.status)}</span>
                       </div>
                     </div>
                   ))}
-                  {selectedProject.tasks.length === 0 && <p className="text-sm text-slate-500">No tasks linked yet.</p>}
+                  {selectedProject.tasks.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد مهام مرتبطة بعد." : "No tasks linked yet."}</p>}
                 </div>
               </div>
 
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-slate-900">Comment Thread</h3>
+                <h3 className="text-lg font-semibold text-slate-900">{isArabic ? "سجل التعليقات" : "Comment Thread"}</h3>
                 <div className="mt-4 space-y-3">
                   {selectedProject.comments.map((comment) => (
                     <div key={comment.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
@@ -329,7 +416,7 @@ export default function ClientDashboard() {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     rows={3}
-                    placeholder="Share feedback or request changes..."
+                    placeholder={isArabic ? "شارك ملاحظاتك أو اطلب تعديلات..." : "Share feedback or request changes..."}
                     className="app-input"
                   />
                   <button
@@ -337,7 +424,7 @@ export default function ClientDashboard() {
                     disabled={commentSaving}
                     className="btn-primary px-4 py-2 text-sm font-medium"
                   >
-                    {commentSaving ? "Posting..." : "Add Comment"}
+                    {commentSaving ? (isArabic ? "جاري الإرسال..." : "Posting...") : (isArabic ? "إضافة تعليق" : "Add Comment")}
                   </button>
                 </div>
               </div>
@@ -357,7 +444,7 @@ export default function ClientDashboard() {
               <div>
                 <div className="text-sm font-semibold text-slate-900">{item.taskName}</div>
                 <div className="mt-1 text-xs text-slate-500">
-                  {item.projectName} · Submitted by {item.submittedBy} · {formatDate(item.uploadDate)}
+                  {item.projectName} · {isArabic ? "تم الإرسال بواسطة" : "Submitted by"} {item.submittedBy} · {formatDate(item.uploadDate)}
                 </div>
               </div>
               <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(item.status)}`}>{formatStatus(item.status)}</span>
@@ -369,12 +456,12 @@ export default function ClientDashboard() {
                 rel="noreferrer"
                 className="mt-4 inline-block text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
               >
-                Open {item.type.toLowerCase()} evidence
+                {isArabic ? "فتح" : "Open"} {item.type.toLowerCase()} evidence
               </a>
             )}
           </div>
         ))}
-        {deliverables.length === 0 && <p className="text-sm text-slate-500">No deliverables uploaded yet.</p>}
+        {deliverables.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد تسليمات مرفوعة بعد." : "No deliverables uploaded yet."}</p>}
       </div>
     );
   }
@@ -383,7 +470,7 @@ export default function ClientDashboard() {
     return (
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="app-panel p-5">
-          <h2 className="text-lg font-semibold text-slate-900">Progress by Project</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "التقدم حسب المشروع" : "Progress by Project"}</h2>
           <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={projectChartData}>
@@ -398,7 +485,7 @@ export default function ClientDashboard() {
         </section>
 
         <section className="app-panel p-5">
-          <h2 className="text-lg font-semibold text-slate-900">Completed vs Open Tasks</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "المهام المكتملة مقابل المفتوحة" : "Completed vs Open Tasks"}</h2>
           <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={workloadData}>
@@ -428,7 +515,7 @@ export default function ClientDashboard() {
             <p className="mt-3 text-sm text-slate-700">{notification.message}</p>
           </div>
         ))}
-        {notifications.length === 0 && <p className="text-sm text-slate-500">No notifications yet.</p>}
+        {notifications.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد إشعارات بعد." : "No notifications yet."}</p>}
       </div>
     );
   }
@@ -442,14 +529,14 @@ export default function ClientDashboard() {
           </div>
           <div className="mt-4 text-center">
             <h2 className="text-xl font-semibold text-slate-900">{clientProfile.name}</h2>
-            <p className="mt-1 text-sm text-slate-500">Client Portal</p>
+            <p className="mt-1 text-sm text-slate-500">{t.clientPortal}</p>
           </div>
 
           <div className="mt-6 space-y-3">
             {[
-              ["Email", clientProfile.email],
-              ["Joined", formatDate(clientProfile.joined)],
-              ["Linked Projects", summary.total],
+              [isArabic ? "البريد الإلكتروني" : "Email", clientProfile.email],
+              [isArabic ? "تاريخ الانضمام" : "Joined", formatDate(clientProfile.joined)],
+              [isArabic ? "المشاريع المرتبطة" : "Linked Projects", summary.total],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                 <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</div>
@@ -460,12 +547,12 @@ export default function ClientDashboard() {
         </section>
 
         <section className="space-y-4">
-          <ClientStatCard label="Projects" value={summary.total} subtext="Scoped to this client account" accent="bg-[#1275e2]" />
-          <ClientStatCard label="Deliverables" value={deliverables.length} subtext="Evidence files shared with you" accent="bg-emerald-400" />
+          <ClientStatCard label={isArabic ? "المشاريع" : "Projects"} value={summary.total} subtext={isArabic ? "ضمن نطاق حساب هذا العميل" : "Scoped to this client account"} accent="bg-[#1275e2]" />
+          <ClientStatCard label={isArabic ? "التسليمات" : "Deliverables"} value={deliverables.length} subtext={isArabic ? "ملفات الإثبات المشتركة معك" : "Evidence files shared with you"} accent="bg-emerald-400" />
           <ClientStatCard
-            label="Unread Notifications"
+            label={isArabic ? "الإشعارات غير المقروءة" : "Unread Notifications"}
             value={notifications.filter((item) => !item.read).length}
-            subtext="Recent updates awaiting review"
+            subtext={isArabic ? "تحديثات حديثة بانتظار المراجعة" : "Recent updates awaiting review"}
             accent="bg-[#5f78a3]"
           />
         </section>
@@ -473,21 +560,38 @@ export default function ClientDashboard() {
     );
   }
 
-  const pageTitle = navItems.find((item) => item.id === activePage)?.label || "Dashboard";
+  const pageTitle = navItems.find((item) => item.id === activePage)?.label || t.nav.home;
 
   return (
-    <div className="app-shell min-h-screen">
-      <div className="flex min-h-screen flex-col lg:flex-row">
+    <div className="app-shell min-h-screen" dir={isArabic ? "rtl" : "ltr"}>
+      <div className={`flex min-h-screen flex-col ${isArabic ? "lg:flex-row-reverse" : "lg:flex-row"}`}>
         <aside className="border-b border-slate-200 bg-[#fbfdff] lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:border-r lg:border-b-0">
           <div className="border-b border-slate-200 px-6 py-6">
             <div className="text-2xl font-bold text-slate-900">
-              Client<span className="text-[#1275e2]">View</span>
+              {isArabic ? "عرض العميل" : <><span>Client</span><span className="text-[#1275e2]">View</span></>}
             </div>
-            <p className="mt-1 text-sm text-slate-500">Connected to live project data</p>
+            <p className="mt-1 text-sm text-slate-500">{t.connected}</p>
           </div>
 
           <div className="px-4 py-5 lg:flex-1">
-            <div className="mb-3 px-3 text-xs uppercase tracking-[0.25em] text-slate-400">Navigation</div>
+            <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t.language}</span>
+              <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+                <button
+                  onClick={() => setLanguage("en")}
+                  className={`rounded-md px-3 py-1 text-xs font-semibold transition ${language === "en" ? "bg-[#1275e2] text-white" : "text-slate-600"}`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLanguage("ar")}
+                  className={`rounded-md px-3 py-1 text-xs font-semibold transition ${language === "ar" ? "bg-[#1275e2] text-white" : "text-slate-600"}`}
+                >
+                  AR
+                </button>
+              </div>
+            </div>
+            <div className="mb-3 px-3 text-xs uppercase tracking-[0.25em] text-slate-400">{t.navigation}</div>
             <nav className="space-y-1">
               {navItems.map((item) => (
                 <button
@@ -519,9 +623,9 @@ export default function ClientDashboard() {
             </div>
             <button
               onClick={signOut}
-              className="mt-3 w-full py-1 text-left text-xs text-slate-500 transition hover:text-[#c55b00]"
+              className={`mt-3 w-full py-1 text-xs text-slate-500 transition hover:text-[#c55b00] ${isArabic ? "text-right" : "text-left"}`}
             >
-              Sign out →
+              {t.signOut}
             </button>
           </div>
         </aside>
@@ -529,10 +633,12 @@ export default function ClientDashboard() {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-sm uppercase tracking-[0.25em] text-[#5f78a3]">Client Portal</div>
+              <div className="text-sm uppercase tracking-[0.25em] text-[#5f78a3]">{t.clientPortal}</div>
               <h1 className="mt-2 text-3xl font-semibold text-slate-900">{pageTitle}</h1>
               <p className="mt-1 text-sm text-slate-500">
-                {selectedProject ? `Currently focused on ${selectedProject.name}` : "Viewing all linked projects"}
+                {selectedProject
+                  ? (isArabic ? `التركيز الحالي على ${selectedProject.name}` : `Currently focused on ${selectedProject.name}`)
+                  : (isArabic ? "عرض جميع المشاريع المرتبطة" : "Viewing all linked projects")}
               </p>
             </div>
           </div>
