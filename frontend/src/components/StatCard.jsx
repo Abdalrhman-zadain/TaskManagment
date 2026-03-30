@@ -1,18 +1,19 @@
-export default function StatCard({ label, value, sub, color = 'blue' }) {
+export default function StatCard({ label, value, sub, color = "blue" }) {
   const colors = {
-    blue:   'bg-blue-500',
-    green:  'bg-green-500',
-    amber:  'bg-amber-500',
-    red:    'bg-red-500',
-    teal:   'bg-teal-500',
-    purple: 'bg-purple-500'
-  }
+    blue: "bg-[#1275e2]",
+    green: "bg-emerald-500",
+    amber: "bg-[#c55b00]",
+    red: "bg-rose-500",
+    teal: "bg-[#5f78a3]",
+    purple: "bg-violet-500",
+  };
+
   return (
-    <div className="bg-white/4 border border-white/8 rounded-xl p-4 relative overflow-hidden">
-      <div className={`absolute top-0 left-0 right-0 h-0.5 ${colors[color]}`} />
-      <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-2">{label}</div>
-      <div className="text-3xl font-bold font-mono">{value}</div>
-      {sub && <div className="text-xs text-slate-400 mt-1.5">{sub}</div>}
+    <div className="app-panel relative overflow-hidden p-5">
+      <div className={`absolute top-0 left-0 right-0 h-1 ${colors[color]}`} />
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">{label}</div>
+      <div className="text-3xl font-extrabold text-slate-900">{value}</div>
+      {sub && <div className="mt-1.5 text-xs text-slate-500">{sub}</div>}
     </div>
-  )
+  );
 }

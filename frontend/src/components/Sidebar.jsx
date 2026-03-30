@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/client";
-import { socket, connectSocket, disconnectSocket } from "../socket";
+import { socket, disconnectSocket } from "../socket";
 
 export default function Sidebar({ role }) {
   const navigate = useNavigate();
@@ -9,14 +9,13 @@ export default function Sidebar({ role }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Socket and Polling for unread notifications
   useEffect(() => {
     async function fetchUnread() {
       try {
         const res = await api.get("/notifications");
         setUnreadCount(res.data.filter((n) => !n.read).length);
       } catch {
-        // silent — non-critical
+        // Non-critical.
       }
     }
 
@@ -32,6 +31,7 @@ export default function Sidebar({ role }) {
       clearInterval(interval);
     };
   }, []);
+
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -39,40 +39,35 @@ export default function Sidebar({ role }) {
     navigate("/login");
   }
 
-  const navItem = (label, path, dot = "bg-slate-500") => {
+  const navItem = (label, path, dot = "bg-slate-400") => {
     const active = location.pathname === path;
     return (
       <div
         onClick={() => navigate(path)}
-        className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${
+        className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
           active
-            ? "text-blue-300 bg-blue-500/10 border-blue-500"
-            : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
+            ? "bg-[#1275e2] text-white shadow-sm"
+            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
         }`}
       >
-        <div
-          className={`w-2 h-2 rounded-full ${active ? "bg-blue-400" : dot}`}
-        />
+        <div className={`h-2 w-2 rounded-full ${active ? "bg-white" : dot}`} />
         {label}
       </div>
     );
   };
 
   return (
-    <aside className="w-52 bg-[#162447] border-r border-white/8 flex flex-col pt-6 pb-4 flex-shrink-0 h-screen sticky top-0">
-      {/* Logo */}
-      <div className="px-5 pb-6 border-b border-white/8 mb-5 shrink-0">
-        <div className="font-bold text-xl tracking-tight">
-          Team<span className="text-blue-400">Task</span>
+    <aside className="sticky top-0 flex h-screen w-56 flex-shrink-0 flex-col border-r border-slate-200 bg-[#fbfdff] pt-6 pb-4">
+      <div className="mb-5 shrink-0 border-b border-slate-200 px-5 pb-6">
+        <div className="text-xl font-bold tracking-tight text-slate-900">
+          Team<span className="text-[#1275e2]">Task</span>
         </div>
-        <div className="text-xs text-slate-400 mt-0.5">{role} Portal</div>
+        <div className="mt-0.5 text-xs text-slate-500">{role} Portal</div>
       </div>
 
-      {/* Navigation Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="pb-4">
-          {/* Navigation */}
-          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-5 mb-1.5">
+          <div className="mb-1.5 px-5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
             Overview
           </div>
           {role === "CEO" && navItem("Dashboard", "/ceo")}
@@ -92,26 +87,29 @@ export default function Sidebar({ role }) {
 
           {role === "Client" && navItem("Dashboard", "/client")}
 
-          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-5 mb-1.5 mt-4">
+          <div className="mt-4 mb-1.5 px-5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
             Account
           </div>
           {navItem("My Profile", "/profile")}
 
-          {/* Notifications link with unread badge */}
           <div
             onClick={() => navigate("/notifications")}
-            className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm transition border-l-[3px] ${
+            className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
               location.pathname === "/notifications"
-                ? "text-blue-300 bg-blue-500/10 border-blue-500"
-                : "text-slate-400 border-transparent hover:bg-white/5 hover:text-white"
+                ? "bg-[#1275e2] text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
-            <div
-              className={`w-2 h-2 rounded-full ${location.pathname === "/notifications" ? "bg-blue-400" : "bg-slate-500"}`}
-            />
+            <div className={`h-2 w-2 rounded-full ${location.pathname === "/notifications" ? "bg-white" : "bg-slate-400"}`} />
             Notifications
             {unreadCount > 0 && (
-              <span className="ml-auto bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+              <span
+                className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                  location.pathname === "/notifications"
+                    ? "bg-white text-[#1275e2]"
+                    : "bg-[#1275e2] text-white"
+                }`}
+              >
                 {unreadCount}
               </span>
             )}
@@ -119,10 +117,9 @@ export default function Sidebar({ role }) {
         </div>
       </div>
 
-      {/* User footer - Always at bottom */}
-      <div className="mt-auto pt-4 px-4 border-t border-white/8 shrink-0">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
+      <div className="mt-auto shrink-0 border-t border-slate-200 px-4 pt-4">
+        <div className="app-panel mb-3 flex items-center gap-2.5 px-3 py-3 shadow-none">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1275e2] to-[#5f78a3] text-xs font-bold text-white">
             {user.name
               ?.split(" ")
               .map((n) => n[0])
@@ -131,13 +128,13 @@ export default function Sidebar({ role }) {
               .toUpperCase()}
           </div>
           <div>
-            <div className="text-sm font-medium text-white">{user.name}</div>
-            <div className="text-xs text-slate-400">{user.role}</div>
+            <div className="text-sm font-medium text-slate-900">{user.name}</div>
+            <div className="text-xs text-slate-500">{user.role}</div>
           </div>
         </div>
         <button
           onClick={logout}
-          className="w-full text-xs text-slate-400 hover:text-red-400 text-left transition py-1"
+          className="w-full py-1 text-left text-xs text-slate-500 transition hover:text-[#c55b00]"
         >
           Sign out →
         </button>

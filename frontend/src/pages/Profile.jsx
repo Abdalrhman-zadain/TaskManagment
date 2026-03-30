@@ -27,7 +27,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
@@ -53,15 +53,15 @@ export default function Profile() {
     : 100;
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="app-shell flex min-h-screen">
       <Sidebar role={role} />
 
-      <main className="flex-1 p-7 overflow-y-auto">
-        <h1 className="text-xl font-bold mb-7">My Profile</h1>
+      <main className="flex-1 overflow-y-auto p-7">
+        <h1 className="page-title mb-7">My Profile</h1>
 
         <div className="flex gap-5">
-          <div className="w-64 flex-shrink-0 bg-white/4 border border-white/8 rounded-xl p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold mb-3 ring-4 ring-blue-500/20">
+          <div className="app-panel flex w-64 flex-shrink-0 flex-col items-center p-6 text-center">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#1275e2] to-[#5f78a3] text-2xl font-bold text-white ring-4 ring-blue-100">
               {profile.name
                 .split(" ")
                 .map((part) => part[0])
@@ -70,51 +70,51 @@ export default function Profile() {
                 .toUpperCase()}
             </div>
 
-            <div className="font-bold text-base">{profile.name}</div>
-            <div className="text-xs text-slate-400 mt-0.5">
+            <div className="text-base font-bold text-slate-900">{profile.name}</div>
+            <div className="mt-0.5 text-xs text-slate-500">
               {profile.section?.name || "No section"} · {profile.role}
             </div>
 
             {showsPerformance && (
               <>
                 <div
-                  className={`w-full mt-5 rounded-xl p-4 border ${
+                  className={`mt-5 w-full rounded-xl border p-4 ${
                     profile.level === "GOLD"
-                      ? "bg-yellow-500/8 border-yellow-500/20"
+                      ? "border-yellow-200 bg-yellow-50"
                       : profile.level === "SILVER"
-                        ? "bg-slate-400/8 border-slate-400/20"
-                        : "bg-amber-800/10 border-amber-700/20"
+                        ? "border-slate-200 bg-slate-50"
+                        : "border-amber-200 bg-amber-50"
                   }`}
                 >
-                  <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">
+                  <div className="mb-1 text-[10px] uppercase tracking-widest text-slate-500">
                     Current Level
                   </div>
                   <div
                     className={`text-xl font-bold ${
                       profile.level === "GOLD"
-                        ? "text-yellow-400"
+                        ? "text-yellow-600"
                         : profile.level === "SILVER"
-                          ? "text-slate-300"
-                          : "text-amber-600"
+                          ? "text-slate-600"
+                          : "text-amber-700"
                     }`}
                   >
                     {profile.level}
                   </div>
-                  <div className="flex justify-center gap-0.5 mt-2">
+                  <div className="mt-2 flex justify-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <span
                         key={star}
                         className={`text-base ${
-                          star <= profile.stars ? "text-yellow-400" : "text-white/10"
+                          star <= profile.stars ? "text-yellow-500" : "text-slate-200"
                         }`}
                       >
-                        *
+                        ★
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <div className="w-full border-t border-white/8 mt-5 pt-5">
+                <div className="mt-5 w-full border-t border-slate-200 pt-5">
                   <div className="flex justify-around">
                     {[
                       { value: totalScore, label: "Total Score" },
@@ -122,8 +122,8 @@ export default function Profile() {
                       { value: scores.length, label: "Total Tasks" },
                     ].map((stat) => (
                       <div key={stat.label} className="text-center">
-                        <div className="text-lg font-bold">{stat.value}</div>
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wide mt-0.5">
+                        <div className="text-lg font-bold text-slate-900">{stat.value}</div>
+                        <div className="mt-0.5 text-[10px] uppercase tracking-wide text-slate-500">
                           {stat.label}
                         </div>
                       </div>
@@ -133,7 +133,7 @@ export default function Profile() {
               </>
             )}
 
-            <div className="text-xs text-slate-500 mt-4">
+            <div className="mt-4 text-xs text-slate-500">
               Member since{" "}
               {new Date(profile.createdAt).toLocaleDateString("en-GB", {
                 month: "long",
@@ -143,28 +143,28 @@ export default function Profile() {
           </div>
 
           {showsPerformance ? (
-            <div className="flex-1 flex flex-col gap-4">
-              <div className="bg-white/4 border border-white/8 rounded-xl p-5">
-                <div className="text-sm font-bold mb-4">Score History</div>
+            <div className="flex flex-1 flex-col gap-4">
+              <div className="app-panel p-5">
+                <div className="mb-4 text-sm font-bold text-slate-900">Score History</div>
                 {scores.length === 0 ? (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-slate-500">
                     No scores yet. Complete tasks to see your scores here.
                   </p>
                 ) : (
-                  <div className="flex items-end gap-2 h-20">
+                  <div className="flex h-20 items-end gap-2">
                     {scores
                       .slice(0, 10)
                       .reverse()
                       .map((score, index) => (
-                        <div key={index} className="flex flex-col items-center gap-1 flex-1">
-                          <div className="text-[9px] font-semibold text-white">{score.value}</div>
+                        <div key={index} className="flex flex-1 flex-col items-center gap-1">
+                          <div className="text-[9px] font-semibold text-slate-700">{score.value}</div>
                           <div
-                            className={`w-full rounded-t min-h-1 ${
+                            className={`min-h-1 w-full rounded-t ${
                               score.value >= 8
-                                ? "bg-green-400"
+                                ? "bg-emerald-400"
                                 : score.value >= 5
                                   ? "bg-amber-400"
-                                  : "bg-red-400"
+                                  : "bg-rose-400"
                             }`}
                             style={{ height: `${(score.value / 10) * 64}px` }}
                           />
@@ -175,11 +175,11 @@ export default function Profile() {
                 )}
               </div>
 
-              <div className="bg-white/4 border border-white/8 rounded-xl p-5">
-                <div className="text-sm font-bold mb-4">Star Milestones</div>
-                <div className="h-2 bg-white/8 rounded-full overflow-hidden mb-3">
+              <div className="app-panel p-5">
+                <div className="mb-4 text-sm font-bold text-slate-900">Star Milestones</div>
+                <div className="mb-3 h-2 overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-yellow-400 transition-all"
+                    className="h-full rounded-full bg-gradient-to-r from-[#1275e2] to-[#c55b00] transition-all"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -187,59 +187,59 @@ export default function Profile() {
                   {milestones.map((milestone) => (
                     <div key={milestone.tasks} className="text-center">
                       <div
-                        className={`w-2.5 h-2.5 rounded-full mx-auto mb-1 ${
+                        className={`mx-auto mb-1 h-2.5 w-2.5 rounded-full ${
                           profile.onTimeCount >= milestone.tasks
-                            ? "bg-yellow-400"
-                            : "bg-white/15 border border-white/25"
+                            ? "bg-yellow-500"
+                            : "border border-slate-300 bg-slate-100"
                         }`}
                       />
-                      <div className="text-[9px] text-slate-400">{milestone.tasks} tasks</div>
-                      <div className="text-[9px] text-yellow-500">{milestone.label}</div>
+                      <div className="text-[9px] text-slate-500">{milestone.tasks} tasks</div>
+                      <div className="text-[9px] text-amber-700">{milestone.label}</div>
                     </div>
                   ))}
                 </div>
-                <div className="text-xs text-slate-400 mt-3">
+                <div className="mt-3 text-xs text-slate-500">
                   {nextMilestone ? (
                     <>
-                      <strong className="text-white">
+                      <strong className="text-slate-900">
                         {nextMilestone.tasks - profile.onTimeCount} more
                       </strong>{" "}
                       on-time tasks to reach the next milestone
                     </>
                   ) : (
-                    <span className="text-yellow-400">All milestones reached.</span>
+                    <span className="text-yellow-600">All milestones reached.</span>
                   )}
                 </div>
               </div>
 
-              <div className="bg-white/4 border border-white/8 rounded-xl p-5">
-                <div className="text-sm font-bold mb-3">Recent Task Scores</div>
+              <div className="app-panel p-5">
+                <div className="mb-3 text-sm font-bold text-slate-900">Recent Task Scores</div>
                 {scores.length === 0 ? (
-                  <p className="text-sm text-slate-400">No completed tasks yet.</p>
+                  <p className="text-sm text-slate-500">No completed tasks yet.</p>
                 ) : (
                   scores.slice(0, 6).map((score, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-3 py-2.5 border-b border-white/8 last:border-0"
+                      className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-0"
                     >
                       <div
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          score.isOnTime ? "bg-green-400" : "bg-red-400"
+                        className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                          score.isOnTime ? "bg-emerald-500" : "bg-rose-500"
                         }`}
                       />
-                      <div className="flex-1 text-sm">{score.task?.title}</div>
+                      <div className="flex-1 text-sm text-slate-800">{score.task?.title}</div>
                       <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                           score.value >= 8
-                            ? "bg-green-500/15 text-green-400"
+                            ? "bg-emerald-50 text-emerald-700"
                             : score.value >= 5
-                              ? "bg-amber-500/15 text-amber-400"
-                              : "bg-red-500/15 text-red-400"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-rose-50 text-rose-700"
                         }`}
                       >
                         {score.value}/10
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {new Date(score.createdAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -248,12 +248,12 @@ export default function Profile() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center border border-white/8 rounded-xl bg-white/4 p-10">
-              <div className="text-slate-400 text-center max-w-xl">
-                <div className="text-4xl mb-4 text-white/80">
+            <div className="app-panel flex flex-1 items-center justify-center p-10">
+              <div className="max-w-xl text-center text-slate-500">
+                <div className="mb-4 text-4xl text-slate-400">
                   {profile.role === "CLIENT" ? "Client" : "CEO"}
                 </div>
-                <div className="text-2xl font-bold text-white mb-2">
+                <div className="mb-2 text-2xl font-bold text-slate-900">
                   {profile.role === "CLIENT" ? "Client Account" : "CEO Overview"}
                 </div>
                 <div className="text-base leading-relaxed">

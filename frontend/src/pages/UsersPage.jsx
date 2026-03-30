@@ -85,7 +85,7 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
@@ -97,78 +97,69 @@ export default function UsersPage() {
   const shouldShowSectionPicker = currentUser.role === "CEO" && role !== "CLIENT";
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
-      <Sidebar role={currentUser.role === 'MANAGER' ? 'Manager' : 'CEO'} />
+    <div className="app-shell flex min-h-screen">
+      <Sidebar role={currentUser.role === "MANAGER" ? "Manager" : "CEO"} />
 
-      <main className="flex-1 p-7 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
-          <h1 className="text-xl font-bold">{currentUser.role === 'MANAGER' ? 'Team Management' : 'Users Management'}</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            {currentUser.role === 'MANAGER'
-              ? 'Create employee accounts for your section'
-              : 'Create manager, employee, and client accounts'}
+          <h1 className="page-title">
+            {currentUser.role === "MANAGER" ? "Team Management" : "Users Management"}
+          </h1>
+          <p className="page-subtitle">
+            {currentUser.role === "MANAGER"
+              ? "Create employee accounts for your section"
+              : "Create manager, employee, and client accounts"}
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-5">
-          <form
-            onSubmit={createUser}
-            className="col-span-1 bg-white/4 border border-white/8 rounded-xl p-4 h-fit"
-          >
-            <h2 className="text-sm font-bold mb-3">Create User</h2>
+          <form onSubmit={createUser} className="app-panel col-span-1 h-fit p-4">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">Create User</h2>
 
             <div className="mb-3">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Name
-              </label>
+              <label className="app-label">Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 placeholder="User name"
               />
             </div>
 
             <div className="mb-3">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Email
-              </label>
+              <label className="app-label">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 placeholder="user@teamtask.com"
               />
             </div>
 
             <div className="mb-3">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Password
-              </label>
+              <label className="app-label">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 placeholder="Minimum 6 characters"
               />
             </div>
 
-            {currentUser.role === 'CEO' && (
+            {currentUser.role === "CEO" && (
               <>
                 <div className="mb-3">
-                  <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                    Role
-                  </label>
+                  <label className="app-label">Role</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    className="app-input"
                   >
                     <option value="EMPLOYEE">Employee</option>
                     <option value="MANAGER">Manager</option>
@@ -178,13 +169,11 @@ export default function UsersPage() {
 
                 {shouldShowSectionPicker && (
                   <div className="mb-4">
-                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                      Section (optional)
-                    </label>
+                    <label className="app-label">Section (optional)</label>
                     <select
                       value={sectionId}
                       onChange={(e) => setSectionId(e.target.value)}
-                      className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      className="app-input"
                     >
                       <option value="">Unassigned</option>
                       {sections.map((section) => (
@@ -198,31 +187,23 @@ export default function UsersPage() {
               </>
             )}
 
-            {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+            {error && <p className="mb-3 text-xs text-rose-600">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition"
-            >
+            <button type="submit" disabled={saving} className="btn-primary w-full py-2 text-sm font-medium">
               {saving ? "Creating..." : "Create User"}
             </button>
           </form>
 
-          <div className="col-span-2 bg-white/4 border border-white/8 rounded-xl p-4">
-            <h2 className="text-sm font-bold mb-3">All Users</h2>
+          <div className="app-panel col-span-2 p-4">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">All Users</h2>
 
-            <div className="mb-4 text-xs text-slate-400">
-              Managers:{" "}
-              <strong className="text-white">{managers.length}</strong> |
-              Employees:{" "}
-              <strong className="text-white">{employees.length}</strong>
-              {" | "}
-              Clients:{" "}
-              <strong className="text-white">{clients.length}</strong>
+            <div className="mb-4 text-xs text-slate-500">
+              Managers: <strong className="text-slate-900">{managers.length}</strong> | Employees:{" "}
+              <strong className="text-slate-900">{employees.length}</strong> | Clients:{" "}
+              <strong className="text-slate-900">{clients.length}</strong>
             </div>
 
-            {users.filter(u => u.id !== currentUser.id).map((user) => {
+            {users.filter((u) => u.id !== currentUser.id).map((user) => {
               const uScores = user.scores || [];
               const totalScore = uScores.reduce((sum, sc) => sum + sc.value, 0);
 
@@ -230,45 +211,47 @@ export default function UsersPage() {
                 <div
                   key={user.id}
                   onClick={() => navigate(`/users/${user.id}`)}
-                  className="py-3 border-b border-white/8 last:border-0 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 px-3 -mx-3 rounded-lg transition"
+                  className="mx-[-0.75rem] flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-3 transition hover:bg-slate-50"
                 >
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-blue-100 group-hover:text-blue-400 transition">{user.name}</div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {user.email}
-                    </div>
+                    <div className="text-sm font-medium text-slate-900">{user.name}</div>
+                    <div className="mt-1 text-xs text-slate-500">{user.email}</div>
                   </div>
 
-                  <div className="text-right flex items-center gap-6">
-                    {user.role !== 'CEO' && user.role !== 'CLIENT' && (
+                  <div className="flex items-center gap-6 text-right">
+                    {user.role !== "CEO" && user.role !== "CLIENT" && (
                       <div className="text-right">
-                        <div className="text-sm font-bold text-white">{totalScore} <span className="text-[10px] font-normal text-slate-500">Pts</span></div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{uScores.length} Tasks</div>
+                        <div className="text-sm font-bold text-slate-900">
+                          {totalScore} <span className="text-[10px] font-normal text-slate-400">Pts</span>
+                        </div>
+                        <div className="mt-0.5 text-[10px] text-slate-500">{uScores.length} Tasks</div>
                       </div>
                     )}
 
-                    <div className="text-right w-24">
-                      <div className="text-xs text-slate-400 break-words line-clamp-1">
+                    <div className="w-24 text-right">
+                      <div className="line-clamp-1 break-words text-xs text-slate-500">
                         {user.section?.name || "No section"}
                       </div>
                       <span
-                        className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${user.role === "MANAGER"
-                          ? "bg-teal-500/15 text-teal-300"
-                          : user.role === "EMPLOYEE"
-                            ? "bg-blue-500/15 text-blue-300"
-                            : user.role === "CLIENT"
-                              ? "bg-amber-500/15 text-amber-300"
-                            : "bg-white/10 text-slate-300"
-                          }`}
+                        className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] ${
+                          user.role === "MANAGER"
+                            ? "bg-teal-50 text-teal-700"
+                            : user.role === "EMPLOYEE"
+                              ? "bg-blue-50 text-blue-700"
+                              : user.role === "CLIENT"
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-slate-100 text-slate-600"
+                        }`}
                       >
                         {user.role}
                       </span>
                     </div>
 
-                    {((currentUser.role === 'CEO' && user.role !== 'CEO') || (currentUser.role === 'MANAGER' && user.role === 'EMPLOYEE')) && (
+                    {((currentUser.role === "CEO" && user.role !== "CEO") ||
+                      (currentUser.role === "MANAGER" && user.role === "EMPLOYEE")) && (
                       <button
                         onClick={(e) => deleteUser(user.id, e)}
-                        className="ml-3 px-2 py-1 text-xs rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition"
+                        className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
                         title="Delete user"
                       >
                         Delete
@@ -276,7 +259,7 @@ export default function UsersPage() {
                     )}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>

@@ -61,52 +61,43 @@ export default function SectionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="app-shell flex min-h-screen">
       <Sidebar role="CEO" />
 
-      <main className="flex-1 p-7 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
-          <h1 className="text-xl font-bold">Sections</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Create sections and assign managers
-          </p>
+          <h1 className="page-title">Sections</h1>
+          <p className="page-subtitle">Create sections and assign managers</p>
         </div>
 
         <div className="grid grid-cols-3 gap-5">
-          <form
-            onSubmit={handleCreate}
-            className="col-span-1 bg-white/4 border border-white/8 rounded-xl p-4 h-fit"
-          >
-            <h2 className="text-sm font-bold mb-3">Create Section</h2>
+          <form onSubmit={handleCreate} className="app-panel col-span-1 h-fit p-4">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">Create Section</h2>
 
             <div className="mb-3">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Section Name
-              </label>
+              <label className="app-label">Section Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 placeholder="Engineering"
               />
             </div>
 
             <div className="mb-4">
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Manager
-              </label>
+              <label className="app-label">Manager</label>
               <select
                 value={managerId}
                 onChange={(e) => setManagerId(e.target.value)}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
               >
                 <option value="">Unassigned</option>
                 {managers.map((m) => (
@@ -117,47 +108,33 @@ export default function SectionsPage() {
               </select>
             </div>
 
-            {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+            {error && <p className="mb-3 text-xs text-rose-600">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition"
-            >
+            <button type="submit" disabled={saving} className="btn-primary w-full py-2 text-sm font-medium">
               {saving ? "Creating..." : "Create Section"}
             </button>
           </form>
 
-          <div className="col-span-2 bg-white/4 border border-white/8 rounded-xl p-4">
-            <h2 className="text-sm font-bold mb-3">All Sections</h2>
-            {sections.length === 0 && (
-              <p className="text-sm text-slate-400">No sections yet</p>
-            )}
+          <div className="app-panel col-span-2 p-4">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">All Sections</h2>
+            {sections.length === 0 && <p className="text-sm text-slate-500">No sections yet</p>}
 
             {sections.map((section) => (
-              <div
-                key={section.id}
-                className="py-3 border-b border-white/8 last:border-0"
-              >
+              <div key={section.id} className="border-b border-slate-100 py-3 last:border-0">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold">{section.name}</div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      Members: {section.members?.length || 0} | Tasks:{" "}
-                      {section._count?.tasks || 0}
+                    <div className="text-sm font-semibold text-slate-900">{section.name}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      Members: {section.members?.length || 0} | Tasks: {section._count?.tasks || 0}
                     </div>
                   </div>
 
                   <div className="w-56">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">
-                      Manager
-                    </label>
+                    <label className="app-label">Manager</label>
                     <select
                       value={section.managerId || ""}
-                      onChange={(e) =>
-                        updateManager(section.id, e.target.value)
-                      }
-                      className="w-full bg-[#162447] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                      onChange={(e) => updateManager(section.id, e.target.value)}
+                      className="app-input"
                     >
                       <option value="">Unassigned</option>
                       {managers.map((m) => (

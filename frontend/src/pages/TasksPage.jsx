@@ -52,44 +52,43 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="app-shell flex min-h-screen">
       <Sidebar role={roleLabel(user)} />
 
-      <main className="flex-1 p-7 overflow-y-auto">
-        <div className="flex items-start justify-between mb-7">
+      <main className="flex-1 overflow-y-auto p-7">
+        <div className="mb-7 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Tasks</h1>
-            <p className="text-sm text-slate-400 mt-0.5">
-              {new Date().toDateString()}
-            </p>
+            <h1 className="page-title">Tasks</h1>
+            <p className="page-subtitle">{new Date().toDateString()}</p>
           </div>
           {(user.role === "CEO" || user.role === "MANAGER") && (
             <button
               onClick={() => navigate("/tasks/new")}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+              className="btn-primary px-4 py-2 text-sm font-medium"
             >
               + New Task
             </button>
           )}
         </div>
 
-        <div className="bg-white/4 border border-white/8 rounded-xl p-6">
-          <div className="flex gap-1 mb-6 bg-white/4 rounded-lg p-1 max-w-2xl">
+        <div className="app-panel p-6">
+          <div className="mb-6 flex max-w-2xl gap-1 rounded-lg bg-slate-100 p-1">
             {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`flex-1 text-sm py-2 rounded-md font-medium transition ${filter === f
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
+                className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
+                  filter === f
+                    ? "bg-[#1275e2] text-white shadow-sm"
+                    : "text-slate-500 hover:bg-white hover:text-slate-900"
+                }`}
               >
                 {f === "IN_PROGRESS"
                   ? "Waiting Response"
@@ -102,8 +101,8 @@ export default function TasksPage() {
 
           <div className="flex flex-col gap-2">
             {filteredTasks.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 bg-white/2 rounded-xl border border-dashed border-white/8">
-                <div className="text-2xl mb-2 flex justify-center">📋</div>
+              <div className="app-panel-muted py-12 text-center text-slate-500">
+                <div className="mb-2 flex justify-center text-2xl">📋</div>
                 <p className="text-sm">No tasks found in this category</p>
               </div>
             ) : (

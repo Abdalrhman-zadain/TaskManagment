@@ -19,7 +19,6 @@ export default function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // Redirect based on role
       const role = res.data.user.role;
       if (role === "CEO") navigate("/ceo");
       if (role === "MANAGER") navigate("/manager");
@@ -33,54 +32,46 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A]">
-      <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-2xl p-8">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            Team<span className="text-blue-400">Task</span>
+    <div className="app-shell flex min-h-screen items-center justify-center px-4">
+      <div className="app-panel w-full max-w-sm p-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-slate-900">
+            Team<span className="text-[#1275e2]">Task</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Sign in to your workspace
-          </p>
+          <p className="mt-1 text-sm text-slate-500">Sign in to your workspace</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
-            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-              Email
-            </label>
+            <label className="app-label">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="app-input"
               placeholder="you@company.com"
             />
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-              Password
-            </label>
+            <label className="app-label">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-              placeholder="••••••••"
+              className="app-input"
+              placeholder="Enter your password"
             />
           </div>
 
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          {error && <p className="text-center text-sm text-rose-600">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2.5 text-sm transition mt-2 disabled:opacity-50"
+            className="btn-primary mt-2 w-full py-2.5 text-sm font-medium"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

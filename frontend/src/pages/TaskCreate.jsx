@@ -16,9 +16,7 @@ export default function TaskCreate() {
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [sectionId, setSectionId] = useState(
-    user.sectionId ? String(user.sectionId) : "",
-  );
+  const [sectionId, setSectionId] = useState(user.sectionId ? String(user.sectionId) : "");
   const [parentId, setParentId] = useState("");
   const [deadline, setDeadline] = useState("");
   const [priority, setPriority] = useState("medium");
@@ -45,9 +43,7 @@ export default function TaskCreate() {
         setTasks(tasksRes.data);
         setProjects(projectsRes.data);
       } catch (err) {
-        setError(
-          err.response?.data?.error || "Failed to load users and sections",
-        );
+        setError(err.response?.data?.error || "Failed to load users and sections");
       } finally {
         setLoading(false);
       }
@@ -56,14 +52,11 @@ export default function TaskCreate() {
   }, []);
 
   const allowedSections = useMemo(() => {
-    if (user.role === "MANAGER")
-      return sections.filter((s) => s.id === user.sectionId);
+    if (user.role === "MANAGER") return sections.filter((s) => s.id === user.sectionId);
     return sections;
   }, [sections, user.role, user.sectionId]);
 
   const assigneeOptions = useMemo(() => {
-    // CEO assigns main tasks only to section managers.
-    // Managers assign subtasks only to employees in their section.
     if (user.role === "CEO") {
       if (!sectionId) return [];
       const selectedSection = sections.find((s) => s.id === Number(sectionId));
@@ -129,59 +122,48 @@ export default function TaskCreate() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="app-shell flex min-h-screen">
       <Sidebar role={roleLabel(user)} />
 
-      <main className="flex-1 p-7 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
-          <h1 className="text-xl font-bold">Create Task</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Assign work to your team
-          </p>
+          <h1 className="page-title">Create Task</h1>
+          <p className="page-subtitle">Assign work to your team</p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="max-w-3xl bg-white/4 border border-white/8 rounded-xl p-6 flex flex-col gap-4"
-        >
+        <form onSubmit={handleSubmit} className="app-panel flex max-w-3xl flex-col gap-4 p-6">
           <div>
-            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-              Title
-            </label>
+            <label className="app-label">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="app-input"
               placeholder="Task title"
               required
             />
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-              Description
-            </label>
+            <label className="app-label">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="app-input"
               placeholder="Optional details"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Section
-              </label>
+              <label className="app-label">Section</label>
               <select
                 value={sectionId}
                 onChange={(e) => {
@@ -190,7 +172,7 @@ export default function TaskCreate() {
                   setAssigneeId("");
                   setParentId("");
                 }}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 required
               >
                 <option value="">Select section</option>
@@ -203,16 +185,14 @@ export default function TaskCreate() {
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Project
-              </label>
+              <label className="app-label">Project</label>
               <select
                 value={projectId}
                 onChange={(e) => {
                   setProjectId(e.target.value);
                   setParentId("");
                 }}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 required
               >
                 <option value="">Select project</option>
@@ -225,19 +205,15 @@ export default function TaskCreate() {
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Assignee
-              </label>
+              <label className="app-label">Assignee</label>
               <select
                 value={assigneeId}
                 onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 required
               >
                 <option value="">
-                  {user.role === "CEO"
-                    ? "Select section manager"
-                    : "Select employee"}
+                  {user.role === "CEO" ? "Select section manager" : "Select employee"}
                 </option>
                 {assigneeOptions.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -246,25 +222,21 @@ export default function TaskCreate() {
                   </option>
                 ))}
               </select>
-              {user.role === "CEO" &&
-                projectId &&
-                assigneeOptions.length === 0 && (
-                  <p className="text-xs text-amber-400 mt-1.5">
-                    This project's section has no assigned manager. Assign one in Projects or Sections first.
-                  </p>
-                )}
+              {user.role === "CEO" && projectId && assigneeOptions.length === 0 && (
+                <p className="mt-1.5 text-xs text-amber-600">
+                  This project's section has no assigned manager. Assign one in Projects or Sections first.
+                </p>
+              )}
             </div>
           </div>
 
           {user.role === "MANAGER" && (
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Parent Main Task (from CEO)
-              </label>
+              <label className="app-label">Parent Main Task (from CEO)</label>
               <select
                 value={parentId}
                 onChange={(e) => setParentId(e.target.value)}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 required
               >
                 <option value="">Select main task</option>
@@ -275,35 +247,29 @@ export default function TaskCreate() {
                 ))}
               </select>
               {parentTaskOptions.length === 0 && (
-                <p className="text-xs text-amber-400 mt-1.5">
-                  No CEO main task found for your section yet.
-                </p>
+                <p className="mt-1.5 text-xs text-amber-600">No CEO main task found for your section yet.</p>
               )}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Deadline
-              </label>
+              <label className="app-label">Deadline</label>
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
-                Priority
-              </label>
+              <label className="app-label">Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full bg-[#162447] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="app-input"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -312,21 +278,13 @@ export default function TaskCreate() {
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-rose-600">{error}</p>}
 
           <div className="flex items-center gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
-            >
+            <button type="submit" disabled={saving} className="btn-primary px-4 py-2 text-sm font-medium">
               {saving ? "Creating..." : "Create Task"}
             </button>
-            <button
-              type="button"
-              onClick={() => navigate("/tasks")}
-              className="text-sm text-slate-300 hover:text-white"
-            >
+            <button type="button" onClick={() => navigate("/tasks")} className="text-sm text-slate-500 hover:text-slate-900">
               Cancel
             </button>
           </div>

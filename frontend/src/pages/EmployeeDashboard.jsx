@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import StatCard from "../components/StatCard";
 import TaskCard from "../components/TaskCard";
@@ -7,6 +8,7 @@ import api from "../api/client";
 export default function EmployeeDashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadTasks();
@@ -44,71 +46,50 @@ export default function EmployeeDashboard() {
           done.filter((t) => t.score).reduce((s, t) => s + t.score.value, 0) /
           done.filter((t) => t.score).length
         ).toFixed(1)
-      : "—";
+      : "-";
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
+  }
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="app-shell flex min-h-screen">
       <Sidebar role="Employee" />
-      <main className="flex-1 p-7 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
-          <h1 className="text-xl font-bold">My Tasks</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            {new Date().toDateString()}
-          </p>
+          <h1 className="page-title">My Tasks</h1>
+          <p className="page-subtitle">{new Date().toDateString()}</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-7">
-          <StatCard
-            label="Assigned to Me"
-            value={tasks.length}
-            sub="Total tasks"
-            color="blue"
-          />
-          <StatCard
-            label="Completed"
-            value={done.length}
-            sub="All time"
-            color="green"
-          />
-          <StatCard
-            label="Avg Score"
-            value={avgScore}
-            sub="Out of 10"
-            color="amber"
-          />
+        <div className="mb-7 grid grid-cols-4 gap-4">
+          <StatCard label="Assigned to Me" value={tasks.length} sub="Total tasks" color="blue" />
+          <StatCard label="Completed" value={done.length} sub="All time" color="green" />
+          <StatCard label="Avg Score" value={avgScore} sub="Out of 10" color="amber" />
           <StatCard
             label="Overdue"
             value={overdue}
-            sub={overdue === 0 ? "All clear! 🎉" : "Needs attention"}
+            sub={overdue === 0 ? "All clear" : "Needs attention"}
             color={overdue > 0 ? "red" : "green"}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-5">
-          {/* Active Tasks */}
-          <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold">
-                Active Tasks ({active.length})
-              </h2>
+          <div className="app-panel p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Active Tasks ({active.length})</h2>
               <button
                 onClick={() => navigate("/tasks")}
-                className="text-xs text-blue-400 ml-2"
+                className="ml-2 text-xs font-medium text-[#1275e2]"
               >
                 View all →
               </button>
             </div>
             {active.length === 0 ? (
-              <p className="text-sm text-slate-400 py-4 text-center">
-                No active tasks 🎉
-              </p>
+              <p className="py-4 text-center text-sm text-slate-500">No active tasks yet</p>
             ) : (
               active.map((task) => (
                 <TaskCard key={task.id} task={task} onMarkDone={markDone} />
@@ -116,15 +97,10 @@ export default function EmployeeDashboard() {
             )}
           </div>
 
-          {/* Completed Tasks */}
-          <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-            <h2 className="text-sm font-bold mb-3">
-              Completed ({done.length})
-            </h2>
+          <div className="app-panel p-4">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">Completed ({done.length})</h2>
             {done.length === 0 ? (
-              <p className="text-sm text-slate-400 py-4 text-center">
-                No completed tasks yet
-              </p>
+              <p className="py-4 text-center text-sm text-slate-500">No completed tasks yet</p>
             ) : (
               done.map((task) => <TaskCard key={task.id} task={task} />)
             )}

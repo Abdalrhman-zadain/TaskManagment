@@ -1,63 +1,67 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
 
 const statusStyles = {
-  TODO: 'bg-white/8 text-slate-400',
-  IN_PROGRESS: 'bg-blue-500/15 text-blue-300',
-  DONE: 'bg-green-500/15 text-green-400',
-  LATE: 'bg-red-500/15 text-red-400'
-}
+  TODO: "bg-slate-100 text-slate-500",
+  IN_PROGRESS: "bg-blue-50 text-blue-700",
+  DONE: "bg-emerald-50 text-emerald-700",
+  LATE: "bg-rose-50 text-rose-700",
+  PENDING_APPROVAL: "bg-amber-50 text-amber-700",
+};
 
 const statusDot = {
-  TODO: 'bg-white/30',
-  IN_PROGRESS: 'bg-blue-400',
-  DONE: 'bg-green-400',
-  LATE: 'bg-red-500'
-}
+  TODO: "bg-slate-300",
+  IN_PROGRESS: "bg-[#1275e2]",
+  DONE: "bg-emerald-500",
+  LATE: "bg-rose-500",
+  PENDING_APPROVAL: "bg-[#c55b00]",
+};
 
 export default function TaskCard({ task, onMarkDone }) {
-  const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-  const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'DONE'
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isOverdue = new Date(task.deadline) < new Date() && task.status !== "DONE";
 
   return (
     <div
       onClick={() => navigate(`/tasks/${task.id}`)}
-      className="flex items-center gap-3 py-3 border-b border-white/8 last:border-0 cursor-pointer hover:bg-white/3 px-1 rounded transition group"
+      className="group flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300 hover:shadow-sm"
     >
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot[task.status]}`} />
+      <div className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${statusDot[task.status] || "bg-slate-300"}`} />
 
-      <div className="flex-1 min-w-0">
-        <div className="text-base font-medium truncate">{task.title}</div>
-        <div className="text-sm text-slate-400 mt-0.5">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-base font-semibold text-slate-900">{task.title}</div>
+        <div className="mt-0.5 text-sm text-slate-500">
           {task.assignee?.name} · {task.section?.name}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-2">
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyles[task.status] || "bg-slate-100 text-slate-500"}`}>
+          {String(task.status).replaceAll("_", " ")}
+        </span>
+
         {task.score && (
-          <span className={`text-sm font-semibold px-2.5 py-1 rounded-full ${task.score.value >= 8 ? 'bg-green-500/15 text-green-400' :
-            task.score.value >= 5 ? 'bg-amber-500/15 text-amber-400' :
-              'bg-red-500/15 text-red-400'
-            }`}>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-700">
             {task.score.value}/10
           </span>
         )}
 
-        <span className={`text-sm ${isOverdue ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
-          {isOverdue ? '⚠ ' : ''}
-          {new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+        <span className={`text-sm ${isOverdue ? "font-semibold text-rose-600" : "text-slate-500"}`}>
+          {new Date(task.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
         </span>
 
-        {/* Mark done button — only for assignee */}
-        {user.id === task.assigneeId && task.status !== 'DONE' && (
+        {user.id === task.assigneeId && task.status !== "DONE" && (
           <button
-            onClick={e => { e.stopPropagation(); onMarkDone && onMarkDone(task.id) }}
-            className="text-xs px-2.5 py-1 bg-green-500/12 text-green-400 border border-green-500/25 rounded-full hover:bg-green-500/25 transition opacity-0 group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkDone && onMarkDone(task.id);
+            }}
+            className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 opacity-0 transition group-hover:opacity-100"
           >
             Done
           </button>
         )}
       </div>
     </div>
-  )
+  );
 }

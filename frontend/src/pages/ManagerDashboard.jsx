@@ -41,9 +41,7 @@ export default function ManagerDashboard() {
   }
 
   const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = tasks.filter((t) =>
-    ["TODO", "IN_PROGRESS"].includes(t.status),
-  ).length;
+  const progress = tasks.filter((t) => ["TODO", "IN_PROGRESS"].includes(t.status)).length;
   const overdue = tasks.filter(
     (t) => new Date(t.deadline) < new Date() && t.status !== "DONE",
   );
@@ -59,78 +57,50 @@ export default function ManagerDashboard() {
             ? tasks.filter((t) => t.status === "DONE")
             : overdue;
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
         Loading...
       </div>
     );
+  }
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="app-shell flex min-h-screen">
       <Sidebar role="Manager" />
-      <main className="flex-1 p-7 overflow-y-auto">
-        <div className="flex items-start justify-between mb-7">
+      <main className="flex-1 overflow-y-auto p-7">
+        <div className="mb-7 flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold">Section Dashboard</h1>
-            <p className="text-sm text-slate-400 mt-0.5">
-              {new Date().toDateString()}
-            </p>
+            <h1 className="page-title">Section Dashboard</h1>
+            <p className="page-subtitle">{new Date().toDateString()}</p>
           </div>
           <button
             onClick={() => navigate("/tasks/new")}
-            className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            className="btn-primary px-4 py-2 text-sm font-medium"
           >
             + Assign Task
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-7">
-          <StatCard
-            label="Section Tasks"
-            value={tasks.length}
-            sub={`${team.length} members`}
-            color="teal"
-          />
-          <StatCard
-            label="Completed"
-            value={done}
-            sub={`${tasks.length ? Math.round((done / tasks.length) * 100) : 0}% rate`}
-            color="green"
-          />
-          <StatCard
-            label="In Progress"
-            value={progress}
-            sub="Active now"
-            color="amber"
-          />
-          <StatCard
-            label="Overdue"
-            value={overdue.length}
-            sub={overdue.length > 0 ? "Needs attention" : "All clear!"}
-            color={overdue.length > 0 ? "red" : "green"}
-          />
+        <div className="mb-7 grid grid-cols-4 gap-4">
+          <StatCard label="Section Tasks" value={tasks.length} sub={`${team.length} members`} color="teal" />
+          <StatCard label="Completed" value={done} sub={`${tasks.length ? Math.round((done / tasks.length) * 100) : 0}% rate`} color="green" />
+          <StatCard label="In Progress" value={progress} sub="Active now" color="amber" />
+          <StatCard label="Overdue" value={overdue.length} sub={overdue.length > 0 ? "Needs attention" : "All clear"} color={overdue.length > 0 ? "red" : "green"} />
         </div>
 
         <div className="grid grid-cols-3 gap-5">
           <div className="col-span-2 flex flex-col gap-5">
-            {/* Overdue alert */}
             {overdue.length > 0 && (
-              <div className="bg-red-500/7 border border-red-500/20 rounded-xl p-4">
-                <h2 className="text-sm font-bold text-red-400 mb-3">
-                  ⚠ Overdue Tasks
-                </h2>
+              <div className="app-panel p-4">
+                <h2 className="mb-3 text-sm font-bold text-rose-600">Overdue Tasks</h2>
                 {overdue.map((t) => (
-                  <div key={t.id} className="flex gap-2.5 mb-2 last:mb-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                  <div key={t.id} className="mb-2 flex gap-2.5 last:mb-0">
+                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-rose-500" />
                     <div>
-                      <div className="text-sm font-medium">{t.title}</div>
-                      <div className="text-xs text-slate-400">
-                        {t.assignee?.name} ·{" "}
-                        {Math.round(
-                          (new Date() - new Date(t.deadline)) / 86400000,
-                        )}{" "}
-                        days overdue
+                      <div className="text-sm font-medium text-slate-900">{t.title}</div>
+                      <div className="text-xs text-slate-500">
+                        {t.assignee?.name} · {Math.round((new Date() - new Date(t.deadline)) / 86400000)} days overdue
                       </div>
                     </div>
                   </div>
@@ -138,24 +108,15 @@ export default function ManagerDashboard() {
               </div>
             )}
 
-            {/* Task list with filter tabs */}
-            <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex gap-1 bg-white/4 rounded-lg p-1">
-                  {[
-                    "ALL",
-                    "IN_PROGRESS",
-                    "PENDING_APPROVAL",
-                    "DONE",
-                    "OVERDUE",
-                  ].map((f) => (
+            <div className="app-panel p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+                  {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
-                      className={`flex-1 text-xs py-1.5 rounded-md font-medium transition ${
-                        filter === f
-                          ? "bg-teal-500 text-white"
-                          : "text-slate-400 hover:text-white"
+                      className={`flex-1 rounded-md py-1.5 px-3 text-xs font-medium transition ${
+                        filter === f ? "bg-[#1275e2] text-white" : "text-slate-500 hover:text-slate-900"
                       }`}
                     >
                       {f === "IN_PROGRESS"
@@ -166,17 +127,12 @@ export default function ManagerDashboard() {
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => navigate("/tasks")}
-                  className="text-xs text-blue-400 ml-2"
-                >
+                <button onClick={() => navigate("/tasks")} className="ml-2 text-xs font-medium text-[#1275e2]">
                   View all →
                 </button>
               </div>
               {filtered.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">
-                  No tasks here
-                </p>
+                <p className="py-4 text-center text-sm text-slate-500">No tasks here</p>
               ) : (
                 filtered.map((task) => (
                   <TaskCard key={task.id} task={task} onMarkDone={markDone} />
@@ -185,59 +141,38 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* RIGHT — Team */}
           <div className="flex flex-col gap-5">
-            <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold">My Team</h2>
-                <button
-                  onClick={() => navigate("/users")}
-                  className="text-xs text-blue-400"
-                >
+            <div className="app-panel p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-900">My Team</h2>
+                <button onClick={() => navigate("/users")} className="text-xs font-medium text-[#1275e2]">
                   Full team →
                 </button>
               </div>
               {team.map((emp) => (
-                <div
-                  key={emp.id}
-                  className="flex items-center gap-2.5 py-2.5 border-b border-white/8 last:border-0"
-                >
-                  <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">
-                    {emp.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)}
+                <div key={emp.id} className="flex items-center gap-2.5 border-b border-slate-100 py-2.5 last:border-0">
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-[#1275e2]">
+                    {emp.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium">{emp.name}</div>
-                    <div className="flex gap-0.5 mt-0.5">
+                    <div className="text-sm font-medium text-slate-900">{emp.name}</div>
+                    <div className="mt-0.5 flex gap-0.5">
                       {[1, 2, 3, 4, 5].map((s) => (
-                        <span
-                          key={s}
-                          className={`text-xs ${s <= emp.stars ? "text-yellow-400" : "text-white/10"}`}
-                        >
+                        <span key={s} className={`text-xs ${s <= emp.stars ? "text-yellow-500" : "text-slate-200"}`}>
                           ★
                         </span>
                       ))}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold">{emp.onTimeCount} ✓</div>
-                    <div
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 ${
-                        emp.level === "GOLD"
-                          ? "bg-yellow-500/15 text-yellow-400"
-                          : emp.level === "SILVER"
-                            ? "bg-slate-400/15 text-slate-300"
-                            : "bg-amber-800/20 text-amber-600"
-                      }`}
-                    >
-                      {emp.level === "GOLD"
-                        ? "🥇"
+                    <div className="text-sm font-bold text-slate-900">{emp.onTimeCount} ✓</div>
+                    <div className={`mt-0.5 rounded-full px-1.5 py-0.5 text-[10px] ${
+                      emp.level === "GOLD"
+                        ? "bg-yellow-50 text-yellow-700"
                         : emp.level === "SILVER"
-                          ? "🥈"
-                          : "🥉"}{" "}
+                          ? "bg-slate-100 text-slate-600"
+                          : "bg-amber-50 text-amber-700"
+                    }`}>
                       {emp.level}
                     </div>
                   </div>
@@ -245,39 +180,29 @@ export default function ManagerDashboard() {
               ))}
             </div>
 
-            {/* Section Progress */}
-            <div className="bg-white/4 border border-white/8 rounded-xl p-4">
-              <h2 className="text-sm font-bold mb-4">Section Progress</h2>
+            <div className="app-panel p-4">
+              <h2 className="mb-4 text-sm font-bold text-slate-900">Section Progress</h2>
               {[
                 {
                   label: "Completion",
-                  value: tasks.length
-                    ? Math.round((done / tasks.length) * 100)
-                    : 0,
+                  value: tasks.length ? Math.round((done / tasks.length) * 100) : 0,
                   color: "bg-teal-400",
                 },
                 {
                   label: "On-time rate",
                   value: tasks.length
-                    ? Math.round(
-                        (tasks.filter((t) => t.score?.isOnTime).length /
-                          tasks.length) *
-                          100,
-                      )
+                    ? Math.round((tasks.filter((t) => t.score?.isOnTime).length / tasks.length) * 100)
                     : 0,
                   color: "bg-green-400",
                 },
               ].map((item) => (
                 <div key={item.label} className="mb-3 last:mb-0">
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-slate-400">{item.label}</span>
-                    <strong>{item.value}%</strong>
+                  <div className="mb-1.5 flex justify-between text-xs">
+                    <span className="text-slate-500">{item.label}</span>
+                    <strong className="text-slate-900">{item.value}%</strong>
                   </div>
-                  <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${item.color}`}
-                      style={{ width: `${item.value}%` }}
-                    />
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.value}%` }} />
                   </div>
                 </div>
               ))}
