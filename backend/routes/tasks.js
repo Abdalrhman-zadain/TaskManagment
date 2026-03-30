@@ -139,10 +139,6 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       }
     }
 
-    if (req.user.role === 'MANAGER' && !parsedParentId) {
-      return res.status(400).json({ error: 'Manager must create a subtask under a CEO main task' });
-    }
-
     if (parsedParentId) {
       const parentTask = await prisma.task.findUnique({
         where: { id: parsedParentId },

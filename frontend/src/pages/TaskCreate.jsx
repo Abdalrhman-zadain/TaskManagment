@@ -95,11 +95,6 @@ export default function TaskCreate() {
       return;
     }
 
-    if (user.role === "MANAGER" && !parentId) {
-      setError("Please select a parent main task from CEO");
-      return;
-    }
-
     setSaving(true);
     try {
       await api.post("/tasks", {
@@ -110,7 +105,7 @@ export default function TaskCreate() {
         projectId,
         deadline,
         priority,
-        parentId: user.role === "MANAGER" ? parentId : null,
+        parentId: user.role === "MANAGER" ? parentId || null : null,
       });
       navigate("/tasks");
     } catch (err) {
@@ -237,9 +232,8 @@ export default function TaskCreate() {
                 value={parentId}
                 onChange={(e) => setParentId(e.target.value)}
                 className="app-input"
-                required
               >
-                <option value="">Select main task</option>
+                <option value="">Optional</option>
                 {parentTaskOptions.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title}
