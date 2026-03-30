@@ -33,14 +33,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A]">
-      <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-2xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-white px-4">
+      <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-3xl font-bold text-slate-900">
             Team<span className="text-blue-400">Task</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Sign in to your workspace
           </p>
         </div>
@@ -48,7 +48,7 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
-            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
+            <label className="text-xs text-slate-500 uppercase tracking-wider mb-1 block">
               Email
             </label>
             <input
@@ -56,13 +56,13 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-blue-500"
               placeholder="you@company.com"
             />
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1 block">
+            <label className="text-xs text-slate-500 uppercase tracking-wider mb-1 block">
               Password
             </label>
             <input
@@ -70,7 +70,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-blue-500"
               placeholder="••••••••"
             />
           </div>

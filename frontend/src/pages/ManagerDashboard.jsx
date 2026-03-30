@@ -61,13 +61,13 @@ export default function ManagerDashboard() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F1D3A] text-slate-400">
+      <div className="min-h-screen flex items-center justify-center bg-white text-slate-400">
         Loading...
       </div>
     );
 
   return (
-    <div className="flex min-h-screen bg-[#0F1D3A]">
+    <div className="flex min-h-screen bg-white text-slate-900">
       <Sidebar role="Manager" />
       <main className="flex-1 p-7 overflow-y-auto">
         <div className="flex items-start justify-between mb-7">
