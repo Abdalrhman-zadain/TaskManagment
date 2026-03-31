@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
@@ -21,6 +21,8 @@ export default function TaskDetail() {
   const [customScore, setCustomScore] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const fileInputRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
@@ -53,12 +55,51 @@ export default function TaskDetail() {
     }
   }
 
-  async function handleFileUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function formatFileSize(size) {
+    if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    if (size >= 1024) return `${Math.round(size / 1024)} KB`;
+    return `${size} B`;
+  }
+
+  function getFileTypeLabel(file) {
+    return file.type.startsWith("video/") ? "Video" : "Image";
+  }
+
+  function getFileKey(file) {
+    return `${file.name}-${file.size}-${file.lastModified}-${file.type}`;
+  }
+
+  function getEvidenceTypeLabel(evidenceUrl) {
+    return /\.(mp4|mov)$/i.test(evidenceUrl) ? "Video" : "Image";
+  }
+
+  function getEvidenceFileName(evidenceUrl) {
+    return evidenceUrl.split("/").pop() || evidenceUrl;
+  }
+
+  function handleFileSelection(e) {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles((currentFiles) => {
+      const fileMap = new Map(currentFiles.map((file) => [getFileKey(file), file]));
+      files.forEach((file) => {
+        fileMap.set(getFileKey(file), file);
+      });
+      return Array.from(fileMap.values());
+    });
+    e.target.value = "";
+  }
+
+  function removeSelectedFile(indexToRemove) {
+    setSelectedFiles((currentFiles) => currentFiles.filter((_, index) => index !== indexToRemove));
+  }
+
+  async function handleFileUpload() {
+    if (selectedFiles.length === 0) return;
 
     const formData = new FormData();
-    formData.append("file", file);
+    selectedFiles.forEach((file) => {
+      formData.append("files", file);
+    });
     formData.append("taskId", id);
 
     setUploading(true);
@@ -67,6 +108,8 @@ export default function TaskDetail() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Evidence uploaded successfully!");
+      setSelectedFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       loadTask();
     } catch (err) {
       alert(err.response?.data?.error || "Upload failed");
@@ -144,6 +187,21 @@ export default function TaskDetail() {
   const isAssignee = user.id === task.assigneeId;
   const isCreator = user.id === task.creatorId;
   const isPendingApproval = task.status === "PENDING_APPROVAL";
+  const evidenceFiles = task.evidenceUrls?.length
+    ? task.evidenceUrls.map((url) => ({
+        url,
+        name: getEvidenceFileName(url),
+        type: getEvidenceTypeLabel(url),
+      }))
+    : task.evidenceUrl
+      ? [
+          {
+            url: task.evidenceUrl,
+            name: getEvidenceFileName(task.evidenceUrl),
+            type: getEvidenceTypeLabel(task.evidenceUrl),
+          },
+        ]
+      : [];
 
   const role =
     user.role === "CEO"
@@ -179,7 +237,7 @@ export default function TaskDetail() {
                 <p className="mb-6 text-sm leading-relaxed text-slate-600">{task.description}</p>
               )}
 
-              {task.evidenceUrl && (
+              {evidenceFiles.length > 0 && (
                 <div className="mb-6 border-b border-slate-200 pb-6">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="text-sm font-bold text-slate-900">Evidence</div>
@@ -220,6 +278,28 @@ export default function TaskDetail() {
                         </div>
                       </div>
                     )}
+                    <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
+                      {evidenceFiles.map((file, index) => (
+                        <div
+                          key={`${file.url}-${index}`}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-slate-900">{file.name}</div>
+                            <div className="mt-1 text-xs text-slate-500">{file.type}</div>
+                          </div>
+                          <a
+                            href={`http://localhost:5000${file.url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-shrink-0 text-xs font-medium text-[#1275e2] hover:text-[#0f63c0]"
+                          >
+                            Open
+                          </a>
+                        </div>
+                      ))}
+                    </div>
                     <div className="mt-2 text-xs text-slate-500">
                       Uploaded: {new Date(task.evidenceUploadedAt).toLocaleString()} · Click to expand
                     </div>
@@ -393,13 +473,55 @@ export default function TaskDetail() {
               <div className="app-panel p-4">
                 <div className="mb-3 text-sm font-bold text-slate-900">Upload Evidence</div>
                 <input
+                  ref={fileInputRef}
                   type="file"
-                  accept="image/*,video/*"
-                  onChange={handleFileUpload}
+                  accept=".jpg,.jpeg,.png,.mp4,.mov"
+                  multiple
+                  onChange={handleFileSelection}
                   disabled={uploading}
                   className="w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#1275e2] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#0f63c0] disabled:opacity-50"
                 />
-                <div className="mt-2 text-xs text-slate-500">JPG, PNG, MP4, MOV (max 100MB)</div>
+                <div className="mt-2 text-xs text-slate-500">JPG, PNG, MP4, MOV (max 100MB per file)</div>
+                <div className="mt-2 text-xs text-slate-500">
+                  {selectedFiles.length === 1 ? "1 file selected" : `${selectedFiles.length} files selected`}
+                </div>
+                {selectedFiles.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.size}-${index}`}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
+                              {getFileTypeLabel(file) === "Video" ? "VID" : "IMG"}
+                            </span>
+                            <span className="truncate">{file.name}</span>
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {formatFileSize(file.size)} · {getFileTypeLabel(file)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedFile(index)}
+                          className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleFileUpload}
+                  disabled={uploading || selectedFiles.length === 0}
+                  className="mt-3 w-full rounded-lg bg-[#1275e2] py-2.5 text-sm font-medium text-white transition hover:bg-[#0f63c0] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Upload Evidence"}
+                </button>
               </div>
             )}
 

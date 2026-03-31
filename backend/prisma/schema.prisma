@@ -114,6 +114,7 @@ model Task {
   subtasks           Task[]         @relation("SubTasks")
   score              Score?
   evidenceUrl        String?
+  evidenceUrls       String[]       @default([])
   evidenceUploadedAt DateTime?
   approvalStatus     ApprovalStatus @default(PENDING)
   approvalComment    String?

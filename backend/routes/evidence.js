@@ -25,12 +25,12 @@ const upload = multer({
     storage,
     limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
     fileFilter: (req, file, cb) => {
-        // Allow images and videos only
-        const allowed = /\.(jpg|jpeg|png|gif|mp4|avi|mov|mkv)$/i;
+        // Allow supported image and video formats only
+        const allowed = /\.(jpg|jpeg|png|mp4|mov)$/i;
         if (allowed.test(file.originalname)) {
             cb(null, true);
         } else {
-            cb(new Error('Only image and video files are allowed'));
+            cb(new Error('Only JPG, PNG, MP4, and MOV files are allowed'));
         }
     }
 });
@@ -39,12 +39,12 @@ router.use(authMiddleware);
 
 // ── POST /api/evidence/upload ──────────────────────────
 // Manager uploads evidence (photo/video) for a task
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', upload.array('files', 10), async (req, res) => {
     const { taskId } = req.body;
     const taskIdNum = parseInt(taskId);
 
     try {
-        if (!req.file) {
+        if (!req.files?.length) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
@@ -63,10 +63,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         }
 
         // Update task with evidence and set status to PENDING_APPROVAL
+        const uploadedEvidence = req.files.map((file) => `/uploads/${file.filename}`);
+
         const updatedTask = await prisma.task.update({
             where: { id: taskIdNum },
             data: {
-                evidenceUrl: `/uploads/${req.file.filename}`,
+                evidenceUrl: uploadedEvidence[0],
+                evidenceUrls: uploadedEvidence,
                 evidenceUploadedAt: new Date(),
                 status: 'PENDING_APPROVAL',
                 approvalStatus: 'PENDING'
@@ -275,6 +278,7 @@ router.delete('/:id', async (req, res) => {
                 id: true,
                 assigneeId: true,
                 evidenceUrl: true,
+                evidenceUrls: true,
                 status: true,
                 title: true
             }
@@ -295,18 +299,20 @@ router.delete('/:id', async (req, res) => {
         }
 
         // Delete the file from uploads folder
-        if (task.evidenceUrl) {
-            const filePath = path.join(process.cwd(), task.evidenceUrl);
+        const evidencePaths = task.evidenceUrls?.length ? task.evidenceUrls : task.evidenceUrl ? [task.evidenceUrl] : [];
+        evidencePaths.forEach((evidencePath) => {
+            const filePath = path.join(process.cwd(), evidencePath);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
-        }
+        });
 
         // Clear evidence from task and set back to IN_PROGRESS
         const updatedTask = await prisma.task.update({
             where: { id: taskIdNum },
             data: {
                 evidenceUrl: null,
+                evidenceUrls: [],
                 evidenceUploadedAt: null,
                 status: 'IN_PROGRESS',
                 approvalStatus: 'PENDING'
