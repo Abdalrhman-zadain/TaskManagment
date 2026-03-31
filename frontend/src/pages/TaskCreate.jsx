@@ -14,6 +14,7 @@ export default function TaskCreate() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [sectionId, setSectionId] = useState(user.sectionId ? String(user.sectionId) : "");
@@ -56,6 +57,23 @@ export default function TaskCreate() {
     return sections;
   }, [sections, user.role, user.sectionId]);
 
+  const clientOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          projects
+            .filter((project) => project.client?.id && project.client?.name)
+            .map((project) => [project.client.id, project.client]),
+        ).values(),
+      ),
+    [projects],
+  );
+
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === Number(projectId)) || null,
+    [projects, projectId],
+  );
+
   const assigneeOptions = useMemo(() => {
     if (user.role === "CEO") {
       if (!sectionId) return [];
@@ -70,9 +88,18 @@ export default function TaskCreate() {
   }, [users, sections, sectionId, user.role]);
 
   const projectOptions = useMemo(() => {
-    if (!sectionId) return [];
-    return projects.filter((project) => project.sectionId === Number(sectionId));
-  }, [projects, sectionId]);
+    if (!clientId) return [];
+    return projects.filter((project) => {
+      const matchesClient = project.client?.id === Number(clientId);
+      const matchesSection = !sectionId || project.sectionId === Number(sectionId);
+      return matchesClient && matchesSection;
+    });
+  }, [projects, clientId, sectionId]);
+
+  const sectionOptions = useMemo(() => {
+    if (!selectedProject) return allowedSections;
+    return allowedSections.filter((section) => section.id === selectedProject.sectionId);
+  }, [allowedSections, selectedProject]);
 
   const parentTaskOptions = useMemo(() => {
     if (user.role !== "MANAGER" || !sectionId || !projectId) return [];
@@ -158,22 +185,23 @@ export default function TaskCreate() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="app-label">Section</label>
+              <label className="app-label">Client</label>
               <select
-                value={sectionId}
+                value={clientId}
                 onChange={(e) => {
-                  setSectionId(e.target.value);
+                  setClientId(e.target.value);
                   setProjectId("");
+                  setSectionId(user.sectionId ? String(user.sectionId) : "");
                   setAssigneeId("");
                   setParentId("");
                 }}
                 className="app-input"
                 required
               >
-                <option value="">Select section</option>
-                {allowedSections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
+                <option value="">Select client</option>
+                {clientOptions.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
                   </option>
                 ))}
               </select>
@@ -184,16 +212,41 @@ export default function TaskCreate() {
               <select
                 value={projectId}
                 onChange={(e) => {
-                  setProjectId(e.target.value);
+                  const nextProjectId = e.target.value;
+                  const nextProject = projects.find((project) => project.id === Number(nextProjectId));
+                  setProjectId(nextProjectId);
+                  setSectionId(nextProject?.sectionId ? String(nextProject.sectionId) : "");
+                  setParentId("");
+                  setAssigneeId("");
+                }}
+                className="app-input"
+                required
+              >
+                <option value="">{clientId ? "Select project" : "Select a client first"}</option>
+                {projectOptions.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="app-label">Section</label>
+              <select
+                value={sectionId}
+                onChange={(e) => {
+                  setSectionId(e.target.value);
+                  setAssigneeId("");
                   setParentId("");
                 }}
                 className="app-input"
                 required
               >
-                <option value="">Select project</option>
-                {projectOptions.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
+                <option value="">Select section</option>
+                {sectionOptions.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
                   </option>
                 ))}
               </select>

@@ -173,6 +173,33 @@ export default function ClientDashboard() {
     return "border-amber-200 bg-amber-50 text-amber-700";
   }
 
+  function getEvidenceLinkLabel(evidenceUrl) {
+    const isLink = /^https?:\/\//i.test(evidenceUrl);
+    const isImage = /\.(jpg|jpeg|png)$/i.test(evidenceUrl);
+    const isVideo = /\.(mp4|mov)$/i.test(evidenceUrl);
+    const isPdf = /\.pdf$/i.test(evidenceUrl);
+    const isPresentation = /\.(ppt|pptx)$/i.test(evidenceUrl);
+    const isSpreadsheet = /\.(xls|xlsx)$/i.test(evidenceUrl);
+
+    if (isArabic) {
+      if (isImage) return "فتح ملف صورة";
+      if (isVideo) return "فتح ملف فيديو";
+      if (isPdf) return "فتح ملف PDF";
+      if (isPresentation) return "فتح ملف عرض تقديمي";
+      if (isSpreadsheet) return "فتح ملف جدول بيانات";
+      if (isLink) return "فتح الرابط";
+      return "فتح ملف الإثبات";
+    }
+
+    if (isImage) return "Open image evidence";
+    if (isVideo) return "Open video evidence";
+    if (isPdf) return "Open PDF evidence";
+    if (isPresentation) return "Open presentation evidence";
+    if (isSpreadsheet) return "Open spreadsheet evidence";
+    if (isLink) return "Open link";
+    return "Open evidence";
+  }
+
   useEffect(() => {
     localStorage.setItem("clientDashboardLanguage", language);
   }, [language]);
@@ -529,12 +556,12 @@ export default function ClientDashboard() {
                     )}
                     {item.evidenceUrl && (
                       <a
-                        href={`http://localhost:5000${item.evidenceUrl}`}
+                        href={/^https?:\/\//i.test(item.evidenceUrl) ? item.evidenceUrl : `http://localhost:5000${item.evidenceUrl}`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
                       >
-                        {isArabic ? "فتح ملف الإثبات" : "Open evidence"}
+                        {getEvidenceLinkLabel(item.evidenceUrl)}
                       </a>
                     )}
                   </div>
@@ -710,12 +737,12 @@ export default function ClientDashboard() {
             </div>
             {item.evidenceUrl && (
               <a
-                href={`http://localhost:5000${item.evidenceUrl}`}
+                href={/^https?:\/\//i.test(item.evidenceUrl) ? item.evidenceUrl : `http://localhost:5000${item.evidenceUrl}`}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-4 inline-block text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
               >
-                {isArabic ? "فتح" : "Open"} {item.type.toLowerCase()} evidence
+                {getEvidenceLinkLabel(item.evidenceUrl)}
               </a>
             )}
           </div>

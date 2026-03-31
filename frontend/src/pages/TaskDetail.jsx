@@ -109,6 +109,17 @@ export default function TaskDetail() {
     return /^https?:\/\//i.test(evidenceUrl) ? evidenceUrl : `http://localhost:5000${evidenceUrl}`;
   }
 
+  function getEvidenceLinkLabel(evidenceUrl) {
+    const type = getEvidenceTypeLabel(evidenceUrl);
+    if (type === "Image") return "Open image evidence";
+    if (type === "Video") return "Open video evidence";
+    if (type === "PDF") return "Open PDF evidence";
+    if (type === "Presentation") return "Open presentation evidence";
+    if (type === "Spreadsheet") return "Open spreadsheet evidence";
+    if (type === "Link") return "Open link";
+    return "Open evidence";
+  }
+
   function handleFileSelection(e) {
     const files = Array.from(e.target.files || []);
     setSelectedFiles((currentFiles) => {
@@ -365,7 +376,7 @@ export default function TaskDetail() {
                             onClick={(e) => e.stopPropagation()}
                             className="flex-shrink-0 text-xs font-medium text-[#1275e2] hover:text-[#0f63c0]"
                           >
-                            Open
+                            {getEvidenceLinkLabel(file.url)}
                           </a>
                         </div>
                       ))}
@@ -736,6 +747,7 @@ export default function TaskDetail() {
               <div className="mb-3 text-sm font-bold text-slate-900">Task Info</div>
               {[
                 { label: "Created by", value: task.creator?.name },
+                ...(task.project?.client?.name ? [{ label: "Client", value: task.project.client.name }] : []),
                 { label: "Section", value: task.section?.name },
                 {
                   label: "Subtasks",
@@ -843,7 +855,7 @@ export default function TaskDetail() {
                       rel="noreferrer"
                       className="mt-4 inline-block text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
                     >
-                      Open File
+                      {getEvidenceLinkLabel(activeEvidenceFile.url)}
                     </a>
                   </div>
                 )}
