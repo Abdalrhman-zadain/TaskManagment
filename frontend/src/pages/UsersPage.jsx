@@ -11,6 +11,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [sectionFilter, setSectionFilter] = useState("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -95,6 +98,22 @@ export default function UsersPage() {
   const employees = users.filter((u) => u.role === "EMPLOYEE");
   const clients = users.filter((u) => u.role === "CLIENT");
   const shouldShowSectionPicker = currentUser.role === "CEO" && role !== "CLIENT";
+  const listUsers = users.filter((u) => u.id !== currentUser.id);
+  const availableSections = sections.filter((section) =>
+    listUsers.some((user) => user.section?.id === section.id),
+  );
+  const filteredUsers = listUsers.filter((user) => {
+    const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
+    const matchesSection =
+      sectionFilter === "ALL" || String(user.section?.id || "NONE") === sectionFilter;
+    const searchValue = searchTerm.trim().toLowerCase();
+    const matchesSearch =
+      !searchValue ||
+      user.name.toLowerCase().includes(searchValue) ||
+      user.email.toLowerCase().includes(searchValue);
+
+    return matchesRole && matchesSection && matchesSearch;
+  });
 
   return (
     <div className="app-shell flex min-h-screen">
@@ -203,7 +222,55 @@ export default function UsersPage() {
               <strong className="text-slate-900">{clients.length}</strong>
             </div>
 
-            {users.filter((u) => u.id !== currentUser.id).map((user) => {
+            <div className="mb-4 grid grid-cols-3 gap-3">
+              <div>
+                <label className="app-label">Role</label>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="app-input"
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="CLIENT">Client</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="app-label">Section</label>
+                <select
+                  value={sectionFilter}
+                  onChange={(e) => setSectionFilter(e.target.value)}
+                  className="app-input"
+                >
+                  <option value="ALL">All Sections</option>
+                  {availableSections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))}
+                  <option value="NONE">No section</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="app-label">Search</label>
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="app-input"
+                  placeholder="Search name or email"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4 text-xs text-slate-500">
+              Showing <strong className="text-slate-900">{filteredUsers.length}</strong> of{" "}
+              <strong className="text-slate-900">{listUsers.length}</strong> users
+            </div>
+
+            {filteredUsers.map((user) => {
               const uScores = user.scores || [];
               const totalScore = uScores.reduce((sum, sc) => sum + sc.value, 0);
 
@@ -261,6 +328,9 @@ export default function UsersPage() {
                 </div>
               );
             })}
+            {filteredUsers.length === 0 && (
+              <div className="py-6 text-center text-sm text-slate-500">No users match the current filters.</div>
+            )}
           </div>
         </div>
       </main>

@@ -1,6 +1,7 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const { authMiddleware, requireRole } = require("../middleware/auth");
+const { createNotification } = require("../utils/notify");
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -97,6 +98,124 @@ router.get("/dashboard", async (req, res) => {
       deliverables,
       notifications,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch("/deliverables/:id/approve", async (req, res) => {
+  try {
+    const taskId = Number(req.params.id);
+
+    const task = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        project: {
+          clientId: req.user.id,
+        },
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, managerId: true },
+        },
+      },
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: "Deliverable not found" });
+    }
+
+    if (!task.evidenceUrl) {
+      return res.status(400).json({ error: "No deliverable submitted for this task" });
+    }
+
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        status: "DONE",
+        approvalStatus: "APPROVED",
+        approvalComment: null,
+        approvalBy: req.user.id,
+        approvalAt: new Date(),
+        completedAt: task.completedAt || new Date(),
+      },
+    });
+
+    await Promise.all([
+      createNotification({
+        userId: task.assigneeId,
+        type: "task_approved",
+        message: `Client approved deliverable for "${task.title}"`,
+        taskId,
+      }),
+      createNotification({
+        userId: task.creatorId,
+        type: "task_approved",
+        message: `Client approved deliverable for "${task.title}"`,
+        taskId,
+      }),
+    ]);
+
+    res.json({ task: updatedTask });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch("/deliverables/:id/request-changes", async (req, res) => {
+  try {
+    const taskId = Number(req.params.id);
+    const { comment } = req.body;
+
+    const task = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        project: {
+          clientId: req.user.id,
+        },
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, managerId: true },
+        },
+      },
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: "Deliverable not found" });
+    }
+
+    if (!task.evidenceUrl) {
+      return res.status(400).json({ error: "No deliverable submitted for this task" });
+    }
+
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        status: "IN_PROGRESS",
+        approvalStatus: "REJECTED",
+        approvalComment: comment?.trim() || "Changes requested by client",
+        approvalBy: req.user.id,
+        approvalAt: new Date(),
+      },
+    });
+
+    await Promise.all([
+      createNotification({
+        userId: task.assigneeId,
+        type: "task_rejected",
+        message: `Client requested changes for "${task.title}"`,
+        taskId,
+      }),
+      createNotification({
+        userId: task.creatorId,
+        type: "task_rejected",
+        message: `Client requested changes for "${task.title}"`,
+        taskId,
+      }),
+    ]);
+
+    res.json({ task: updatedTask });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

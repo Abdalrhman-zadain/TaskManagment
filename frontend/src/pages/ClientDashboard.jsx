@@ -133,6 +133,11 @@ export default function ClientDashboard() {
   const [error, setError] = useState("");
   const [newComment, setNewComment] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
+  const [homeProjectStatusFilter, setHomeProjectStatusFilter] = useState("ALL");
+  const [homeDeliverableProjectFilter, setHomeDeliverableProjectFilter] = useState("ALL");
+  const [homeDeliverableStatusFilter, setHomeDeliverableStatusFilter] = useState("ALL");
+  const [deliverablesProjectFilter, setDeliverablesProjectFilter] = useState("ALL");
+  const [actionTaskId, setActionTaskId] = useState(null);
   const isArabic = language === "ar";
   const t = copy[language];
 
@@ -147,6 +152,25 @@ export default function ClientDashboard() {
 
   function formatStatus(status) {
     return t.status[status] || String(status).replaceAll("_", " ");
+  }
+
+  function getHomeProjectStatus(project) {
+    if (project.status === "COMPLETED" || project.progress === 100) return "COMPLETED";
+    if (project.deadline && new Date(project.deadline) < new Date()) return "DELAYED";
+    if (project.status === "AT_RISK") return "AT_RISK";
+    return "ON_TRACK";
+  }
+
+  function getDeliverableBadge(status) {
+    if (status === "APPROVED") return isArabic ? "تمت الموافقة" : "Approved";
+    if (status === "REJECTED") return isArabic ? "مطلوب تعديلات" : "Changes Requested";
+    return isArabic ? "بانتظار المراجعة" : "Pending Review";
+  }
+
+  function getDeliverableTone(status) {
+    if (status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    if (status === "REJECTED") return "border-rose-200 bg-rose-50 text-rose-700";
+    return "border-amber-200 bg-amber-50 text-amber-700";
   }
 
   useEffect(() => {
@@ -245,6 +269,27 @@ export default function ClientDashboard() {
     [projects, isArabic],
   );
 
+  const homeFilteredProjects = useMemo(
+    () =>
+      projects.filter((project) => {
+        if (homeProjectStatusFilter === "ALL") return true;
+        return getHomeProjectStatus(project) === homeProjectStatusFilter;
+      }),
+    [projects, homeProjectStatusFilter],
+  );
+
+  const homeFilteredDeliverables = useMemo(
+    () =>
+      deliverables.filter((item) => {
+        const matchesProject =
+          homeDeliverableProjectFilter === "ALL" || String(item.projectId) === homeDeliverableProjectFilter;
+        const matchesStatus =
+          homeDeliverableStatusFilter === "ALL" || item.status === homeDeliverableStatusFilter;
+        return matchesProject && matchesStatus;
+      }),
+    [deliverables, homeDeliverableProjectFilter, homeDeliverableStatusFilter],
+  );
+
   async function addComment() {
     if (!selectedProject || !newComment.trim()) return;
     setCommentSaving(true);
@@ -258,6 +303,25 @@ export default function ClientDashboard() {
       setError(err.response?.data?.error || t.loadError);
     } finally {
       setCommentSaving(false);
+    }
+  }
+
+  async function reviewDeliverable(taskId, action) {
+    setActionTaskId(taskId);
+    setError("");
+    try {
+      if (action === "approve") {
+        await api.patch(`/client/deliverables/${taskId}/approve`);
+      } else {
+        await api.patch(`/client/deliverables/${taskId}/request-changes`, {
+          comment: "Changes requested by client",
+        });
+      }
+      await loadDashboard();
+    } catch (err) {
+      setError(err.response?.data?.error || t.loadError);
+    } finally {
+      setActionTaskId(null);
     }
   }
 
@@ -315,6 +379,173 @@ export default function ClientDashboard() {
             </div>
           </section>
         </div>
+
+        <section className="app-panel p-5">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "المشاريع" : "Projects"}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {isArabic ? "جميع المشاريع المرتبطة بحساب هذا العميل." : "All projects linked to this client account."}
+              </p>
+            </div>
+            <select
+              value={homeProjectStatusFilter}
+              onChange={(e) => setHomeProjectStatusFilter(e.target.value)}
+              className="app-input w-full md:w-56"
+            >
+              <option value="ALL">{isArabic ? "كل الحالات" : "All Statuses"}</option>
+              <option value="ON_TRACK">{isArabic ? "على المسار" : "On Track"}</option>
+              <option value="AT_RISK">{isArabic ? "معرض للخطر" : "At Risk"}</option>
+              <option value="COMPLETED">{isArabic ? "مكتمل" : "Completed"}</option>
+              <option value="DELAYED">{isArabic ? "متأخر" : "Delayed"}</option>
+            </select>
+          </div>
+
+          <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            {homeFilteredProjects.map((project) => {
+              const derivedStatus = getHomeProjectStatus(project);
+              const deliverableCount = project.tasks.filter((task) => task.evidenceUrl).length;
+              const statusLabel =
+                derivedStatus === "ON_TRACK"
+                  ? isArabic ? "على المسار" : "On Track"
+                  : derivedStatus === "DELAYED"
+                    ? isArabic ? "متأخر" : "Delayed"
+                    : formatStatus(derivedStatus);
+              const statusClasses =
+                derivedStatus === "COMPLETED"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : derivedStatus === "AT_RISK"
+                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                    : derivedStatus === "DELAYED"
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : "border-blue-200 bg-blue-50 text-blue-700";
+
+              return (
+                <div key={project.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-lg font-semibold text-slate-900">{project.name}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {isArabic ? "المدير" : "Manager"}: {project.manager.name}
+                      </div>
+                    </div>
+                    <span className={`rounded-full border px-3 py-1 text-xs ${statusClasses}`}>{statusLabel}</span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                      <span>{isArabic ? "التقدم" : "Progress"}</span>
+                      <span>{project.progress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-[#1275e2]" style={{ width: `${project.progress}%` }} />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "الموعد النهائي" : "Deadline"}</div>
+                      <div className="mt-2 text-sm text-slate-900">{formatDate(project.deadline)}</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "التسليمات" : "Deliverables"}</div>
+                      <div className="mt-2 text-sm text-slate-900">{deliverableCount} {isArabic ? "مرفوع" : "submitted"}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {homeFilteredProjects.length === 0 && (
+              <p className="text-sm text-slate-500">{isArabic ? "لا توجد مشاريع ضمن هذا الفلتر." : "No projects match this filter."}</p>
+            )}
+          </div>
+        </section>
+
+        <section className="app-panel p-5">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "التسليمات" : "Deliverables"}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {isArabic ? "جميع ملفات الإثبات المرسلة عبر المشاريع المرتبطة." : "All submitted evidence across linked projects."}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <select
+                value={homeDeliverableProjectFilter}
+                onChange={(e) => setHomeDeliverableProjectFilter(e.target.value)}
+                className="app-input w-full sm:w-56"
+              >
+                <option value="ALL">{isArabic ? "كل المشاريع" : "All Projects"}</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
+              </select>
+              <select
+                value={homeDeliverableStatusFilter}
+                onChange={(e) => setHomeDeliverableStatusFilter(e.target.value)}
+                className="app-input w-full sm:w-56"
+              >
+                <option value="ALL">{isArabic ? "كل الحالات" : "All Statuses"}</option>
+                <option value="PENDING">{isArabic ? "بانتظار المراجعة" : "Pending Review"}</option>
+                <option value="APPROVED">{isArabic ? "تمت الموافقة" : "Approved"}</option>
+                <option value="REJECTED">{isArabic ? "مطلوب تعديلات" : "Changes Requested"}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            {homeFilteredDeliverables.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{item.taskName}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {item.projectName} · {isArabic ? "تم الإرسال بواسطة" : "Submitted by"} {item.submittedBy}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {isArabic ? "تاريخ الإرسال" : "Submitted"}: {formatDate(item.uploadDate)}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-start gap-3 xl:items-end">
+                    <span className={`rounded-full border px-3 py-1 text-xs ${getDeliverableTone(item.status)}`}>
+                      {getDeliverableBadge(item.status)}
+                    </span>
+                    {item.status === "PENDING" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => reviewDeliverable(item.id, "approve")}
+                          disabled={actionTaskId === item.id}
+                          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {actionTaskId === item.id ? (isArabic ? "جارٍ الحفظ..." : "Saving...") : (isArabic ? "موافقة" : "Approve")}
+                        </button>
+                        <button
+                          onClick={() => reviewDeliverable(item.id, "request-changes")}
+                          disabled={actionTaskId === item.id}
+                          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isArabic ? "طلب تعديلات" : "Request Changes"}
+                        </button>
+                      </div>
+                    )}
+                    {item.evidenceUrl && (
+                      <a
+                        href={`http://localhost:5000${item.evidenceUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
+                      >
+                        {isArabic ? "فتح ملف الإثبات" : "Open evidence"}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {homeFilteredDeliverables.length === 0 && (
+              <p className="text-sm text-slate-500">{isArabic ? "لا توجد تسليمات ضمن هذه الفلاتر." : "No deliverables match these filters."}</p>
+            )}
+          </div>
+        </section>
       </div>
     );
   }
@@ -436,9 +667,37 @@ export default function ClientDashboard() {
   }
 
   function renderDeliverables() {
+    const filteredDeliverables = deliverables.filter((item) => {
+      if (deliverablesProjectFilter === "ALL") return true;
+      return String(item.projectId) === deliverablesProjectFilter;
+    });
+
     return (
       <div className="space-y-4">
-        {deliverables.map((item) => (
+        <div className="app-panel p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "تصفية حسب المشروع" : "Filter by Project"}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {isArabic ? "اعرض جميع التسليمات أو تسليمات مشروع محدد." : "Show all deliverables or only one project's deliverables."}
+              </p>
+            </div>
+            <select
+              value={deliverablesProjectFilter}
+              onChange={(e) => setDeliverablesProjectFilter(e.target.value)}
+              className="app-input w-full sm:w-64"
+            >
+              <option value="ALL">{isArabic ? "كل المشاريع" : "All"}</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {filteredDeliverables.map((item) => (
           <div key={item.id} className="app-panel p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -461,7 +720,7 @@ export default function ClientDashboard() {
             )}
           </div>
         ))}
-        {deliverables.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد تسليمات مرفوعة بعد." : "No deliverables uploaded yet."}</p>}
+        {filteredDeliverables.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد تسليمات مرفوعة بعد." : "No deliverables uploaded yet."}</p>}
       </div>
     );
   }

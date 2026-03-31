@@ -16,6 +16,13 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
+  const [projectFilter, setProjectFilter] = useState("ALL");
+  const [sectionFilter, setSectionFilter] = useState("ALL");
+  const [assigneeFilter, setAssigneeFilter] = useState("ALL");
+  const [scoreFilter, setScoreFilter] = useState("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -41,14 +48,85 @@ export default function TasksPage() {
     }
   }
 
+  const projectOptions = Array.from(
+    new Map(
+      tasks
+        .filter((task) => task.project?.id && task.project?.name)
+        .map((task) => [task.project.id, task.project]),
+    ).values(),
+  );
+
+  const sectionOptions = Array.from(
+    new Map(
+      tasks
+        .filter((task) => task.section?.id && task.section?.name)
+        .map((task) => [task.section.id, task.section]),
+    ).values(),
+  );
+
+  const assigneeOptions = Array.from(
+    new Map(
+      tasks
+        .filter((task) => task.assignee?.id && task.assignee?.name)
+        .map((task) => [task.assignee.id, task.assignee]),
+    ).values(),
+  );
+
   const filteredTasks = tasks.filter((t) => {
-    if (filter === "ALL") return true;
-    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS" || t.status === "TODO";
-    if (filter === "PENDING_APPROVAL") return t.status === "PENDING_APPROVAL";
-    if (filter === "DONE") return t.status === "DONE";
-    if (filter === "OVERDUE") return new Date(t.deadline) < new Date() && t.status !== "DONE";
-    return true;
+    const deadlineDate = t.deadline ? new Date(t.deadline) : null;
+    const taskScore = t.score?.value;
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const matchesStatus =
+      filter === "ALL"
+        ? true
+        : filter === "IN_PROGRESS"
+          ? t.status === "IN_PROGRESS" || t.status === "TODO"
+          : filter === "PENDING_APPROVAL"
+            ? t.status === "PENDING_APPROVAL"
+            : filter === "DONE"
+              ? t.status === "DONE"
+              : filter === "OVERDUE"
+                ? deadlineDate && deadlineDate < new Date() && t.status !== "DONE"
+                : true;
+
+    const matchesProject =
+      projectFilter === "ALL" || String(t.project?.id || "") === projectFilter;
+    const matchesSection =
+      sectionFilter === "ALL" || String(t.section?.id || "") === sectionFilter;
+    const matchesAssignee =
+      assigneeFilter === "ALL" || String(t.assignee?.id || "") === assigneeFilter;
+    const matchesScore =
+      scoreFilter === "ALL" ||
+      (scoreFilter === "HIGH" && taskScore >= 8 && taskScore <= 10) ||
+      (scoreFilter === "MEDIUM" && taskScore >= 5 && taskScore <= 7) ||
+      (scoreFilter === "LOW" && taskScore >= 0 && taskScore <= 4);
+    const matchesFromDate = !fromDate || (deadlineDate && deadlineDate >= new Date(`${fromDate}T00:00:00`));
+    const matchesToDate = !toDate || (deadlineDate && deadlineDate <= new Date(`${toDate}T23:59:59`));
+    const matchesSearch = !normalizedSearch || t.title.toLowerCase().includes(normalizedSearch);
+
+    return (
+      matchesStatus &&
+      matchesProject &&
+      matchesSection &&
+      matchesAssignee &&
+      matchesScore &&
+      matchesFromDate &&
+      matchesToDate &&
+      matchesSearch
+    );
   });
+
+  function clearFilters() {
+    setFilter("ALL");
+    setProjectFilter("ALL");
+    setSectionFilter("ALL");
+    setAssigneeFilter("ALL");
+    setScoreFilter("ALL");
+    setFromDate("");
+    setToDate("");
+    setSearchTerm("");
+  }
 
   if (loading) {
     return (
@@ -97,6 +175,88 @@ export default function TasksPage() {
                     : f.charAt(0) + f.slice(1).toLowerCase()}
               </button>
             ))}
+          </div>
+
+          <div className="mb-4 grid grid-cols-3 gap-3">
+            <div>
+              <label className="app-label">Project</label>
+              <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className="app-input">
+                <option value="ALL">All Projects</option>
+                {projectOptions.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="app-label">Section</label>
+              <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} className="app-input">
+                <option value="ALL">All Sections</option>
+                {sectionOptions.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="app-label">Assigned To</label>
+              <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="app-input">
+                <option value="ALL">All People</option>
+                {assigneeOptions.map((assignee) => (
+                  <option key={assignee.id} value={assignee.id}>
+                    {assignee.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="app-label">Score</label>
+              <select value={scoreFilter} onChange={(e) => setScoreFilter(e.target.value)} className="app-input">
+                <option value="ALL">All Scores</option>
+                <option value="HIGH">High 8-10</option>
+                <option value="MEDIUM">Medium 5-7</option>
+                <option value="LOW">Low 0-4</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="app-label">From Date</label>
+              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="app-input" />
+            </div>
+
+            <div>
+              <label className="app-label">To Date</label>
+              <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="app-input" />
+            </div>
+          </div>
+
+          <div className="mb-6 flex items-end justify-between gap-3">
+            <div className="flex-1">
+              <label className="app-label">Search</label>
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="app-input"
+                placeholder="Search task name"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              Clear Filters
+            </button>
+          </div>
+
+          <div className="mb-4 text-xs text-slate-500">
+            Showing <strong className="text-slate-900">{filteredTasks.length}</strong> of{" "}
+            <strong className="text-slate-900">{tasks.length}</strong> tasks
           </div>
 
           <div className="flex flex-col gap-2">

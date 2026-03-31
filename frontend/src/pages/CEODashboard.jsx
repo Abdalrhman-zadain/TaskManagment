@@ -7,21 +7,26 @@ import api from "../api/client";
 
 export default function CEODashboard() {
   const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [sections, setSections] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
+  const [projectFilter, setProjectFilter] = useState("ALL");
+  const [projectClientFilter, setProjectClientFilter] = useState("ALL");
   const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
       try {
-        const [t, s, u] = await Promise.all([
+        const [t, p, s, u] = await Promise.all([
           api.get("/tasks"),
+          api.get("/projects"),
           api.get("/sections"),
           api.get("/users"),
         ]);
         setTasks(t.data);
+        setProjects(p.data);
         setSections(s.data);
         setUsers(u.data);
       } catch (err) {
@@ -43,6 +48,33 @@ export default function CEODashboard() {
   const allPerformers = [...users]
     .filter((u) => u.role === "EMPLOYEE" || u.role === "MANAGER")
     .sort((a, b) => b.onTimeCount - a.onTimeCount);
+
+  function getProjectProgress(project) {
+    const totalTasks = project.tasks?.length || 0;
+    const doneTasks = project.tasks?.filter((task) => task.status === "DONE").length || 0;
+    return totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  }
+
+  function getProjectStatus(project) {
+    if (project.status === "COMPLETED") return "COMPLETED";
+    if (project.deadline && new Date(project.deadline) < new Date()) return "DELAYED";
+    return "ACTIVE";
+  }
+
+  const projectClients = Array.from(
+    new Map(
+      projects
+        .filter((project) => project.client?.name)
+        .map((project) => [project.client.id, project.client]),
+    ).values(),
+  );
+
+  const filteredProjects = projects.filter((project) => {
+    const matchesStatus = projectFilter === "ALL" || getProjectStatus(project) === projectFilter;
+    const matchesClient =
+      projectClientFilter === "ALL" || String(project.client?.id) === projectClientFilter;
+    return matchesStatus && matchesClient;
+  });
 
   const filteredTasks = tasks.filter((t) => {
     if (filter === "ALL") return true;
@@ -141,6 +173,90 @@ export default function CEODashboard() {
                   <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-base">+</div>
                   Create a new section
                 </div>
+              </div>
+            </div>
+
+            <div className="app-panel p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-900">Projects</h2>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={projectClientFilter}
+                    onChange={(e) => setProjectClientFilter(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 outline-none transition focus:border-[#1275e2] focus:bg-white"
+                  >
+                    <option value="ALL">All Clients</option>
+                    {projectClients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex gap-1 rounded-lg bg-slate-100 p-0.5">
+                    {["ALL", "ACTIVE", "COMPLETED", "DELAYED"].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setProjectFilter(status)}
+                        className={`rounded-md px-3 py-1 text-[10px] font-medium transition ${
+                          projectFilter === status ? "bg-[#1275e2] text-white" : "text-slate-500 hover:text-slate-900"
+                        }`}
+                      >
+                        {status.charAt(0) + status.slice(1).toLowerCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                {filteredProjects.map((project) => {
+                  const progressValue = getProjectProgress(project);
+                  const status = getProjectStatus(project);
+                  const statusClasses =
+                    status === "COMPLETED"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : status === "DELAYED"
+                        ? "bg-rose-50 text-rose-700"
+                        : "bg-blue-50 text-blue-700";
+
+                  return (
+                    <div key={project.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">{project.name}</div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            Client: {project.client?.name || "Unknown"} · Manager: {project.manager?.name || "Unassigned"}
+                          </div>
+                        </div>
+                        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${statusClasses}`}>
+                          {status}
+                        </span>
+                      </div>
+                      <div className="mt-3">
+                        <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                          <span>Progress</span>
+                          <span>{progressValue}%</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-full rounded-full bg-[#1275e2]" style={{ width: `${progressValue}%` }} />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+                        <span>
+                          Deadline:{" "}
+                          <strong className="text-slate-900">
+                            {project.deadline ? new Date(project.deadline).toLocaleDateString() : "Not set"}
+                          </strong>
+                        </span>
+                        <span>
+                          Tasks: <strong className="text-slate-900">{project.tasks?.length || 0}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredProjects.length === 0 && (
+                  <div className="py-6 text-center text-xs text-slate-500">No projects found in this category</div>
+                )}
               </div>
             </div>
 
