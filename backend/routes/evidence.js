@@ -25,12 +25,12 @@ const upload = multer({
     storage,
     limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
     fileFilter: (req, file, cb) => {
-        // Allow supported image and video formats only
-        const allowed = /\.(jpg|jpeg|png|mp4|mov)$/i;
+        // Allow supported image, video, and document formats
+        const allowed = /\.(jpg|jpeg|png|mp4|mov|ppt|pptx|xls|xlsx|pdf)$/i;
         if (allowed.test(file.originalname)) {
             cb(null, true);
         } else {
-            cb(new Error('Only JPG, PNG, MP4, and MOV files are allowed'));
+            cb(new Error('Only JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, and PDF files are allowed'));
         }
     }
 });
@@ -44,8 +44,12 @@ router.post('/upload', upload.array('files', 10), async (req, res) => {
     const taskIdNum = parseInt(taskId);
 
     try {
-        if (!req.files?.length) {
-            return res.status(400).json({ error: 'No file uploaded' });
+        const submittedLinks = req.body.links
+            ? JSON.parse(req.body.links).filter((link) => typeof link === 'string' && /^https?:\/\//i.test(link))
+            : [];
+
+        if (!req.files?.length && submittedLinks.length === 0) {
+            return res.status(400).json({ error: 'No evidence uploaded' });
         }
 
         const task = await prisma.task.findUnique({
@@ -64,12 +68,13 @@ router.post('/upload', upload.array('files', 10), async (req, res) => {
 
         // Update task with evidence and set status to PENDING_APPROVAL
         const uploadedEvidence = req.files.map((file) => `/uploads/${file.filename}`);
+        const evidenceItems = [...uploadedEvidence, ...submittedLinks];
 
         const updatedTask = await prisma.task.update({
             where: { id: taskIdNum },
             data: {
-                evidenceUrl: uploadedEvidence[0],
-                evidenceUrls: uploadedEvidence,
+                evidenceUrl: evidenceItems[0],
+                evidenceUrls: evidenceItems,
                 evidenceUploadedAt: new Date(),
                 status: 'PENDING_APPROVAL',
                 approvalStatus: 'PENDING'
@@ -301,6 +306,7 @@ router.delete('/:id', async (req, res) => {
         // Delete the file from uploads folder
         const evidencePaths = task.evidenceUrls?.length ? task.evidenceUrls : task.evidenceUrl ? [task.evidenceUrl] : [];
         evidencePaths.forEach((evidencePath) => {
+            if (!evidencePath.startsWith('/uploads/')) return;
             const filePath = path.join(process.cwd(), evidencePath);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);

@@ -22,6 +22,9 @@ export default function TaskDetail() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedLinks, setSelectedLinks] = useState([]);
+  const [linkInput, setLinkInput] = useState("");
+  const [activeEvidenceIndex, setActiveEvidenceIndex] = useState(0);
   const fileInputRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -41,7 +44,7 @@ export default function TaskDetail() {
   }
 
   async function markDone() {
-    if (!task.evidenceUrl) {
+    if (!task.evidenceUrl && !(task.evidenceUrls?.length)) {
       alert("Please upload evidence (photo or video) first before marking the task as complete.");
       return;
     }
@@ -61,8 +64,19 @@ export default function TaskDetail() {
     return `${size} B`;
   }
 
+  function getFileExtension(name = "") {
+    const parts = name.split(".");
+    return parts.length > 1 ? parts.pop().toLowerCase() : "";
+  }
+
   function getFileTypeLabel(file) {
-    return file.type.startsWith("video/") ? "Video" : "Image";
+    const extension = getFileExtension(file.name);
+    if (["jpg", "jpeg", "png"].includes(extension)) return "Image";
+    if (["mp4", "mov"].includes(extension)) return "Video";
+    if (["ppt", "pptx"].includes(extension)) return "Presentation";
+    if (["xls", "xlsx"].includes(extension)) return "Spreadsheet";
+    if (extension === "pdf") return "PDF";
+    return "File";
   }
 
   function getFileKey(file) {
@@ -70,11 +84,29 @@ export default function TaskDetail() {
   }
 
   function getEvidenceTypeLabel(evidenceUrl) {
-    return /\.(mp4|mov)$/i.test(evidenceUrl) ? "Video" : "Image";
+    if (/^https?:\/\//i.test(evidenceUrl)) return "Link";
+    if (/\.(jpg|jpeg|png)$/i.test(evidenceUrl)) return "Image";
+    if (/\.(mp4|mov)$/i.test(evidenceUrl)) return "Video";
+    if (/\.(ppt|pptx)$/i.test(evidenceUrl)) return "Presentation";
+    if (/\.(xls|xlsx)$/i.test(evidenceUrl)) return "Spreadsheet";
+    if (/\.pdf$/i.test(evidenceUrl)) return "PDF";
+    return "File";
   }
 
   function getEvidenceFileName(evidenceUrl) {
     return evidenceUrl.split("/").pop() || evidenceUrl;
+  }
+
+  function canPreviewImage(evidenceUrl) {
+    return !/^https?:\/\//i.test(evidenceUrl) && /\.(jpg|jpeg|png)$/i.test(evidenceUrl);
+  }
+
+  function canPreviewVideo(evidenceUrl) {
+    return !/^https?:\/\//i.test(evidenceUrl) && /\.(mp4|mov)$/i.test(evidenceUrl);
+  }
+
+  function getEvidenceHref(evidenceUrl) {
+    return /^https?:\/\//i.test(evidenceUrl) ? evidenceUrl : `http://localhost:5000${evidenceUrl}`;
   }
 
   function handleFileSelection(e) {
@@ -93,13 +125,38 @@ export default function TaskDetail() {
     setSelectedFiles((currentFiles) => currentFiles.filter((_, index) => index !== indexToRemove));
   }
 
+  function addLink() {
+    const trimmedLink = linkInput.trim();
+    if (!trimmedLink) return;
+
+    try {
+      const parsedUrl = new URL(trimmedLink);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        alert("Please enter a valid http or https URL.");
+        return;
+      }
+
+      setSelectedLinks((currentLinks) =>
+        currentLinks.includes(parsedUrl.toString()) ? currentLinks : [...currentLinks, parsedUrl.toString()],
+      );
+      setLinkInput("");
+    } catch {
+      alert("Please enter a valid URL.");
+    }
+  }
+
+  function removeSelectedLink(linkToRemove) {
+    setSelectedLinks((currentLinks) => currentLinks.filter((link) => link !== linkToRemove));
+  }
+
   async function handleFileUpload() {
-    if (selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0 && selectedLinks.length === 0) return;
 
     const formData = new FormData();
     selectedFiles.forEach((file) => {
       formData.append("files", file);
     });
+    formData.append("links", JSON.stringify(selectedLinks));
     formData.append("taskId", id);
 
     setUploading(true);
@@ -109,6 +166,8 @@ export default function TaskDetail() {
       });
       alert("Evidence uploaded successfully!");
       setSelectedFiles([]);
+      setSelectedLinks([]);
+      setLinkInput("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       loadTask();
     } catch (err) {
@@ -202,6 +261,7 @@ export default function TaskDetail() {
           },
         ]
       : [];
+  const activeEvidenceFile = evidenceFiles[activeEvidenceIndex] || evidenceFiles[0] || null;
 
   const role =
     user.role === "CEO"
@@ -243,7 +303,10 @@ export default function TaskDetail() {
                     <div className="text-sm font-bold text-slate-900">Evidence</div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setShowEvidenceModal(true)}
+                        onClick={() => {
+                          setActiveEvidenceIndex(0);
+                          setShowEvidenceModal(true);
+                        }}
                         className="btn-primary px-2 py-1 text-xs"
                       >
                         View Full
@@ -261,21 +324,28 @@ export default function TaskDetail() {
                   </div>
                   <div
                     className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50/80 p-4 transition hover:border-slate-300"
-                    onClick={() => setShowEvidenceModal(true)}
+                    onClick={() => {
+                      setActiveEvidenceIndex(0);
+                      setShowEvidenceModal(true);
+                    }}
                   >
-                    {task.evidenceUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                    {canPreviewImage(evidenceFiles[0]?.url || "") ? (
                       <img
-                        src={`http://localhost:5000${task.evidenceUrl}`}
-                        alt="Evidence"
+                        src={getEvidenceHref(evidenceFiles[0].url)}
+                        alt={evidenceFiles[0].name}
                         className="h-auto max-w-full rounded"
                       />
-                    ) : (
+                    ) : canPreviewVideo(evidenceFiles[0]?.url || "") ? (
                       <div className="flex items-center justify-center rounded bg-slate-100 p-4" style={{ minHeight: "200px" }}>
                         <div className="text-center">
                           <div className="mb-2 text-3xl">Video</div>
                           <div className="text-sm text-slate-700">Video Evidence</div>
                           <div className="mt-1 text-xs text-slate-500">Click to view</div>
                         </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                        {evidenceFiles[0]?.name}
                       </div>
                     )}
                     <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
@@ -289,7 +359,7 @@ export default function TaskDetail() {
                             <div className="mt-1 text-xs text-slate-500">{file.type}</div>
                           </div>
                           <a
-                            href={`http://localhost:5000${file.url}`}
+                            href={getEvidenceHref(file.url)}
                             target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -469,19 +539,19 @@ export default function TaskDetail() {
               </div>
             </div>
 
-            {isAssignee && (task.status === "TODO" || task.status === "IN_PROGRESS" || task.status === "PENDING_APPROVAL") && !task.evidenceUrl && (
+            {isAssignee && (task.status === "TODO" || task.status === "IN_PROGRESS" || task.status === "PENDING_APPROVAL") && evidenceFiles.length === 0 && (
               <div className="app-panel p-4">
                 <div className="mb-3 text-sm font-bold text-slate-900">Upload Evidence</div>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".jpg,.jpeg,.png,.mp4,.mov"
+                  accept=".jpg,.jpeg,.png,.mp4,.mov,.ppt,.pptx,.xls,.xlsx,.pdf"
                   multiple
                   onChange={handleFileSelection}
                   disabled={uploading}
                   className="w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#1275e2] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#0f63c0] disabled:opacity-50"
                 />
-                <div className="mt-2 text-xs text-slate-500">JPG, PNG, MP4, MOV (max 100MB per file)</div>
+                <div className="mt-2 text-xs text-slate-500">JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 100MB per file)</div>
                 <div className="mt-2 text-xs text-slate-500">
                   {selectedFiles.length === 1 ? "1 file selected" : `${selectedFiles.length} files selected`}
                 </div>
@@ -495,7 +565,15 @@ export default function TaskDetail() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
-                              {getFileTypeLabel(file) === "Video" ? "VID" : "IMG"}
+                              {getFileTypeLabel(file) === "Video"
+                                ? "VID"
+                                : getFileTypeLabel(file) === "Presentation"
+                                  ? "PPT"
+                                  : getFileTypeLabel(file) === "Spreadsheet"
+                                    ? "XLS"
+                                    : getFileTypeLabel(file) === "PDF"
+                                      ? "PDF"
+                                      : "IMG"}
                             </span>
                             <span className="truncate">{file.name}</span>
                           </div>
@@ -514,10 +592,58 @@ export default function TaskDetail() {
                     ))}
                   </div>
                 )}
+                <div className="mt-4">
+                  <label className="mb-2 block text-xs font-medium text-slate-700">External Link</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={linkInput}
+                      onChange={(e) => setLinkInput(e.target.value)}
+                      placeholder="https://example.com/file"
+                      className="app-input flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addLink}
+                      className="btn-primary px-4 py-2 text-xs"
+                    >
+                      Add Link
+                    </button>
+                  </div>
+                </div>
+                {selectedLinks.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {selectedLinks.map((link) => (
+                      <div
+                        key={link}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
+                              LNK
+                            </span>
+                            <a href={link} target="_blank" rel="noreferrer" className="truncate text-[#1275e2] hover:text-[#0f63c0]">
+                              {link}
+                            </a>
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">Link</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedLink(link)}
+                          className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={handleFileUpload}
-                  disabled={uploading || selectedFiles.length === 0}
+                  disabled={uploading || (selectedFiles.length === 0 && selectedLinks.length === 0)}
                   className="mt-3 w-full rounded-lg bg-[#1275e2] py-2.5 text-sm font-medium text-white transition hover:bg-[#0f63c0] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {uploading ? "Uploading..." : "Upload Evidence"}
@@ -539,7 +665,7 @@ export default function TaskDetail() {
               </div>
             )}
 
-            {isPendingApproval && isCreator && task.evidenceUrl && (
+            {isPendingApproval && isCreator && evidenceFiles.length > 0 && (
               <div className="app-panel p-4">
                 <div className="mb-3 text-sm font-bold text-slate-900">Approve or Reject</div>
 
@@ -628,10 +754,13 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        {showEvidenceModal && task.evidenceUrl && (
+        {showEvidenceModal && activeEvidenceFile && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-            onClick={() => setShowEvidenceModal(false)}
+            onClick={() => {
+              setShowEvidenceModal(false);
+              setActiveEvidenceIndex(0);
+            }}
           >
             <div
               className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white"
@@ -658,7 +787,10 @@ export default function TaskDetail() {
                     </button>
                   )}
                   <button
-                    onClick={() => setShowEvidenceModal(false)}
+                    onClick={() => {
+                      setShowEvidenceModal(false);
+                      setActiveEvidenceIndex(0);
+                    }}
                     className="btn-secondary px-3 py-1.5 text-xs"
                   >
                     Close
@@ -666,18 +798,54 @@ export default function TaskDetail() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <button
+                  onClick={() => setActiveEvidenceIndex((current) => Math.max(current - 1, 0))}
+                  disabled={activeEvidenceIndex === 0}
+                  className="btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <div className="min-w-0 text-center">
+                  <div className="truncate text-sm font-semibold text-slate-900">{activeEvidenceFile.name}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">
+                    {activeEvidenceIndex + 1} of {evidenceFiles.length} · {activeEvidenceFile.type}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveEvidenceIndex((current) => Math.min(current + 1, evidenceFiles.length - 1))}
+                  disabled={activeEvidenceIndex === evidenceFiles.length - 1}
+                  className="btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+
               <div className="flex flex-1 items-center justify-center overflow-y-auto p-6">
-                {task.evidenceUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                {canPreviewImage(activeEvidenceFile.url) ? (
                   <img
-                    src={`http://localhost:5000${task.evidenceUrl}`}
-                    alt="Evidence"
+                    src={getEvidenceHref(activeEvidenceFile.url)}
+                    alt={activeEvidenceFile.name}
                     className="max-h-full max-w-full rounded-lg"
                   />
-                ) : (
+                ) : canPreviewVideo(activeEvidenceFile.url) ? (
                   <video controls autoPlay className="max-h-full max-w-full rounded-lg">
-                    <source src={`http://localhost:5000${task.evidenceUrl}`} />
+                    <source src={getEvidenceHref(activeEvidenceFile.url)} />
                     Your browser does not support video playback.
                   </video>
+                ) : (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+                    <div className="text-sm font-semibold text-slate-900">{activeEvidenceFile.name}</div>
+                    <div className="mt-2 text-xs text-slate-500">Preview not available for this file.</div>
+                    <a
+                      href={getEvidenceHref(activeEvidenceFile.url)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-block text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
+                    >
+                      Open File
+                    </a>
+                  </div>
                 )}
               </div>
 
