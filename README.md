@@ -126,29 +126,34 @@ This ensures your frontend can communicate with your backend and resolves most l
 
 Redesign the GUI/UX for my web app called TeamTask.
 
-This is a role-based team task management platform for organizations. It has 3 roles:
+This is a role-based team task management platform for organizations. It now supports **4 roles**:
 
 1. CEO
 2. Manager
 3. Employee
+4. Client _(NEW!)_
 
-Core purpose:
+## Key Features (2026 Update)
 
-- Manage teams and sections
-- Assign tasks from CEO to managers
-- Assign subtasks from managers to employees
-- Track progress and deadlines
-- Upload evidence (photo/video) before marking a task complete
-- Approve or reject completed work
-- Score completed tasks out of 10
-- Show user performance, stars, levels, and notifications
+- **Client Portal:** Clients can request tasks, track project progress, and rate completed work.
+- **Project Management:** Create and manage projects, link tasks to projects, assign clients and managers.
+- **Task Ratings:** Clients can rate completed tasks (1-5 stars + comment).
+- **Approval Workflow:** CEO/Managers approve or reject work, with comments and notifications.
+- **Evidence Upload:** Employees upload photo/video as proof before marking tasks complete.
+- **Enhanced Notifications:** Real-time updates for task status, approvals, points, deadlines, and level-ups.
+- **User Performance:** Stars, levels, points, on-time rates, and detailed stats for all roles.
+- **Section Management:** Organize teams, assign managers/employees to sections.
+- **Multi-language Support:** English & Arabic UI (auto-detect or user-selectable).
+- **Modern UI/UX:** Redesigned dashboards, cleaner forms, improved hierarchy, mobile responsiveness, and premium look.
 
-Main pages:
+## Main Pages
 
 - Login
 - CEO Dashboard
 - Manager Dashboard
 - Employee Dashboard
+- Client Dashboard _(NEW)_
+- Projects page _(NEW)_
 - Tasks list page
 - Task detail page
 - Create task page
@@ -157,40 +162,31 @@ Main pages:
 - Profile page
 - Notifications page
 
-Important workflows:
+## Important Workflows
 
-- CEO creates sections and assigns managers
-- CEO assigns main tasks to managers
-- Managers assign subtasks to employees in their own section
-- Employees upload evidence and submit for approval
-- Managers/CEO approve or reject work
-- Users receive points, stars, and level progression based on performance
+- **Client requests work:** Clients submit task requests with requirements and deadlines.
+- **CEO approves/rejects requests:** CEO reviews and manages client requests.
+- **Project assignment:** CEO assigns projects/tasks to managers; managers create subtasks for employees.
+- **Evidence & Approval:** Employees upload evidence; managers/CEO approve or request changes.
+- **Task rating:** Clients rate completed tasks; ratings are visible to the team.
+- **Performance tracking:** All users see points, stars, levels, and progress stats.
 
-Current design:
+## New & Improved Design
 
-- Dark navy dashboard UI
-- Left sidebar navigation
-- Glass-effect cards
-- Blue/teal highlights
-- Many cards, stats, badges, and task rows
+- Modern, premium dashboard UI (dark navy, glass-effect cards, blue/teal highlights)
+- Improved visual hierarchy and reduced clutter
+- Responsive layouts for all devices
+- Cleaner forms and tables
+- Enhanced notifications and empty states
+- Multi-language support (English/Arabic)
 
-Problems to solve:
+## New API & Database Changes
 
-- Make it look more modern and premium
-- Improve visual hierarchy
-- Reduce clutter and make information easier to scan
-- Improve dashboard layouts
-- Improve task detail page UX
-- Make forms cleaner and more user-friendly
-- Improve mobile responsiveness
-- Keep it professional for company use
+- Added Client and Rating models (Prisma)
+- Projects module and endpoints
+- Extended Task model: clientId, requestStatus, clientNotes, rating
+- New endpoints for client management, ratings, and project workflows
 
-Please give me:
+---
 
-- A full UI/UX redesign direction
-- Color palette
-- Typography suggestions
-- Dashboard layout ideas for each role
-- Better component ideas for tasks, stats, notifications, profile, and forms
-- Suggestions for spacing, icons, cards, tables, filters, and empty states
-- A cleaner and more modern design system
+For a full feature list and roadmap, see `PROJECT_OVERVIEW.md` and `FUTURE_WORK.md`.
