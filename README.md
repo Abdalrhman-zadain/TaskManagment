@@ -48,6 +48,32 @@ You should see: ✓ Server running on http://localhost:5000
 
 ---
 
+## Swagger API Docs
+
+After the backend is running, open:
+
+**http://localhost:5000/api-docs**
+
+If Swagger dependencies are not installed yet, run this inside `backend`:
+
+```bash
+npm install swagger-ui-express swagger-jsdoc
+```
+
+### How to authorize in Swagger
+
+1. Open `POST /api/auth/login`
+2. Click `Try it out`
+3. Send your email and password
+4. Copy the `token` from the response
+5. Click the `Authorize` button in Swagger
+6. Paste the token into the bearerAuth field
+7. Click `Authorize`
+
+After that, protected endpoints like `/api/users`, `/api/tasks`, and `/api/projects` can be tested from Swagger.
+
+---
+
 ## Step 4 — Install & run the frontend
 
 Open a SECOND terminal in the `frontend` folder:

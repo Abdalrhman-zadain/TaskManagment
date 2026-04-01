@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -17,10 +19,24 @@ const clientRoutes = require('./routes/client');
 
 const app = express();
 const prisma = new PrismaClient();
+const swaggerSpec = swaggerJsdoc({
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'TeamTask API',
+      version: '1.0.0',
+    },
+    servers: [
+      { url: 'http://localhost:5000' }
+    ]
+  },
+  apis: [__dirname + '/swagger.js'],
+});
 
 // ── Middleware ─────────────────────────────────────────
 app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'http://192.168.1.251:5173', 'http://192.168.1.251:5173', 'http://0.0.0.0:5173'] }));
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
