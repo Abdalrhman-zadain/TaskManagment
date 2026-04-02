@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import api from "../api/client";
+import api, { getBackendUrl } from "../api/client";
 
 function statusBadge(status) {
   if (status === "DONE") return "bg-emerald-50 text-emerald-700";
@@ -44,8 +44,10 @@ export default function TaskDetail() {
   }
 
   async function markDone() {
-    if (!task.evidenceUrl && !(task.evidenceUrls?.length)) {
-      alert("Please upload evidence (photo or video) first before marking the task as complete.");
+    if (!task.evidenceUrl && !task.evidenceUrls?.length) {
+      alert(
+        "Please upload evidence (photo or video) first before marking the task as complete.",
+      );
       return;
     }
 
@@ -98,15 +100,22 @@ export default function TaskDetail() {
   }
 
   function canPreviewImage(evidenceUrl) {
-    return !/^https?:\/\//i.test(evidenceUrl) && /\.(jpg|jpeg|png)$/i.test(evidenceUrl);
+    return (
+      !/^https?:\/\//i.test(evidenceUrl) &&
+      /\.(jpg|jpeg|png)$/i.test(evidenceUrl)
+    );
   }
 
   function canPreviewVideo(evidenceUrl) {
-    return !/^https?:\/\//i.test(evidenceUrl) && /\.(mp4|mov)$/i.test(evidenceUrl);
+    return (
+      !/^https?:\/\//i.test(evidenceUrl) && /\.(mp4|mov)$/i.test(evidenceUrl)
+    );
   }
 
   function getEvidenceHref(evidenceUrl) {
-    return /^https?:\/\//i.test(evidenceUrl) ? evidenceUrl : `http://localhost:5000${evidenceUrl}`;
+    return /^https?:\/\//i.test(evidenceUrl)
+      ? evidenceUrl
+      : `${getBackendUrl()}${evidenceUrl}`;
   }
 
   function getEvidenceLinkLabel(evidenceUrl) {
@@ -123,7 +132,9 @@ export default function TaskDetail() {
   function handleFileSelection(e) {
     const files = Array.from(e.target.files || []);
     setSelectedFiles((currentFiles) => {
-      const fileMap = new Map(currentFiles.map((file) => [getFileKey(file), file]));
+      const fileMap = new Map(
+        currentFiles.map((file) => [getFileKey(file), file]),
+      );
       files.forEach((file) => {
         fileMap.set(getFileKey(file), file);
       });
@@ -133,7 +144,9 @@ export default function TaskDetail() {
   }
 
   function removeSelectedFile(indexToRemove) {
-    setSelectedFiles((currentFiles) => currentFiles.filter((_, index) => index !== indexToRemove));
+    setSelectedFiles((currentFiles) =>
+      currentFiles.filter((_, index) => index !== indexToRemove),
+    );
   }
 
   function addLink() {
@@ -148,7 +161,9 @@ export default function TaskDetail() {
       }
 
       setSelectedLinks((currentLinks) =>
-        currentLinks.includes(parsedUrl.toString()) ? currentLinks : [...currentLinks, parsedUrl.toString()],
+        currentLinks.includes(parsedUrl.toString())
+          ? currentLinks
+          : [...currentLinks, parsedUrl.toString()],
       );
       setLinkInput("");
     } catch {
@@ -157,7 +172,9 @@ export default function TaskDetail() {
   }
 
   function removeSelectedLink(linkToRemove) {
-    setSelectedLinks((currentLinks) => currentLinks.filter((link) => link !== linkToRemove));
+    setSelectedLinks((currentLinks) =>
+      currentLinks.filter((link) => link !== linkToRemove),
+    );
   }
 
   async function handleFileUpload() {
@@ -189,7 +206,10 @@ export default function TaskDetail() {
   }
 
   async function approveTask() {
-    if (customScore !== "" && (Number(customScore) < 1 || Number(customScore) > 10)) {
+    if (
+      customScore !== "" &&
+      (Number(customScore) < 1 || Number(customScore) > 10)
+    ) {
       alert("Score must be between 1 and 10");
       return;
     }
@@ -219,7 +239,11 @@ export default function TaskDetail() {
   }
 
   async function deleteEvidence() {
-    if (!window.confirm("Are you sure you want to delete this evidence? You can re-upload a new one.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this evidence? You can re-upload a new one.",
+      )
+    ) {
       return;
     }
 
@@ -252,7 +276,8 @@ export default function TaskDetail() {
     );
   }
 
-  const isOverdue = new Date(task.deadline) < new Date() && task.status !== "DONE";
+  const isOverdue =
+    new Date(task.deadline) < new Date() && task.status !== "DONE";
   const daysLeft = Math.ceil((new Date(task.deadline) - new Date()) / 86400000);
   const isAssignee = user.id === task.assigneeId;
   const isCreator = user.id === task.creatorId;
@@ -272,7 +297,8 @@ export default function TaskDetail() {
           },
         ]
       : [];
-  const activeEvidenceFile = evidenceFiles[activeEvidenceIndex] || evidenceFiles[0] || null;
+  const activeEvidenceFile =
+    evidenceFiles[activeEvidenceIndex] || evidenceFiles[0] || null;
 
   const role =
     user.role === "CEO"
@@ -298,20 +324,28 @@ export default function TaskDetail() {
           <div className="col-span-2">
             <div className="app-panel p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
-                <h1 className="text-xl font-bold leading-snug text-slate-900">{task.title}</h1>
-                <span className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${statusBadge(task.status)}`}>
+                <h1 className="text-xl font-bold leading-snug text-slate-900">
+                  {task.title}
+                </h1>
+                <span
+                  className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${statusBadge(task.status)}`}
+                >
                   {task.status.replace("_", " ")}
                 </span>
               </div>
 
               {task.description && (
-                <p className="mb-6 text-sm leading-relaxed text-slate-600">{task.description}</p>
+                <p className="mb-6 text-sm leading-relaxed text-slate-600">
+                  {task.description}
+                </p>
               )}
 
               {evidenceFiles.length > 0 && (
                 <div className="mb-6 border-b border-slate-200 pb-6">
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="text-sm font-bold text-slate-900">Evidence</div>
+                    <div className="text-sm font-bold text-slate-900">
+                      Evidence
+                    </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
@@ -322,15 +356,18 @@ export default function TaskDetail() {
                       >
                         View Full
                       </button>
-                      {isAssignee && (task.status === "PENDING_APPROVAL" || task.status === "IN_PROGRESS" || task.status === "TODO") && (
-                        <button
-                          onClick={deleteEvidence}
-                          disabled={uploading}
-                          className="rounded bg-rose-600 px-2 py-1 text-xs text-white transition disabled:opacity-50 hover:bg-rose-700"
-                        >
-                          Delete
-                        </button>
-                      )}
+                      {isAssignee &&
+                        (task.status === "PENDING_APPROVAL" ||
+                          task.status === "IN_PROGRESS" ||
+                          task.status === "TODO") && (
+                          <button
+                            onClick={deleteEvidence}
+                            disabled={uploading}
+                            className="rounded bg-rose-600 px-2 py-1 text-xs text-white transition disabled:opacity-50 hover:bg-rose-700"
+                          >
+                            Delete
+                          </button>
+                        )}
                     </div>
                   </div>
                   <div
@@ -347,11 +384,18 @@ export default function TaskDetail() {
                         className="h-auto max-w-full rounded"
                       />
                     ) : canPreviewVideo(evidenceFiles[0]?.url || "") ? (
-                      <div className="flex items-center justify-center rounded bg-slate-100 p-4" style={{ minHeight: "200px" }}>
+                      <div
+                        className="flex items-center justify-center rounded bg-slate-100 p-4"
+                        style={{ minHeight: "200px" }}
+                      >
                         <div className="text-center">
                           <div className="mb-2 text-3xl">Video</div>
-                          <div className="text-sm text-slate-700">Video Evidence</div>
-                          <div className="mt-1 text-xs text-slate-500">Click to view</div>
+                          <div className="text-sm text-slate-700">
+                            Video Evidence
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            Click to view
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -366,8 +410,12 @@ export default function TaskDetail() {
                           className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
                         >
                           <div className="min-w-0">
-                            <div className="truncate text-sm font-medium text-slate-900">{file.name}</div>
-                            <div className="mt-1 text-xs text-slate-500">{file.type}</div>
+                            <div className="truncate text-sm font-medium text-slate-900">
+                              {file.name}
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">
+                              {file.type}
+                            </div>
                           </div>
                           <a
                             href={getEvidenceHref(file.url)}
@@ -382,7 +430,9 @@ export default function TaskDetail() {
                       ))}
                     </div>
                     <div className="mt-2 text-xs text-slate-500">
-                      Uploaded: {new Date(task.evidenceUploadedAt).toLocaleString()} · Click to expand
+                      Uploaded:{" "}
+                      {new Date(task.evidenceUploadedAt).toLocaleString()} ·
+                      Click to expand
                     </div>
                   </div>
                 </div>
@@ -390,7 +440,9 @@ export default function TaskDetail() {
 
               {task.approvalAt && (
                 <div className="mb-6 border-b border-slate-200 pb-6">
-                  <div className="mb-3 text-sm font-bold text-slate-900">Approval Status</div>
+                  <div className="mb-3 text-sm font-bold text-slate-900">
+                    Approval Status
+                  </div>
                   <div
                     className={`rounded-lg border p-3 text-sm ${
                       task.approvalStatus === "APPROVED"
@@ -400,16 +452,22 @@ export default function TaskDetail() {
                           : "border-slate-200 bg-slate-50"
                     }`}
                   >
-                    <div className="font-semibold capitalize text-slate-900">{task.approvalStatus}</div>
+                    <div className="font-semibold capitalize text-slate-900">
+                      {task.approvalStatus}
+                    </div>
                     {task.approvalComment && (
-                      <div className="mt-1 text-xs text-slate-600">{task.approvalComment}</div>
+                      <div className="mt-1 text-xs text-slate-600">
+                        {task.approvalComment}
+                      </div>
                     )}
                   </div>
                 </div>
               )}
 
               <div className="mb-5">
-                <div className="mb-2 text-[10px] uppercase tracking-widest text-slate-500">Delegation chain</div>
+                <div className="mb-2 text-[10px] uppercase tracking-widest text-slate-500">
+                  Delegation chain
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {[
                     { name: task.creator?.name, role: task.creator?.role },
@@ -423,14 +481,22 @@ export default function TaskDetail() {
                       <div key={i} className="flex items-center gap-2">
                         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[9px] font-bold text-[#1275e2]">
-                            {node.name?.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            {node.name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
                           </div>
                           <div>
-                            <div className="font-medium text-slate-900">{node.name}</div>
+                            <div className="font-medium text-slate-900">
+                              {node.name}
+                            </div>
                             <div className="text-slate-500">{node.role}</div>
                           </div>
                         </div>
-                        {i < arr.length - 1 && <span className="text-slate-400">→</span>}
+                        {i < arr.length - 1 && (
+                          <span className="text-slate-400">→</span>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -456,8 +522,14 @@ export default function TaskDetail() {
                   },
                 ].map((m) => (
                   <div key={m.label}>
-                    <div className="mb-1 text-[10px] uppercase tracking-widest text-slate-500">{m.label}</div>
-                    <div className={`text-sm font-medium ${m.color || "text-slate-900"}`}>{m.value}</div>
+                    <div className="mb-1 text-[10px] uppercase tracking-widest text-slate-500">
+                      {m.label}
+                    </div>
+                    <div
+                      className={`text-sm font-medium ${m.color || "text-slate-900"}`}
+                    >
+                      {m.value}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -467,7 +539,8 @@ export default function TaskDetail() {
                   <div className="mb-3 text-sm font-bold text-slate-900">
                     Subtasks
                     <span className="ml-2 font-normal text-slate-500">
-                      {task.subtasks.filter((s) => s.status === "DONE").length}/{task.subtasks.length} done
+                      {task.subtasks.filter((s) => s.status === "DONE").length}/
+                      {task.subtasks.length} done
                     </span>
                   </div>
                   {task.subtasks.map((sub) => (
@@ -484,10 +557,14 @@ export default function TaskDetail() {
                       >
                         {sub.status === "DONE" ? "✓" : ""}
                       </div>
-                      <span className={`flex-1 text-sm ${sub.status === "DONE" ? "text-slate-400 line-through" : "text-slate-800"}`}>
+                      <span
+                        className={`flex-1 text-sm ${sub.status === "DONE" ? "text-slate-400 line-through" : "text-slate-800"}`}
+                      >
                         {sub.title}
                       </span>
-                      <span className="text-xs text-slate-500">{sub.assignee?.name}</span>
+                      <span className="text-xs text-slate-500">
+                        {sub.assignee?.name}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -495,7 +572,9 @@ export default function TaskDetail() {
 
               {task.score && (
                 <div className="border-t border-slate-200 pt-5">
-                  <div className="mb-2 text-sm font-bold text-slate-900">Score</div>
+                  <div className="mb-2 text-sm font-bold text-slate-900">
+                    Score
+                  </div>
                   <div className="flex items-baseline gap-2">
                     <span
                       className={`text-4xl font-bold ${
@@ -519,7 +598,9 @@ export default function TaskDetail() {
                       {task.score.isOnTime ? "On time" : "Late"}
                     </span>
                     {task.score.adjusted && (
-                      <span className="text-xs text-slate-500">(manually adjusted)</span>
+                      <span className="text-xs text-slate-500">
+                        (manually adjusted)
+                      </span>
                     )}
                   </div>
                 </div>
@@ -528,8 +609,12 @@ export default function TaskDetail() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className={`rounded-xl border p-4 ${isOverdue ? "border-rose-200 bg-rose-50" : "border-blue-200 bg-blue-50"}`}>
-              <div className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">Deadline</div>
+            <div
+              className={`rounded-xl border p-4 ${isOverdue ? "border-rose-200 bg-rose-50" : "border-blue-200 bg-blue-50"}`}
+            >
+              <div className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">
+                Deadline
+              </div>
               <div className="text-lg font-bold text-slate-900">
                 {new Date(task.deadline).toLocaleDateString("en-GB", {
                   day: "numeric",
@@ -539,7 +624,11 @@ export default function TaskDetail() {
               </div>
               <div
                 className={`mt-1 text-xs ${
-                  isOverdue ? "text-rose-600" : daysLeft <= 2 ? "text-amber-700" : "text-blue-700"
+                  isOverdue
+                    ? "text-rose-600"
+                    : daysLeft <= 2
+                      ? "text-amber-700"
+                      : "text-blue-700"
                 }`}
               >
                 {isOverdue
@@ -550,135 +639,164 @@ export default function TaskDetail() {
               </div>
             </div>
 
-            {isAssignee && (task.status === "TODO" || task.status === "IN_PROGRESS" || task.status === "PENDING_APPROVAL") && evidenceFiles.length === 0 && (
-              <div className="app-panel p-4">
-                <div className="mb-3 text-sm font-bold text-slate-900">Upload Evidence</div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.mp4,.mov,.ppt,.pptx,.xls,.xlsx,.pdf"
-                  multiple
-                  onChange={handleFileSelection}
-                  disabled={uploading}
-                  className="w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#1275e2] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#0f63c0] disabled:opacity-50"
-                />
-                <div className="mt-2 text-xs text-slate-500">JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 100MB per file)</div>
-                <div className="mt-2 text-xs text-slate-500">
-                  {selectedFiles.length === 1 ? "1 file selected" : `${selectedFiles.length} files selected`}
-                </div>
-                {selectedFiles.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {selectedFiles.map((file, index) => (
-                      <div
-                        key={`${file.name}-${file.size}-${index}`}
-                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
-                              {getFileTypeLabel(file) === "Video"
-                                ? "VID"
-                                : getFileTypeLabel(file) === "Presentation"
-                                  ? "PPT"
-                                  : getFileTypeLabel(file) === "Spreadsheet"
-                                    ? "XLS"
-                                    : getFileTypeLabel(file) === "PDF"
-                                      ? "PDF"
-                                      : "IMG"}
-                            </span>
-                            <span className="truncate">{file.name}</span>
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {formatFileSize(file.size)} · {getFileTypeLabel(file)}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeSelectedFile(index)}
-                          className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
+            {isAssignee &&
+              (task.status === "TODO" ||
+                task.status === "IN_PROGRESS" ||
+                task.status === "PENDING_APPROVAL") &&
+              evidenceFiles.length === 0 && (
+                <div className="app-panel p-4">
+                  <div className="mb-3 text-sm font-bold text-slate-900">
+                    Upload Evidence
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.mp4,.mov,.ppt,.pptx,.xls,.xlsx,.pdf"
+                    multiple
+                    onChange={handleFileSelection}
+                    disabled={uploading}
+                    className="w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#1275e2] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#0f63c0] disabled:opacity-50"
+                  />
+                  <div className="mt-2 text-xs text-slate-500">
+                    JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 100MB per
+                    file)
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">
+                    {selectedFiles.length === 1
+                      ? "1 file selected"
+                      : `${selectedFiles.length} files selected`}
+                  </div>
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={`${file.name}-${file.size}-${index}`}
+                          className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
                         >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-4">
-                  <label className="mb-2 block text-xs font-medium text-slate-700">External Link</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={linkInput}
-                      onChange={(e) => setLinkInput(e.target.value)}
-                      placeholder="https://example.com/file"
-                      className="app-input flex-1"
-                    />
-                    <button
-                      type="button"
-                      onClick={addLink}
-                      className="btn-primary px-4 py-2 text-xs"
-                    >
-                      Add Link
-                    </button>
-                  </div>
-                </div>
-                {selectedLinks.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {selectedLinks.map((link) => (
-                      <div
-                        key={link}
-                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
-                              LNK
-                            </span>
-                            <a href={link} target="_blank" rel="noreferrer" className="truncate text-[#1275e2] hover:text-[#0f63c0]">
-                              {link}
-                            </a>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
+                                {getFileTypeLabel(file) === "Video"
+                                  ? "VID"
+                                  : getFileTypeLabel(file) === "Presentation"
+                                    ? "PPT"
+                                    : getFileTypeLabel(file) === "Spreadsheet"
+                                      ? "XLS"
+                                      : getFileTypeLabel(file) === "PDF"
+                                        ? "PDF"
+                                        : "IMG"}
+                              </span>
+                              <span className="truncate">{file.name}</span>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">
+                              {formatFileSize(file.size)} ·{" "}
+                              {getFileTypeLabel(file)}
+                            </div>
                           </div>
-                          <div className="mt-1 text-xs text-slate-500">Link</div>
+                          <button
+                            type="button"
+                            onClick={() => removeSelectedFile(index)}
+                            className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
+                          >
+                            Remove
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeSelectedLink(link)}
-                          className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-4">
+                    <label className="mb-2 block text-xs font-medium text-slate-700">
+                      External Link
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={linkInput}
+                        onChange={(e) => setLinkInput(e.target.value)}
+                        placeholder="https://example.com/file"
+                        className="app-input flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={addLink}
+                        className="btn-primary px-4 py-2 text-xs"
+                      >
+                        Add Link
+                      </button>
+                    </div>
                   </div>
-                )}
-                <button
-                  type="button"
-                  onClick={handleFileUpload}
-                  disabled={uploading || (selectedFiles.length === 0 && selectedLinks.length === 0)}
-                  className="mt-3 w-full rounded-lg bg-[#1275e2] py-2.5 text-sm font-medium text-white transition hover:bg-[#0f63c0] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {uploading ? "Uploading..." : "Upload Evidence"}
-                </button>
-              </div>
-            )}
+                  {selectedLinks.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {selectedLinks.map((link) => (
+                        <div
+                          key={link}
+                          className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
+                                LNK
+                              </span>
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="truncate text-[#1275e2] hover:text-[#0f63c0]"
+                              >
+                                {link}
+                              </a>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">
+                              Link
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeSelectedLink(link)}
+                            className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleFileUpload}
+                    disabled={
+                      uploading ||
+                      (selectedFiles.length === 0 && selectedLinks.length === 0)
+                    }
+                    className="mt-3 w-full rounded-lg bg-[#1275e2] py-2.5 text-sm font-medium text-white transition hover:bg-[#0f63c0] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {uploading ? "Uploading..." : "Upload Evidence"}
+                  </button>
+                </div>
+              )}
 
-            {isAssignee && (task.status === "TODO" || task.status === "IN_PROGRESS") && (
-              <div className="app-panel p-4">
-                <button
-                  onClick={markDone}
-                  className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
-                >
-                  Mark Complete & Submit
-                </button>
-                <div className="mt-2 text-center text-xs text-slate-500">
-                  {!isOverdue ? "Submit on time for a score of 8-10" : "Late submission: score will be lower"}
+            {isAssignee &&
+              (task.status === "TODO" || task.status === "IN_PROGRESS") && (
+                <div className="app-panel p-4">
+                  <button
+                    onClick={markDone}
+                    className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
+                  >
+                    Mark Complete & Submit
+                  </button>
+                  <div className="mt-2 text-center text-xs text-slate-500">
+                    {!isOverdue
+                      ? "Submit on time for a score of 8-10"
+                      : "Late submission: score will be lower"}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {isPendingApproval && isCreator && evidenceFiles.length > 0 && (
               <div className="app-panel p-4">
-                <div className="mb-3 text-sm font-bold text-slate-900">Approve or Reject</div>
+                <div className="mb-3 text-sm font-bold text-slate-900">
+                  Approve or Reject
+                </div>
 
                 <div className="mb-3">
                   {["CEO", "MANAGER"].includes(user.role) && (
@@ -729,25 +847,48 @@ export default function TaskDetail() {
 
             {task.status !== "DONE" && task.status !== "PENDING_APPROVAL" && (
               <div className="app-panel p-4">
-                <div className="mb-3 text-sm font-bold text-slate-900">Score Preview</div>
+                <div className="mb-3 text-sm font-bold text-slate-900">
+                  Score Preview
+                </div>
                 {[
-                  { label: "On time", score: "8 - 10", color: "text-emerald-700" },
-                  { label: "1-2 days late", score: "5 - 7", color: "text-amber-700" },
-                  { label: "3+ days late", score: "1 - 4", color: "text-rose-700" },
+                  {
+                    label: "On time",
+                    score: "8 - 10",
+                    color: "text-emerald-700",
+                  },
+                  {
+                    label: "1-2 days late",
+                    score: "5 - 7",
+                    color: "text-amber-700",
+                  },
+                  {
+                    label: "3+ days late",
+                    score: "1 - 4",
+                    color: "text-rose-700",
+                  },
                 ].map((r) => (
-                  <div key={r.label} className="flex justify-between py-1 text-xs">
+                  <div
+                    key={r.label}
+                    className="flex justify-between py-1 text-xs"
+                  >
                     <span className="text-slate-500">{r.label}</span>
-                    <span className={`font-semibold ${r.color}`}>{r.score}</span>
+                    <span className={`font-semibold ${r.color}`}>
+                      {r.score}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
 
             <div className="app-panel p-4">
-              <div className="mb-3 text-sm font-bold text-slate-900">Task Info</div>
+              <div className="mb-3 text-sm font-bold text-slate-900">
+                Task Info
+              </div>
               {[
                 { label: "Created by", value: task.creator?.name },
-                ...(task.project?.client?.name ? [{ label: "Client", value: task.project.client.name }] : []),
+                ...(task.project?.client?.name
+                  ? [{ label: "Client", value: task.project.client.name }]
+                  : []),
                 { label: "Section", value: task.section?.name },
                 {
                   label: "Subtasks",
@@ -779,7 +920,9 @@ export default function TaskDetail() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-4">
-                <div className="text-lg font-bold text-slate-900">Evidence Viewer</div>
+                <div className="text-lg font-bold text-slate-900">
+                  Evidence Viewer
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => loadTask()}
@@ -788,16 +931,19 @@ export default function TaskDetail() {
                   >
                     Refresh
                   </button>
-                  {isAssignee && (task.status === "PENDING_APPROVAL" || task.status === "IN_PROGRESS" || task.status === "TODO") && (
-                    <button
-                      onClick={deleteEvidence}
-                      disabled={uploading}
-                      title="Delete evidence and re-upload"
-                      className="rounded bg-rose-600 px-3 py-1.5 text-xs text-white transition disabled:opacity-50 hover:bg-rose-700"
-                    >
-                      Delete
-                    </button>
-                  )}
+                  {isAssignee &&
+                    (task.status === "PENDING_APPROVAL" ||
+                      task.status === "IN_PROGRESS" ||
+                      task.status === "TODO") && (
+                      <button
+                        onClick={deleteEvidence}
+                        disabled={uploading}
+                        title="Delete evidence and re-upload"
+                        className="rounded bg-rose-600 px-3 py-1.5 text-xs text-white transition disabled:opacity-50 hover:bg-rose-700"
+                      >
+                        Delete
+                      </button>
+                    )}
                   <button
                     onClick={() => {
                       setShowEvidenceModal(false);
@@ -812,20 +958,31 @@ export default function TaskDetail() {
 
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                 <button
-                  onClick={() => setActiveEvidenceIndex((current) => Math.max(current - 1, 0))}
+                  onClick={() =>
+                    setActiveEvidenceIndex((current) =>
+                      Math.max(current - 1, 0),
+                    )
+                  }
                   disabled={activeEvidenceIndex === 0}
                   className="btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <div className="min-w-0 text-center">
-                  <div className="truncate text-sm font-semibold text-slate-900">{activeEvidenceFile.name}</div>
+                  <div className="truncate text-sm font-semibold text-slate-900">
+                    {activeEvidenceFile.name}
+                  </div>
                   <div className="mt-0.5 text-xs text-slate-500">
-                    {activeEvidenceIndex + 1} of {evidenceFiles.length} · {activeEvidenceFile.type}
+                    {activeEvidenceIndex + 1} of {evidenceFiles.length} ·{" "}
+                    {activeEvidenceFile.type}
                   </div>
                 </div>
                 <button
-                  onClick={() => setActiveEvidenceIndex((current) => Math.min(current + 1, evidenceFiles.length - 1))}
+                  onClick={() =>
+                    setActiveEvidenceIndex((current) =>
+                      Math.min(current + 1, evidenceFiles.length - 1),
+                    )
+                  }
                   disabled={activeEvidenceIndex === evidenceFiles.length - 1}
                   className="btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -841,14 +998,22 @@ export default function TaskDetail() {
                     className="max-h-full max-w-full rounded-lg"
                   />
                 ) : canPreviewVideo(activeEvidenceFile.url) ? (
-                  <video controls autoPlay className="max-h-full max-w-full rounded-lg">
+                  <video
+                    controls
+                    autoPlay
+                    className="max-h-full max-w-full rounded-lg"
+                  >
                     <source src={getEvidenceHref(activeEvidenceFile.url)} />
                     Your browser does not support video playback.
                   </video>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
-                    <div className="text-sm font-semibold text-slate-900">{activeEvidenceFile.name}</div>
-                    <div className="mt-2 text-xs text-slate-500">Preview not available for this file.</div>
+                    <div className="text-sm font-semibold text-slate-900">
+                      {activeEvidenceFile.name}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Preview not available for this file.
+                    </div>
                     <a
                       href={getEvidenceHref(activeEvidenceFile.url)}
                       target="_blank"
@@ -863,7 +1028,10 @@ export default function TaskDetail() {
 
               <div className="border-t border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
                 <div className="flex items-center justify-between">
-                  <div>Uploaded: {new Date(task.evidenceUploadedAt).toLocaleString()}</div>
+                  <div>
+                    Uploaded:{" "}
+                    {new Date(task.evidenceUploadedAt).toLocaleString()}
+                  </div>
                   <div>Approved: {task.approvalStatus || "Pending"}</div>
                 </div>
               </div>

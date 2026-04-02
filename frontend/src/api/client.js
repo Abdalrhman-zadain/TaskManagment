@@ -25,4 +25,9 @@ api.interceptors.response.use(
   }
 )
 
+// Get backend base URL that works on any device
+export function getBackendUrl() {
+  return `http://${window.location.hostname}:5000`
+}
+
 export default api

@@ -1,9 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useNavigate } from "react-router-dom";
-import api from "../api/client";
+import api, { getBackendUrl } from "../api/client";
 
-const baseNavItems = ["home", "projects", "deliverables", "reports", "notifications", "profile"];
+const baseNavItems = [
+  "home",
+  "projects",
+  "deliverables",
+  "reports",
+  "notifications",
+  "profile",
+];
 
 const copy = {
   en: {
@@ -95,9 +112,12 @@ const copy = {
 };
 
 function statusTone(status) {
-  if (status === "COMPLETED" || status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "AT_RISK" || status === "REJECTED") return "border-rose-200 bg-rose-50 text-rose-700";
-  if (status === "PENDING") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (status === "COMPLETED" || status === "APPROVED")
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "AT_RISK" || status === "REJECTED")
+    return "border-rose-200 bg-rose-50 text-rose-700";
+  if (status === "PENDING")
+    return "border-amber-200 bg-amber-50 text-amber-700";
   return "border-blue-200 bg-blue-50 text-blue-700";
 }
 
@@ -125,7 +145,9 @@ function chartTooltipStyle() {
 export default function ClientDashboard() {
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const navigate = useNavigate();
-  const [language, setLanguage] = useState(localStorage.getItem("clientDashboardLanguage") || "en");
+  const [language, setLanguage] = useState(
+    localStorage.getItem("clientDashboardLanguage") || "en",
+  );
   const [activePage, setActivePage] = useState("home");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [dashboard, setDashboard] = useState(null);
@@ -134,9 +156,12 @@ export default function ClientDashboard() {
   const [newComment, setNewComment] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
   const [homeProjectStatusFilter, setHomeProjectStatusFilter] = useState("ALL");
-  const [homeDeliverableProjectFilter, setHomeDeliverableProjectFilter] = useState("ALL");
-  const [homeDeliverableStatusFilter, setHomeDeliverableStatusFilter] = useState("ALL");
-  const [deliverablesProjectFilter, setDeliverablesProjectFilter] = useState("ALL");
+  const [homeDeliverableProjectFilter, setHomeDeliverableProjectFilter] =
+    useState("ALL");
+  const [homeDeliverableStatusFilter, setHomeDeliverableStatusFilter] =
+    useState("ALL");
+  const [deliverablesProjectFilter, setDeliverablesProjectFilter] =
+    useState("ALL");
   const [actionTaskId, setActionTaskId] = useState(null);
   const isArabic = language === "ar";
   const t = copy[language];
@@ -155,21 +180,26 @@ export default function ClientDashboard() {
   }
 
   function getHomeProjectStatus(project) {
-    if (project.status === "COMPLETED" || project.progress === 100) return "COMPLETED";
-    if (project.deadline && new Date(project.deadline) < new Date()) return "DELAYED";
+    if (project.status === "COMPLETED" || project.progress === 100)
+      return "COMPLETED";
+    if (project.deadline && new Date(project.deadline) < new Date())
+      return "DELAYED";
     if (project.status === "AT_RISK") return "AT_RISK";
     return "ON_TRACK";
   }
 
   function getDeliverableBadge(status) {
     if (status === "APPROVED") return isArabic ? "تمت الموافقة" : "Approved";
-    if (status === "REJECTED") return isArabic ? "مطلوب تعديلات" : "Changes Requested";
+    if (status === "REJECTED")
+      return isArabic ? "مطلوب تعديلات" : "Changes Requested";
     return isArabic ? "بانتظار المراجعة" : "Pending Review";
   }
 
   function getDeliverableTone(status) {
-    if (status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    if (status === "REJECTED") return "border-rose-200 bg-rose-50 text-rose-700";
+    if (status === "APPROVED")
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    if (status === "REJECTED")
+      return "border-rose-200 bg-rose-50 text-rose-700";
     return "border-amber-200 bg-amber-50 text-amber-700";
   }
 
@@ -234,13 +264,22 @@ export default function ClientDashboard() {
   const navItems = baseNavItems.map((id) => ({ id, label: t.nav[id] }));
 
   const selectedProject =
-    projects.find((project) => project.id === selectedProjectId) || projects[0] || null;
+    projects.find((project) => project.id === selectedProjectId) ||
+    projects[0] ||
+    null;
 
   const summary = useMemo(() => {
-    const completed = projects.filter((project) => project.status === "COMPLETED").length;
-    const atRisk = projects.filter((project) => project.status === "AT_RISK").length;
+    const completed = projects.filter(
+      (project) => project.status === "COMPLETED",
+    ).length;
+    const atRisk = projects.filter(
+      (project) => project.status === "AT_RISK",
+    ).length;
     const avgProgress = projects.length
-      ? Math.round(projects.reduce((sum, project) => sum + project.progress, 0) / projects.length)
+      ? Math.round(
+          projects.reduce((sum, project) => sum + project.progress, 0) /
+            projects.length,
+        )
       : 0;
 
     return {
@@ -254,7 +293,10 @@ export default function ClientDashboard() {
   const projectChartData = useMemo(
     () =>
       projects.map((project) => ({
-        name: project.name.length > 12 ? `${project.name.slice(0, 12)}...` : project.name,
+        name:
+          project.name.length > 12
+            ? `${project.name.slice(0, 12)}...`
+            : project.name,
         progress: project.progress,
       })),
     [projects],
@@ -263,9 +305,14 @@ export default function ClientDashboard() {
   const workloadData = useMemo(
     () =>
       projects.map((project) => {
-        const completedTasks = project.tasks.filter((task) => task.status === "DONE").length;
+        const completedTasks = project.tasks.filter(
+          (task) => task.status === "DONE",
+        ).length;
         return {
-          name: project.name.length > 12 ? `${project.name.slice(0, 12)}...` : project.name,
+          name:
+            project.name.length > 12
+              ? `${project.name.slice(0, 12)}...`
+              : project.name,
           completed: completedTasks,
           open: project.tasks.length - completedTasks,
         };
@@ -278,17 +325,30 @@ export default function ClientDashboard() {
       projects
         .flatMap((project) =>
           project.tasks
-            .filter((task) => task.evidenceUploadedAt || task.completedAt || task.createdAt)
+            .filter(
+              (task) =>
+                task.evidenceUploadedAt || task.completedAt || task.createdAt,
+            )
             .map((task) => ({
               id: `${project.id}-${task.id}`,
               projectName: project.name,
               text:
                 task.approvalStatus === "APPROVED"
-                  ? (isArabic ? `تمت الموافقة على ${task.title}` : `${task.title} was approved`)
+                  ? isArabic
+                    ? `تمت الموافقة على ${task.title}`
+                    : `${task.title} was approved`
                   : task.evidenceUrl
-                    ? (isArabic ? `يوجد تسليم جديد جاهز لـ ${task.title}` : `${task.title} has a new deliverable ready`)
-                    : (isArabic ? `${task.title} قيد التنفيذ` : `${task.title} is in progress`),
-              time: task.evidenceUploadedAt || task.completedAt || task.createdAt || project.createdAt,
+                    ? isArabic
+                      ? `يوجد تسليم جديد جاهز لـ ${task.title}`
+                      : `${task.title} has a new deliverable ready`
+                    : isArabic
+                      ? `${task.title} قيد التنفيذ`
+                      : `${task.title} is in progress`,
+              time:
+                task.evidenceUploadedAt ||
+                task.completedAt ||
+                task.createdAt ||
+                project.createdAt,
             })),
         )
         .sort((a, b) => new Date(b.time) - new Date(a.time))
@@ -309,9 +369,11 @@ export default function ClientDashboard() {
     () =>
       deliverables.filter((item) => {
         const matchesProject =
-          homeDeliverableProjectFilter === "ALL" || String(item.projectId) === homeDeliverableProjectFilter;
+          homeDeliverableProjectFilter === "ALL" ||
+          String(item.projectId) === homeDeliverableProjectFilter;
         const matchesStatus =
-          homeDeliverableStatusFilter === "ALL" || item.status === homeDeliverableStatusFilter;
+          homeDeliverableStatusFilter === "ALL" ||
+          item.status === homeDeliverableStatusFilter;
         return matchesProject && matchesStatus;
       }),
     [deliverables, homeDeliverableProjectFilter, homeDeliverableStatusFilter],
@@ -359,27 +421,65 @@ export default function ClientDashboard() {
   }
 
   if (loading) {
-    return <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">{t.loading}</div>;
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
+        {t.loading}
+      </div>
+    );
   }
 
   if (error && !dashboard) {
-    return <div className="app-shell flex min-h-screen items-center justify-center text-rose-600">{error}</div>;
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center text-rose-600">
+        {error}
+      </div>
+    );
   }
 
   function renderHome() {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <ClientStatCard label={isArabic ? "المشاريع" : "Projects"} value={summary.total} subtext={isArabic ? "مرئية لهذا العميل" : "Visible to this client"} accent="bg-[#1275e2]" />
-          <ClientStatCard label={isArabic ? "المكتملة" : "Completed"} value={summary.completed} subtext={isArabic ? "أغلقت بنجاح" : "Closed successfully"} accent="bg-emerald-400" />
-          <ClientStatCard label={isArabic ? "المعرضة للخطر" : "At Risk"} value={summary.atRisk} subtext={isArabic ? "تحتاج إلى اهتمام إضافي" : "Needs extra attention"} accent="bg-[#c55b00]" />
-          <ClientStatCard label={isArabic ? "متوسط التقدم" : "Avg Progress"} value={`${summary.avgProgress}%`} subtext={isArabic ? "عبر جميع الأعمال المرتبطة" : "Across all linked work"} accent="bg-[#5f78a3]" />
+          <ClientStatCard
+            label={isArabic ? "المشاريع" : "Projects"}
+            value={summary.total}
+            subtext={isArabic ? "مرئية لهذا العميل" : "Visible to this client"}
+            accent="bg-[#1275e2]"
+          />
+          <ClientStatCard
+            label={isArabic ? "المكتملة" : "Completed"}
+            value={summary.completed}
+            subtext={isArabic ? "أغلقت بنجاح" : "Closed successfully"}
+            accent="bg-emerald-400"
+          />
+          <ClientStatCard
+            label={isArabic ? "المعرضة للخطر" : "At Risk"}
+            value={summary.atRisk}
+            subtext={
+              isArabic ? "تحتاج إلى اهتمام إضافي" : "Needs extra attention"
+            }
+            accent="bg-[#c55b00]"
+          />
+          <ClientStatCard
+            label={isArabic ? "متوسط التقدم" : "Avg Progress"}
+            value={`${summary.avgProgress}%`}
+            subtext={
+              isArabic ? "عبر جميع الأعمال المرتبطة" : "Across all linked work"
+            }
+            accent="bg-[#5f78a3]"
+          />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
           <section className="app-panel p-5">
-            <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "تقدم المشروع" : "Project Progress"}</h2>
-            <p className="mt-1 text-sm text-slate-500">{isArabic ? "تقدم حقيقي محسوب من مهام المشروع المرتبطة." : "Real progress calculated from linked project tasks."}</p>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {isArabic ? "تقدم المشروع" : "Project Progress"}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {isArabic
+                ? "تقدم حقيقي محسوب من مهام المشروع المرتبطة."
+                : "Real progress calculated from linked project tasks."}
+            </p>
             <div className="mt-4 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={projectChartData}>
@@ -387,22 +487,39 @@ export default function ClientDashboard() {
                   <XAxis dataKey="name" stroke="#94a3b8" />
                   <YAxis stroke="#94a3b8" />
                   <Tooltip contentStyle={chartTooltipStyle()} />
-                  <Area type="monotone" dataKey="progress" stroke="#1275e2" fill="rgba(18,117,226,0.16)" strokeWidth={3} />
+                  <Area
+                    type="monotone"
+                    dataKey="progress"
+                    stroke="#1275e2"
+                    fill="rgba(18,117,226,0.16)"
+                    strokeWidth={3}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </section>
 
           <section className="app-panel p-5">
-            <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "أحدث النشاطات" : "Recent Activity"}</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {isArabic ? "أحدث النشاطات" : "Recent Activity"}
+            </h2>
             <div className="mt-4 space-y-3">
               {recentActivity.map((item) => (
-                <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50/80 p-4"
+                >
                   <div className="text-sm text-slate-800">{item.text}</div>
-                  <div className="mt-1 text-xs text-slate-500">{item.projectName} · {formatDate(item.time)}</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {item.projectName} · {formatDate(item.time)}
+                  </div>
                 </div>
               ))}
-              {recentActivity.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا يوجد نشاط بعد." : "No activity yet."}</p>}
+              {recentActivity.length === 0 && (
+                <p className="text-sm text-slate-500">
+                  {isArabic ? "لا يوجد نشاط بعد." : "No activity yet."}
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -410,9 +527,13 @@ export default function ClientDashboard() {
         <section className="app-panel p-5">
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "المشاريع" : "Projects"}</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {isArabic ? "المشاريع" : "Projects"}
+              </h2>
               <p className="mt-1 text-sm text-slate-500">
-                {isArabic ? "جميع المشاريع المرتبطة بحساب هذا العميل." : "All projects linked to this client account."}
+                {isArabic
+                  ? "جميع المشاريع المرتبطة بحساب هذا العميل."
+                  : "All projects linked to this client account."}
               </p>
             </div>
             <select
@@ -420,10 +541,18 @@ export default function ClientDashboard() {
               onChange={(e) => setHomeProjectStatusFilter(e.target.value)}
               className="app-input w-full md:w-56"
             >
-              <option value="ALL">{isArabic ? "كل الحالات" : "All Statuses"}</option>
-              <option value="ON_TRACK">{isArabic ? "على المسار" : "On Track"}</option>
-              <option value="AT_RISK">{isArabic ? "معرض للخطر" : "At Risk"}</option>
-              <option value="COMPLETED">{isArabic ? "مكتمل" : "Completed"}</option>
+              <option value="ALL">
+                {isArabic ? "كل الحالات" : "All Statuses"}
+              </option>
+              <option value="ON_TRACK">
+                {isArabic ? "على المسار" : "On Track"}
+              </option>
+              <option value="AT_RISK">
+                {isArabic ? "معرض للخطر" : "At Risk"}
+              </option>
+              <option value="COMPLETED">
+                {isArabic ? "مكتمل" : "Completed"}
+              </option>
               <option value="DELAYED">{isArabic ? "متأخر" : "Delayed"}</option>
             </select>
           </div>
@@ -431,12 +560,18 @@ export default function ClientDashboard() {
           <div className="mt-5 grid gap-4 xl:grid-cols-2">
             {homeFilteredProjects.map((project) => {
               const derivedStatus = getHomeProjectStatus(project);
-              const deliverableCount = project.tasks.filter((task) => task.evidenceUrl).length;
+              const deliverableCount = project.tasks.filter(
+                (task) => task.evidenceUrl,
+              ).length;
               const statusLabel =
                 derivedStatus === "ON_TRACK"
-                  ? isArabic ? "على المسار" : "On Track"
+                  ? isArabic
+                    ? "على المسار"
+                    : "On Track"
                   : derivedStatus === "DELAYED"
-                    ? isArabic ? "متأخر" : "Delayed"
+                    ? isArabic
+                      ? "متأخر"
+                      : "Delayed"
                     : formatStatus(derivedStatus);
               const statusClasses =
                 derivedStatus === "COMPLETED"
@@ -448,15 +583,25 @@ export default function ClientDashboard() {
                       : "border-blue-200 bg-blue-50 text-blue-700";
 
               return (
-                <div key={project.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+                <div
+                  key={project.id}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-lg font-semibold text-slate-900">{project.name}</div>
+                      <div className="text-lg font-semibold text-slate-900">
+                        {project.name}
+                      </div>
                       <div className="mt-1 text-sm text-slate-500">
-                        {isArabic ? "المدير" : "Manager"}: {project.manager.name}
+                        {isArabic ? "المدير" : "Manager"}:{" "}
+                        {project.manager.name}
                       </div>
                     </div>
-                    <span className={`rounded-full border px-3 py-1 text-xs ${statusClasses}`}>{statusLabel}</span>
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs ${statusClasses}`}
+                    >
+                      {statusLabel}
+                    </span>
                   </div>
                   <div className="mt-4">
                     <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
@@ -464,24 +609,39 @@ export default function ClientDashboard() {
                       <span>{project.progress}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-[#1275e2]" style={{ width: `${project.progress}%` }} />
+                      <div
+                        className="h-full rounded-full bg-[#1275e2]"
+                        style={{ width: `${project.progress}%` }}
+                      />
                     </div>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "الموعد النهائي" : "Deadline"}</div>
-                      <div className="mt-2 text-sm text-slate-900">{formatDate(project.deadline)}</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        {isArabic ? "الموعد النهائي" : "Deadline"}
+                      </div>
+                      <div className="mt-2 text-sm text-slate-900">
+                        {formatDate(project.deadline)}
+                      </div>
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "التسليمات" : "Deliverables"}</div>
-                      <div className="mt-2 text-sm text-slate-900">{deliverableCount} {isArabic ? "مرفوع" : "submitted"}</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        {isArabic ? "التسليمات" : "Deliverables"}
+                      </div>
+                      <div className="mt-2 text-sm text-slate-900">
+                        {deliverableCount} {isArabic ? "مرفوع" : "submitted"}
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })}
             {homeFilteredProjects.length === 0 && (
-              <p className="text-sm text-slate-500">{isArabic ? "لا توجد مشاريع ضمن هذا الفلتر." : "No projects match this filter."}</p>
+              <p className="text-sm text-slate-500">
+                {isArabic
+                  ? "لا توجد مشاريع ضمن هذا الفلتر."
+                  : "No projects match this filter."}
+              </p>
             )}
           </div>
         </section>
@@ -489,20 +649,30 @@ export default function ClientDashboard() {
         <section className="app-panel p-5">
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "التسليمات" : "Deliverables"}</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {isArabic ? "التسليمات" : "Deliverables"}
+              </h2>
               <p className="mt-1 text-sm text-slate-500">
-                {isArabic ? "جميع ملفات الإثبات المرسلة عبر المشاريع المرتبطة." : "All submitted evidence across linked projects."}
+                {isArabic
+                  ? "جميع ملفات الإثبات المرسلة عبر المشاريع المرتبطة."
+                  : "All submitted evidence across linked projects."}
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <select
                 value={homeDeliverableProjectFilter}
-                onChange={(e) => setHomeDeliverableProjectFilter(e.target.value)}
+                onChange={(e) =>
+                  setHomeDeliverableProjectFilter(e.target.value)
+                }
                 className="app-input w-full sm:w-56"
               >
-                <option value="ALL">{isArabic ? "كل المشاريع" : "All Projects"}</option>
+                <option value="ALL">
+                  {isArabic ? "كل المشاريع" : "All Projects"}
+                </option>
                 {projects.map((project) => (
-                  <option key={project.id} value={project.id}>{project.name}</option>
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
                 ))}
               </select>
               <select
@@ -510,30 +680,48 @@ export default function ClientDashboard() {
                 onChange={(e) => setHomeDeliverableStatusFilter(e.target.value)}
                 className="app-input w-full sm:w-56"
               >
-                <option value="ALL">{isArabic ? "كل الحالات" : "All Statuses"}</option>
-                <option value="PENDING">{isArabic ? "بانتظار المراجعة" : "Pending Review"}</option>
-                <option value="APPROVED">{isArabic ? "تمت الموافقة" : "Approved"}</option>
-                <option value="REJECTED">{isArabic ? "مطلوب تعديلات" : "Changes Requested"}</option>
+                <option value="ALL">
+                  {isArabic ? "كل الحالات" : "All Statuses"}
+                </option>
+                <option value="PENDING">
+                  {isArabic ? "بانتظار المراجعة" : "Pending Review"}
+                </option>
+                <option value="APPROVED">
+                  {isArabic ? "تمت الموافقة" : "Approved"}
+                </option>
+                <option value="REJECTED">
+                  {isArabic ? "مطلوب تعديلات" : "Changes Requested"}
+                </option>
               </select>
             </div>
           </div>
 
           <div className="mt-5 space-y-4">
             {homeFilteredDeliverables.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+              <div
+                key={item.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5"
+              >
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">{item.taskName}</div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {item.projectName} · {isArabic ? "تم الإرسال بواسطة" : "Submitted by"} {item.submittedBy}
+                    <div className="text-sm font-semibold text-slate-900">
+                      {item.taskName}
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      {isArabic ? "تاريخ الإرسال" : "Submitted"}: {formatDate(item.uploadDate)}
+                      {item.projectName} ·{" "}
+                      {isArabic ? "تم الإرسال بواسطة" : "Submitted by"}{" "}
+                      {item.submittedBy}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {isArabic ? "تاريخ الإرسال" : "Submitted"}:{" "}
+                      {formatDate(item.uploadDate)}
                     </div>
                   </div>
 
                   <div className="flex flex-col items-start gap-3 xl:items-end">
-                    <span className={`rounded-full border px-3 py-1 text-xs ${getDeliverableTone(item.status)}`}>
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs ${getDeliverableTone(item.status)}`}
+                    >
                       {getDeliverableBadge(item.status)}
                     </span>
                     {item.status === "PENDING" && (
@@ -543,10 +731,18 @@ export default function ClientDashboard() {
                           disabled={actionTaskId === item.id}
                           className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {actionTaskId === item.id ? (isArabic ? "جارٍ الحفظ..." : "Saving...") : (isArabic ? "موافقة" : "Approve")}
+                          {actionTaskId === item.id
+                            ? isArabic
+                              ? "جارٍ الحفظ..."
+                              : "Saving..."
+                            : isArabic
+                              ? "موافقة"
+                              : "Approve"}
                         </button>
                         <button
-                          onClick={() => reviewDeliverable(item.id, "request-changes")}
+                          onClick={() =>
+                            reviewDeliverable(item.id, "request-changes")
+                          }
                           disabled={actionTaskId === item.id}
                           className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -556,7 +752,11 @@ export default function ClientDashboard() {
                     )}
                     {item.evidenceUrl && (
                       <a
-                        href={/^https?:\/\//i.test(item.evidenceUrl) ? item.evidenceUrl : `http://localhost:5000${item.evidenceUrl}`}
+                        href={
+                          /^https?:\/\//i.test(item.evidenceUrl)
+                            ? item.evidenceUrl
+                            : `${getBackendUrl()}${item.evidenceUrl}`
+                        }
                         target="_blank"
                         rel="noreferrer"
                         className="text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
@@ -569,7 +769,11 @@ export default function ClientDashboard() {
               </div>
             ))}
             {homeFilteredDeliverables.length === 0 && (
-              <p className="text-sm text-slate-500">{isArabic ? "لا توجد تسليمات ضمن هذه الفلاتر." : "No deliverables match these filters."}</p>
+              <p className="text-sm text-slate-500">
+                {isArabic
+                  ? "لا توجد تسليمات ضمن هذه الفلاتر."
+                  : "No deliverables match these filters."}
+              </p>
             )}
           </div>
         </section>
@@ -593,20 +797,39 @@ export default function ClientDashboard() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-lg font-semibold text-slate-900">{project.name}</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {project.name}
+                  </div>
                   <div className="mt-1 text-sm text-slate-500">
-                    {isArabic ? "المدير" : "Manager"}: {project.manager.name} · {isArabic ? "القسم" : "Section"}: {project.section.name}
+                    {isArabic ? "المدير" : "Manager"}: {project.manager.name} ·{" "}
+                    {isArabic ? "القسم" : "Section"}: {project.section.name}
                   </div>
                 </div>
-                <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(project.status)}`}>{formatStatus(project.status)}</span>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs ${statusTone(project.status)}`}
+                >
+                  {formatStatus(project.status)}
+                </span>
               </div>
-              {project.description && <p className="mt-3 text-sm text-slate-600">{project.description}</p>}
+              {project.description && (
+                <p className="mt-3 text-sm text-slate-600">
+                  {project.description}
+                </p>
+              )}
               <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                <span>{isArabic ? "الموعد النهائي" : "Deadline"}: {formatDate(project.deadline)}</span>
-                <span>{project.progress}% {isArabic ? "مكتمل" : "complete"}</span>
+                <span>
+                  {isArabic ? "الموعد النهائي" : "Deadline"}:{" "}
+                  {formatDate(project.deadline)}
+                </span>
+                <span>
+                  {project.progress}% {isArabic ? "مكتمل" : "complete"}
+                </span>
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-                <div className="h-full rounded-full bg-[#1275e2]" style={{ width: `${project.progress}%` }} />
+                <div
+                  className="h-full rounded-full bg-[#1275e2]"
+                  style={{ width: `${project.progress}%` }}
+                />
               </div>
             </button>
           ))}
@@ -614,58 +837,110 @@ export default function ClientDashboard() {
 
         <section className="app-panel p-5">
           {!selectedProject ? (
-            <p className="text-sm text-slate-500">{isArabic ? "لم يتم اختيار مشروع." : "No project selected."}</p>
+            <p className="text-sm text-slate-500">
+              {isArabic ? "لم يتم اختيار مشروع." : "No project selected."}
+            </p>
           ) : (
             <>
-              <h2 className="text-xl font-semibold text-slate-900">{selectedProject.name}</h2>
-              <p className="mt-1 text-sm text-slate-500">{selectedProject.description || (isArabic ? "لا يوجد وصف للمشروع حتى الآن." : "No project description yet.")}</p>
+              <h2 className="text-xl font-semibold text-slate-900">
+                {selectedProject.name}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {selectedProject.description ||
+                  (isArabic
+                    ? "لا يوجد وصف للمشروع حتى الآن."
+                    : "No project description yet.")}
+              </p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "الميزانية" : "Budget"}</div>
-                  <div className="mt-2 text-sm text-slate-900">{selectedProject.budget || t.notSet}</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                    {isArabic ? "الميزانية" : "Budget"}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-900">
+                    {selectedProject.budget || t.notSet}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{isArabic ? "الموعد النهائي" : "Deadline"}</div>
-                  <div className="mt-2 text-sm text-slate-900">{formatDate(selectedProject.deadline)}</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                    {isArabic ? "الموعد النهائي" : "Deadline"}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-900">
+                    {formatDate(selectedProject.deadline)}
+                  </div>
                 </div>
               </div>
 
               <div className="mt-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-900">{isArabic ? "سجل المهام" : "Task Feed"}</h3>
-                  <span className="text-xs text-slate-500">{selectedProject.tasks.length} {isArabic ? "مهام مرتبطة" : "linked tasks"}</span>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {isArabic ? "سجل المهام" : "Task Feed"}
+                  </h3>
+                  <span className="text-xs text-slate-500">
+                    {selectedProject.tasks.length}{" "}
+                    {isArabic ? "مهام مرتبطة" : "linked tasks"}
+                  </span>
                 </div>
                 <div className="mt-4 space-y-3">
                   {selectedProject.tasks.map((task) => (
-                    <div key={task.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div
+                      key={task.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/80 p-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-sm font-medium text-slate-900">{task.title}</div>
+                          <div className="text-sm font-medium text-slate-900">
+                            {task.title}
+                          </div>
                           <div className="mt-1 text-xs text-slate-500">
-                            {isArabic ? "مُسند إلى" : "Assigned to"} {task.assignee?.name || (isArabic ? "غير معروف" : "Unknown")} · {isArabic ? "ينتهي في" : "Due"} {formatDate(task.deadline)}
+                            {isArabic ? "مُسند إلى" : "Assigned to"}{" "}
+                            {task.assignee?.name ||
+                              (isArabic ? "غير معروف" : "Unknown")}{" "}
+                            · {isArabic ? "ينتهي في" : "Due"}{" "}
+                            {formatDate(task.deadline)}
                           </div>
                         </div>
-                        <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(task.status)}`}>{formatStatus(task.status)}</span>
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs ${statusTone(task.status)}`}
+                        >
+                          {formatStatus(task.status)}
+                        </span>
                       </div>
                     </div>
                   ))}
-                  {selectedProject.tasks.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد مهام مرتبطة بعد." : "No tasks linked yet."}</p>}
+                  {selectedProject.tasks.length === 0 && (
+                    <p className="text-sm text-slate-500">
+                      {isArabic
+                        ? "لا توجد مهام مرتبطة بعد."
+                        : "No tasks linked yet."}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-slate-900">{isArabic ? "سجل التعليقات" : "Comment Thread"}</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {isArabic ? "سجل التعليقات" : "Comment Thread"}
+                </h3>
                 <div className="mt-4 space-y-3">
                   {selectedProject.comments.map((comment) => (
-                    <div key={comment.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div
+                      key={comment.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/80 p-4"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm font-medium text-slate-900">
                           {comment.author.name}
-                          <span className="ml-2 text-xs text-slate-500">{formatStatus(comment.author.role)}</span>
+                          <span className="ml-2 text-xs text-slate-500">
+                            {formatStatus(comment.author.role)}
+                          </span>
                         </div>
-                        <div className="text-xs text-slate-500">{formatDate(comment.createdAt)}</div>
+                        <div className="text-xs text-slate-500">
+                          {formatDate(comment.createdAt)}
+                        </div>
                       </div>
-                      <p className="mt-2 text-sm text-slate-600">{comment.message}</p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {comment.message}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -674,7 +949,11 @@ export default function ClientDashboard() {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     rows={3}
-                    placeholder={isArabic ? "شارك ملاحظاتك أو اطلب تعديلات..." : "Share feedback or request changes..."}
+                    placeholder={
+                      isArabic
+                        ? "شارك ملاحظاتك أو اطلب تعديلات..."
+                        : "Share feedback or request changes..."
+                    }
                     className="app-input"
                   />
                   <button
@@ -682,7 +961,13 @@ export default function ClientDashboard() {
                     disabled={commentSaving}
                     className="btn-primary px-4 py-2 text-sm font-medium"
                   >
-                    {commentSaving ? (isArabic ? "جاري الإرسال..." : "Posting...") : (isArabic ? "إضافة تعليق" : "Add Comment")}
+                    {commentSaving
+                      ? isArabic
+                        ? "جاري الإرسال..."
+                        : "Posting..."
+                      : isArabic
+                        ? "إضافة تعليق"
+                        : "Add Comment"}
                   </button>
                 </div>
               </div>
@@ -704,9 +989,13 @@ export default function ClientDashboard() {
         <div className="app-panel p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "تصفية حسب المشروع" : "Filter by Project"}</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {isArabic ? "تصفية حسب المشروع" : "Filter by Project"}
+              </h2>
               <p className="mt-1 text-sm text-slate-500">
-                {isArabic ? "اعرض جميع التسليمات أو تسليمات مشروع محدد." : "Show all deliverables or only one project's deliverables."}
+                {isArabic
+                  ? "اعرض جميع التسليمات أو تسليمات مشروع محدد."
+                  : "Show all deliverables or only one project's deliverables."}
               </p>
             </div>
             <select
@@ -728,16 +1017,28 @@ export default function ClientDashboard() {
           <div key={item.id} className="app-panel p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="text-sm font-semibold text-slate-900">{item.taskName}</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {item.taskName}
+                </div>
                 <div className="mt-1 text-xs text-slate-500">
-                  {item.projectName} · {isArabic ? "تم الإرسال بواسطة" : "Submitted by"} {item.submittedBy} · {formatDate(item.uploadDate)}
+                  {item.projectName} ·{" "}
+                  {isArabic ? "تم الإرسال بواسطة" : "Submitted by"}{" "}
+                  {item.submittedBy} · {formatDate(item.uploadDate)}
                 </div>
               </div>
-              <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(item.status)}`}>{formatStatus(item.status)}</span>
+              <span
+                className={`rounded-full border px-3 py-1 text-xs ${statusTone(item.status)}`}
+              >
+                {formatStatus(item.status)}
+              </span>
             </div>
             {item.evidenceUrl && (
               <a
-                href={/^https?:\/\//i.test(item.evidenceUrl) ? item.evidenceUrl : `http://localhost:5000${item.evidenceUrl}`}
+                href={
+                  /^https?:\/\//i.test(item.evidenceUrl)
+                    ? item.evidenceUrl
+                    : `${getBackendUrl()}${item.evidenceUrl}`
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="mt-4 inline-block text-sm font-medium text-[#1275e2] hover:text-[#0f63c0]"
@@ -747,7 +1048,13 @@ export default function ClientDashboard() {
             )}
           </div>
         ))}
-        {filteredDeliverables.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد تسليمات مرفوعة بعد." : "No deliverables uploaded yet."}</p>}
+        {filteredDeliverables.length === 0 && (
+          <p className="text-sm text-slate-500">
+            {isArabic
+              ? "لا توجد تسليمات مرفوعة بعد."
+              : "No deliverables uploaded yet."}
+          </p>
+        )}
       </div>
     );
   }
@@ -756,7 +1063,9 @@ export default function ClientDashboard() {
     return (
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="app-panel p-5">
-          <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "التقدم حسب المشروع" : "Progress by Project"}</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            {isArabic ? "التقدم حسب المشروع" : "Progress by Project"}
+          </h2>
           <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={projectChartData}>
@@ -764,14 +1073,24 @@ export default function ClientDashboard() {
                 <XAxis dataKey="name" stroke="#94a3b8" />
                 <YAxis stroke="#94a3b8" />
                 <Tooltip contentStyle={chartTooltipStyle()} />
-                <Area type="monotone" dataKey="progress" stroke="#1275e2" fill="rgba(18,117,226,0.16)" strokeWidth={3} />
+                <Area
+                  type="monotone"
+                  dataKey="progress"
+                  stroke="#1275e2"
+                  fill="rgba(18,117,226,0.16)"
+                  strokeWidth={3}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </section>
 
         <section className="app-panel p-5">
-          <h2 className="text-lg font-semibold text-slate-900">{isArabic ? "المهام المكتملة مقابل المفتوحة" : "Completed vs Open Tasks"}</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            {isArabic
+              ? "المهام المكتملة مقابل المفتوحة"
+              : "Completed vs Open Tasks"}
+          </h2>
           <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={workloadData}>
@@ -795,13 +1114,23 @@ export default function ClientDashboard() {
         {notifications.map((notification) => (
           <div key={notification.id} className="app-panel p-5">
             <div className="flex items-center gap-3">
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{formatStatus(notification.type)}</span>
-              <span className="text-xs text-slate-500">{formatDate(notification.createdAt)}</span>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
+                {formatStatus(notification.type)}
+              </span>
+              <span className="text-xs text-slate-500">
+                {formatDate(notification.createdAt)}
+              </span>
             </div>
-            <p className="mt-3 text-sm text-slate-700">{notification.message}</p>
+            <p className="mt-3 text-sm text-slate-700">
+              {notification.message}
+            </p>
           </div>
         ))}
-        {notifications.length === 0 && <p className="text-sm text-slate-500">{isArabic ? "لا توجد إشعارات بعد." : "No notifications yet."}</p>}
+        {notifications.length === 0 && (
+          <p className="text-sm text-slate-500">
+            {isArabic ? "لا توجد إشعارات بعد." : "No notifications yet."}
+          </p>
+        )}
       </div>
     );
   }
@@ -811,21 +1140,39 @@ export default function ClientDashboard() {
       <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <section className="app-panel p-6">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#1275e2] to-[#5f78a3] text-2xl font-bold text-white">
-            {clientProfile.name?.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
+            {clientProfile.name
+              ?.split(" ")
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase()}
           </div>
           <div className="mt-4 text-center">
-            <h2 className="text-xl font-semibold text-slate-900">{clientProfile.name}</h2>
+            <h2 className="text-xl font-semibold text-slate-900">
+              {clientProfile.name}
+            </h2>
             <p className="mt-1 text-sm text-slate-500">{t.clientPortal}</p>
           </div>
 
           <div className="mt-6 space-y-3">
             {[
               [isArabic ? "البريد الإلكتروني" : "Email", clientProfile.email],
-              [isArabic ? "تاريخ الانضمام" : "Joined", formatDate(clientProfile.joined)],
-              [isArabic ? "المشاريع المرتبطة" : "Linked Projects", summary.total],
+              [
+                isArabic ? "تاريخ الانضمام" : "Joined",
+                formatDate(clientProfile.joined),
+              ],
+              [
+                isArabic ? "المشاريع المرتبطة" : "Linked Projects",
+                summary.total,
+              ],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</div>
+              <div
+                key={label}
+                className="rounded-xl border border-slate-200 bg-slate-50/80 p-4"
+              >
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  {label}
+                </div>
                 <div className="mt-1 text-sm text-slate-900">{value}</div>
               </div>
             ))}
@@ -833,12 +1180,34 @@ export default function ClientDashboard() {
         </section>
 
         <section className="space-y-4">
-          <ClientStatCard label={isArabic ? "المشاريع" : "Projects"} value={summary.total} subtext={isArabic ? "ضمن نطاق حساب هذا العميل" : "Scoped to this client account"} accent="bg-[#1275e2]" />
-          <ClientStatCard label={isArabic ? "التسليمات" : "Deliverables"} value={deliverables.length} subtext={isArabic ? "ملفات الإثبات المشتركة معك" : "Evidence files shared with you"} accent="bg-emerald-400" />
+          <ClientStatCard
+            label={isArabic ? "المشاريع" : "Projects"}
+            value={summary.total}
+            subtext={
+              isArabic
+                ? "ضمن نطاق حساب هذا العميل"
+                : "Scoped to this client account"
+            }
+            accent="bg-[#1275e2]"
+          />
+          <ClientStatCard
+            label={isArabic ? "التسليمات" : "Deliverables"}
+            value={deliverables.length}
+            subtext={
+              isArabic
+                ? "ملفات الإثبات المشتركة معك"
+                : "Evidence files shared with you"
+            }
+            accent="bg-emerald-400"
+          />
           <ClientStatCard
             label={isArabic ? "الإشعارات غير المقروءة" : "Unread Notifications"}
             value={notifications.filter((item) => !item.read).length}
-            subtext={isArabic ? "تحديثات حديثة بانتظار المراجعة" : "Recent updates awaiting review"}
+            subtext={
+              isArabic
+                ? "تحديثات حديثة بانتظار المراجعة"
+                : "Recent updates awaiting review"
+            }
             accent="bg-[#5f78a3]"
           />
         </section>
@@ -846,22 +1215,34 @@ export default function ClientDashboard() {
     );
   }
 
-  const pageTitle = navItems.find((item) => item.id === activePage)?.label || t.nav.home;
+  const pageTitle =
+    navItems.find((item) => item.id === activePage)?.label || t.nav.home;
 
   return (
     <div className="app-shell min-h-screen" dir={isArabic ? "rtl" : "ltr"}>
-      <div className={`flex min-h-screen flex-col ${isArabic ? "lg:flex-row-reverse" : "lg:flex-row"}`}>
+      <div
+        className={`flex min-h-screen flex-col ${isArabic ? "lg:flex-row-reverse" : "lg:flex-row"}`}
+      >
         <aside className="border-b border-slate-200 bg-[#fbfdff] lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:border-r lg:border-b-0">
           <div className="border-b border-slate-200 px-6 py-6">
             <div className="text-2xl font-bold text-slate-900">
-              {isArabic ? "عرض العميل" : <><span>Client</span><span className="text-[#1275e2]">View</span></>}
+              {isArabic ? (
+                "عرض العميل"
+              ) : (
+                <>
+                  <span>Client</span>
+                  <span className="text-[#1275e2]">View</span>
+                </>
+              )}
             </div>
             <p className="mt-1 text-sm text-slate-500">{t.connected}</p>
           </div>
 
           <div className="px-4 py-5 lg:flex-1">
             <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t.language}</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                {t.language}
+              </span>
               <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
                 <button
                   onClick={() => setLanguage("en")}
@@ -877,7 +1258,9 @@ export default function ClientDashboard() {
                 </button>
               </div>
             </div>
-            <div className="mb-3 px-3 text-xs uppercase tracking-[0.25em] text-slate-400">{t.navigation}</div>
+            <div className="mb-3 px-3 text-xs uppercase tracking-[0.25em] text-slate-400">
+              {t.navigation}
+            </div>
             <nav className="space-y-1">
               {navItems.map((item) => (
                 <button
@@ -891,9 +1274,13 @@ export default function ClientDashboard() {
                 >
                   <span>{item.label}</span>
                   {item.id === "notifications" && notifications.length > 0 && (
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      activePage === item.id ? "bg-white text-[#1275e2]" : "bg-[#1275e2] text-white"
-                    }`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        activePage === item.id
+                          ? "bg-white text-[#1275e2]"
+                          : "bg-[#1275e2] text-white"
+                      }`}
+                    >
                       {notifications.length}
                     </span>
                   )}
@@ -904,8 +1291,12 @@ export default function ClientDashboard() {
 
           <div className="px-4 pb-6 lg:mt-auto">
             <div className="app-panel p-4 shadow-none">
-              <div className="text-sm font-medium text-slate-900">{clientProfile.name}</div>
-              <div className="text-xs text-slate-500">{clientProfile.email}</div>
+              <div className="text-sm font-medium text-slate-900">
+                {clientProfile.name}
+              </div>
+              <div className="text-xs text-slate-500">
+                {clientProfile.email}
+              </div>
             </div>
             <button
               onClick={signOut}
@@ -919,12 +1310,20 @@ export default function ClientDashboard() {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-sm uppercase tracking-[0.25em] text-[#5f78a3]">{t.clientPortal}</div>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-900">{pageTitle}</h1>
+              <div className="text-sm uppercase tracking-[0.25em] text-[#5f78a3]">
+                {t.clientPortal}
+              </div>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+                {pageTitle}
+              </h1>
               <p className="mt-1 text-sm text-slate-500">
                 {selectedProject
-                  ? (isArabic ? `التركيز الحالي على ${selectedProject.name}` : `Currently focused on ${selectedProject.name}`)
-                  : (isArabic ? "عرض جميع المشاريع المرتبطة" : "Viewing all linked projects")}
+                  ? isArabic
+                    ? `التركيز الحالي على ${selectedProject.name}`
+                    : `Currently focused on ${selectedProject.name}`
+                  : isArabic
+                    ? "عرض جميع المشاريع المرتبطة"
+                    : "Viewing all linked projects"}
               </p>
             </div>
           </div>
