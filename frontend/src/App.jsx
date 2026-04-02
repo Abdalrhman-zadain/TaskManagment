@@ -12,6 +12,7 @@ import UsersPage from "./pages/UsersPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ClientDashboard from "./pages/ClientDashboard";
 import ProjectsPage from "./pages/ProjectsPage";
+import CalendarPage from "./pages/CalendarPage";
 
 import { useEffect } from "react";
 import { connectSocket, disconnectSocket } from "./socket";
@@ -124,6 +125,15 @@ export default function App() {
           element={
             <Protected roles={["CEO", "MANAGER"]}>
               <ProjectsPage />
+            </Protected>
+          }
+        />
+
+        <Route
+          path="/calendar"
+          element={
+            <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
+              <CalendarPage />
             </Protected>
           }
         />

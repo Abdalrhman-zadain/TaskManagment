@@ -73,17 +73,20 @@ export default function Sidebar({ role }) {
           {role === "CEO" && navItem("Dashboard", "/ceo")}
           {role === "CEO" && navItem("Projects", "/projects")}
           {role === "CEO" && navItem("Tasks", "/tasks")}
+          {role === "CEO" && navItem("Calendar", "/calendar")}
           {role === "CEO" && navItem("Sections", "/sections")}
           {role === "CEO" && navItem("Users", "/users")}
 
           {role === "Manager" && navItem("Dashboard", "/manager")}
           {role === "Manager" && navItem("Projects", "/projects")}
           {role === "Manager" && navItem("Tasks", "/tasks")}
+          {role === "Manager" && navItem("Calendar", "/calendar")}
           {role === "Manager" && navItem("Assign Task", "/tasks/new")}
           {role === "Manager" && navItem("Team", "/users")}
 
           {role === "Employee" && navItem("My Tasks", "/employee")}
           {role === "Employee" && navItem("Tasks", "/tasks")}
+          {role === "Employee" && navItem("Calendar", "/calendar")}
 
           {role === "Client" && navItem("Dashboard", "/client")}
 
@@ -100,7 +103,9 @@ export default function Sidebar({ role }) {
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
-            <div className={`h-2 w-2 rounded-full ${location.pathname === "/notifications" ? "bg-white" : "bg-slate-400"}`} />
+            <div
+              className={`h-2 w-2 rounded-full ${location.pathname === "/notifications" ? "bg-white" : "bg-slate-400"}`}
+            />
             Notifications
             {unreadCount > 0 && (
               <span
@@ -128,7 +133,9 @@ export default function Sidebar({ role }) {
               .toUpperCase()}
           </div>
           <div>
-            <div className="text-sm font-medium text-slate-900">{user.name}</div>
+            <div className="text-sm font-medium text-slate-900">
+              {user.name}
+            </div>
             <div className="text-xs text-slate-500">{user.role}</div>
           </div>
         </div>
