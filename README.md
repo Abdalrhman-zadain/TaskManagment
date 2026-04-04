@@ -1,35 +1,29 @@
-# TeamTask — Setup Guide
+# TeamTask Setup Guide
 
-## What you need installed first
+## Prerequisites
 
-- Node.js (you already have this ✓)
-- PostgreSQL (download from https://www.postgresql.org/download/windows)
+- Node.js
+- PostgreSQL
 
----
+PostgreSQL download: https://www.postgresql.org/download/windows
 
-## Step 1 — Set up PostgreSQL
+## 1. Create the database
 
-1. Install PostgreSQL and remember your password
-2. Open pgAdmin → right-click Databases → Create → Database
-3. Name it: **teamtask**
+1. Install PostgreSQL and keep your password.
+2. Open pgAdmin.
+3. Create a database named `teamtask`.
 
----
+## 2. Configure backend env
 
-## Step 2 — Configure the backend
+Edit `backend/.env`:
 
-Open `backend/.env` and update this line with your PostgreSQL password:
-
-```
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD_HERE@localhost:5432/teamtask"
+```env
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD_HERE@localhost:5432/teamtask?schema=public"
 ```
 
----
+## 3. Run backend
 
-## Step 3 — Install & run the backend
-
-Open a terminal in the `backend` folder:
-
-### First time only:
+In `backend`:
 
 ```bash
 npm install
@@ -38,181 +32,120 @@ npm run seed
 npm run dev
 ```
 
-### Every time after (just run):
+Backend should run on `http://localhost:5000`.
 
-```bash
-npm run dev
-```
+Swagger docs: `http://localhost:5000/api-docs`
 
-You should see: ✓ Server running on http://localhost:5000
+## 4. Run frontend
 
----
-
-## Swagger API Docs
-
-After the backend is running, open:
-
-**http://localhost:5000/api-docs**
-
-If Swagger dependencies are not installed yet, run this inside `backend`:
-
-```bash
-npm install swagger-ui-express swagger-jsdoc
-```
-
-### How to authorize in Swagger
-
-1. Open `POST /api/auth/login`
-2. Click `Try it out`
-3. Send your email and password
-4. Copy the `token` from the response
-5. Click the `Authorize` button in Swagger
-6. Paste the token into the bearerAuth field
-7. Click `Authorize`
-
-After that, protected endpoints like `/api/users`, `/api/tasks`, and `/api/projects` can be tested from Swagger.
-
----
-
-## Step 4 — Install & run the frontend
-
-Open a SECOND terminal in the `frontend` folder:
-
-### First time only:
+In a second terminal, in `frontend`:
 
 ```bash
 npm install
 npm run dev
 ```
 
-### Every time after (just run):
+Frontend should run on `http://localhost:5173`.
 
-```bash
-npm run dev
-```
+## 5. Local login (seeded users)
 
-You should see: Local: http://localhost:5173
-
----
-
-## Step 5 — Open the app
-
-Go to: **http://localhost:5173**
-
----
-
-## Step 6 — Login with seeded users
-
-After running `npm run seed`, you can sign in at http://localhost:5173 with:
+After `npm run seed`, use:
 
 - CEO: `ceo@teamtask.com` / `admin123`
 - Manager: `manager@teamtask.com` / `admin123`
 - Employee: `employee1@teamtask.com` / `admin123`
 - Client: `client@teamtask.com` / `admin123`
 
----
+## 6. Share UI outside your network (Cloudflare Tunnel)
 
-## Folder structure
+Important: tunnel the **frontend port**, not backend root.  
+If you tunnel backend (`5000`), you will only see API JSON.
 
-```
-teamtask/
-├── backend/
-│   ├── prisma/schema.prisma   ← Database structure
-│   ├── routes/                ← API endpoints
-│   ├── middleware/auth.js     ← JWT protection
-│   ├── server.js              ← Entry point
-│   └── .env                   ← Your config (edit this!)
-└── frontend/
-    ├── src/
-    │   ├── pages/             ← All screens
-    │   ├── components/        ← Reusable UI parts
-    │   └── api/client.js      ← API connection
-    └── package.json
+### A. Start backend
+
+In `backend`:
+
+```bash
+npm run dev
 ```
 
----
+### B. Start frontend on a fixed port
 
-## Troubleshooting: Login Issues
+In `frontend`:
 
-If you see a "Login failed" error even after seeding the database:
+```bash
+npm run dev -- --host 0.0.0.0 --port 5175 --strictPort
+```
 
-- Make sure your frontend is correctly proxying API requests to your backend.
-- By default, the Vite config (frontend/vite.config.js) should have:
+### C. Start Cloudflare tunnel
+
+In `backend`:
+
+```bash
+.\cloudflared.exe tunnel --url http://localhost:5175 --no-autoupdate
+```
+
+Cloudflare will print a URL like:
+
+```text
+https://xxxx.trycloudflare.com
+```
+
+Share that URL.
+
+### D. Stop sharing
+
+Press `Ctrl + C` in the tunnel terminal.
+
+## Vite config required for Cloudflare hostnames
+
+`frontend/vite.config.js` must include:
 
 ```js
-proxy: {
-  '/api': 'http://localhost:5000' // Forward API calls to backend
+server: {
+  host: '0.0.0.0',
+  allowedHosts: ['.trycloudflare.com'],
+  proxy: {
+    '/api': 'http://localhost:5000'
+  }
 }
 ```
 
-- If it was set to a network IP (e.g., 'http://192.168.1.251:5000'), change it to 'http://localhost:5000' for local development.
-- After making this change, restart your frontend server.
+## Troubleshooting
 
-This ensures your frontend can communicate with your backend and resolves most local login issues.
+- `Blocked request. This host is not allowed`  
+  Add `allowedHosts: ['.trycloudflare.com']` to Vite server config and restart frontend.
+- Login fails in local dev  
+  Ensure Vite proxy points to `http://localhost:5000`.
+- Only seeing `{"message":"TeamTask API is running"}`  
+  You tunneled backend. Tunnel frontend port instead.
 
-Redesign the GUI/UX for my web app called TeamTask.
+## Project structure
 
-This is a role-based team task management platform for organizations. It now supports **4 roles**:
+```text
+teamtask/
+|-- backend/
+|   |-- prisma/schema.prisma
+|   |-- routes/
+|   |-- middleware/auth.js
+|   |-- server.js
+|   `-- .env
+`-- frontend/
+    |-- src/
+    |   |-- pages/
+    |   |-- components/
+    |   `-- api/client.js
+    `-- package.json
+```
 
-1. CEO
-2. Manager
-3. Employee
-4. Client _(NEW!)_
+## Product overview (current roles)
 
-## Key Features (2026 Update)
+- CEO
+- Manager
+- Employee
+- Client
 
-- **Client Portal:** Clients can request tasks, track project progress, and rate completed work.
-- **Project Management:** Create and manage projects, link tasks to projects, assign clients and managers.
-- **Task Ratings:** Clients can rate completed tasks (1-5 stars + comment).
-- **Approval Workflow:** CEO/Managers approve or reject work, with comments and notifications.
-- **Evidence Upload:** Employees upload photo/video as proof before marking tasks complete.
-- **Enhanced Notifications:** Real-time updates for task status, approvals, points, deadlines, and level-ups.
-- **User Performance:** Stars, levels, points, on-time rates, and detailed stats for all roles.
-- **Section Management:** Organize teams, assign managers/employees to sections.
-- **Multi-language Support:** English & Arabic UI (auto-detect or user-selectable).
-- **Modern UI/UX:** Redesigned dashboards, cleaner forms, improved hierarchy, mobile responsiveness, and premium look.
+For full roadmap and deep feature details, see:
 
-## Main Pages
-
-- Login
-- CEO Dashboard
-- Manager Dashboard
-- Employee Dashboard
-- Client Dashboard _(NEW)_
-- Projects page _(NEW)_
-- Tasks list page
-- Task detail page
-- Create task page
-- Sections management page
-- Users management page
-- Profile page
-- Notifications page
-
-## Important Workflows
-
-- **Client requests work:** Clients submit task requests with requirements and deadlines.
-- **CEO approves/rejects requests:** CEO reviews and manages client requests.
-- **Project assignment:** CEO assigns projects/tasks to managers; managers create subtasks for employees.
-- **Evidence & Approval:** Employees upload evidence; managers/CEO approve or request changes.
-- **Task rating:** Clients rate completed tasks; ratings are visible to the team.
-- **Performance tracking:** All users see points, stars, levels, and progress stats.
-
-## New & Improved Design
-
-- Modern, premium dashboard UI (dark navy, glass-effect cards, blue/teal highlights)
-- Improved visual hierarchy and reduced clutter
-- Responsive layouts for all devices
-- Cleaner forms and tables
-- Enhanced notifications and empty states
-- Multi-language support (English/Arabic)
-
-## New API & Database Changes
-
-- Added Client and Rating models (Prisma)
-- Projects module and endpoints
-- Extended Task model: clientId, requestStatus, clientNotes, rating
-- New endpoints for client management, ratings, and project workflows
-
----
-
-For a full feature list and roadmap, see `PROJECT_OVERVIEW.md` and `FUTURE_WORK.md`.
+- `PROJECT_OVERVIEW.md`
+- `FUTURE_WORK.md`

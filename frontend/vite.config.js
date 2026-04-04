@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': 'http://localhost:5000' // Forward API calls to backend
     }
