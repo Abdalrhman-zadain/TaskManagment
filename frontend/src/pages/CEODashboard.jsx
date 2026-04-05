@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import StatCard from "../components/StatCard";
 import TaskCard from "../components/TaskCard";
 import api from "../api/client";
 
 export default function CEODashboard() {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [sections, setSections] = useState([]);
@@ -88,7 +90,7 @@ export default function CEODashboard() {
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center">
-        <div className="text-slate-500">Loading...</div>
+        <div className="text-slate-500">{t("common.loading")}</div>
       </div>
     );
   }
@@ -100,31 +102,31 @@ export default function CEODashboard() {
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7 flex items-start justify-between">
           <div>
-            <h1 className="page-title">CEO Dashboard</h1>
+            <h1 className="page-title">{t("dashboard.title")}</h1>
             <p className="page-subtitle">{new Date().toDateString()}</p>
           </div>
           <button
             onClick={() => navigate("/tasks/new")}
             className="btn-primary px-4 py-2 text-sm font-medium"
           >
-            + New Task
+            + {t("tasks.createNew")}
           </button>
         </div>
 
         <div className="mb-7 grid grid-cols-4 gap-4">
-          <StatCard label="Total Tasks" value={tasks.length} sub={`${sections.length} sections`} color="blue" />
-          <StatCard label="Completed On Time" value={done} sub={`${onTimeRate}% on-time rate`} color="green" />
-          <StatCard label="In Progress" value={progress} sub="Active now" color="amber" />
-          <StatCard label="Overdue" value={overdue} sub={overdue > 0 ? "Needs attention" : "All clear"} color={overdue > 0 ? "red" : "green"} />
+          <StatCard label={t("dashboard.completedTasks")} value={tasks.length} sub={`${sections.length} ${t("common.sections")}`} color="blue" />
+          <StatCard label={t("dashboard.completedTasks")} value={done} sub={`${onTimeRate}% ${t("dashboard.onTimeRate")}`} color="green" />
+          <StatCard label={t("dashboard.performance")} value={progress} sub={t("common.loading")} color="amber" />
+          <StatCard label={t("tasks.pending")} value={overdue} sub={overdue > 0 ? t("common.error") : t("common.success")} color={overdue > 0 ? "red" : "green"} />
         </div>
 
         <div className="grid grid-cols-3 gap-5">
           <div className="col-span-2 flex flex-col gap-5">
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Sections</h2>
+                <h2 className="text-sm font-bold text-slate-900">{t("sections.title")}</h2>
                 <button onClick={() => navigate("/sections")} className="text-xs font-medium text-[#1275e2]">
-                  Manage →
+                  {t("common.view")} →
                 </button>
               </div>
               <div className="flex flex-col gap-3">
@@ -143,11 +145,11 @@ export default function CEODashboard() {
                           <div className="h-2 w-2 rounded-full bg-teal-400" />
                           {sec.name}
                           <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700">
-                            Active
+                            {t("projects.active")}
                           </span>
                         </div>
                         <span className="text-xs text-slate-500">
-                          Manager: {sec.manager?.name || "Unassigned"}
+                          {t("projects.manager")}: {sec.manager?.name || "Unassigned"}
                         </span>
                       </div>
                       <div className="mb-2 flex items-center gap-2">

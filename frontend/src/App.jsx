@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { I18nextProvider } from "react-i18next";
+import i18n from "./i18n/config";
+import { LanguageProvider } from "./i18n/LanguageContext";
 import Login from "./pages/Login";
 import CEODashboard from "./pages/CEODashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
@@ -48,12 +51,25 @@ export default function App() {
     if (user) {
       connectSocket(user.id);
     }
+    
+    // Set document direction based on saved language
+    const savedLang = localStorage.getItem("language") || "en";
+    if (savedLang === "ar") {
+      document.documentElement.dir = "rtl";
+      document.documentElement.lang = "ar";
+    } else {
+      document.documentElement.dir = "ltr";
+      document.documentElement.lang = "en";
+    }
+    
     return () => disconnectSocket();
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <I18nextProvider i18n={i18n}>
+      <LanguageProvider>
+        <BrowserRouter>
+          <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<RoleRoute />} />
 
@@ -182,7 +198,9 @@ export default function App() {
             </Protected>
           }
         />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+        </BrowserRouter>
+      </LanguageProvider>
+    </I18nextProvider>
   );
 }

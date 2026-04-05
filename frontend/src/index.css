@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL Support */
 :root {
   color-scheme: light;
   --tt-primary: #1275e2;
@@ -16,6 +17,18 @@
   --tt-text: #17324d;
   --tt-text-muted: #66758a;
   --tt-shadow: 0 18px 42px rgba(17, 40, 74, 0.08);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+html[dir="ltr"] {
+  direction: ltr;
 }
 
 html {

@@ -2,5 +2,15 @@
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: { extend: {} },
-  plugins: []
+  plugins: [],
+  corePlugins: {
+    preflight: true,
+  },
+  future: {
+    respectDefaultRingColorOpacity: true,
+  },
+  // Enable RTL support
+  experimental: {
+    optimizeUniversalDefaults: true,
+  }
 }

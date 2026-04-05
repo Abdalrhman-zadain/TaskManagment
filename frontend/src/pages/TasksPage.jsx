@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import TaskCard from "../components/TaskCard";
 import api from "../api/client";
@@ -11,6 +12,7 @@ function roleLabel(user) {
 }
 
 export default function TasksPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [tasks, setTasks] = useState([]);
@@ -131,7 +133,7 @@ export default function TasksPage() {
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }
@@ -143,7 +145,7 @@ export default function TasksPage() {
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7 flex items-start justify-between">
           <div>
-            <h1 className="page-title">Tasks</h1>
+            <h1 className="page-title">{t("tasks.title")}</h1>
             <p className="page-subtitle">{new Date().toDateString()}</p>
           </div>
           {(user.role === "CEO" || user.role === "MANAGER") && (
@@ -151,7 +153,7 @@ export default function TasksPage() {
               onClick={() => navigate("/tasks/new")}
               className="btn-primary px-4 py-2 text-sm font-medium"
             >
-              + New Task
+              + {t("tasks.createNew")}
             </button>
           )}
         </div>
@@ -169,19 +171,23 @@ export default function TasksPage() {
                 }`}
               >
                 {f === "IN_PROGRESS"
-                  ? "Waiting Response"
+                  ? t("tasks.inProgress")
                   : f === "PENDING_APPROVAL"
-                    ? "Pending Review"
-                    : f.charAt(0) + f.slice(1).toLowerCase()}
+                    ? t("tasks.pending")
+                    : f === "DONE"
+                      ? t("tasks.completed")
+                      : f === "OVERDUE"
+                        ? "Overdue"
+                        : t("common.view")}
               </button>
             ))}
           </div>
 
           <div className="mb-4 grid grid-cols-3 gap-3">
             <div>
-              <label className="app-label">Project</label>
+              <label className="app-label">{t("common.projects")}</label>
               <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className="app-input">
-                <option value="ALL">All Projects</option>
+                <option value="ALL">{t("projects.allProjects")}</option>
                 {projectOptions.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
@@ -191,9 +197,9 @@ export default function TasksPage() {
             </div>
 
             <div>
-              <label className="app-label">Section</label>
+              <label className="app-label">{t("users.section")}</label>
               <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} className="app-input">
-                <option value="ALL">All Sections</option>
+                <option value="ALL">{t("sections.allSections")}</option>
                 {sectionOptions.map((section) => (
                   <option key={section.id} value={section.id}>
                     {section.name}

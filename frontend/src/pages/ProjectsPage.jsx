@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
@@ -9,6 +10,7 @@ function roleLabel(user) {
 }
 
 export default function ProjectsPage() {
+  const { t } = useTranslation();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -98,7 +100,7 @@ export default function ProjectsPage() {
   }
 
   if (loading) {
-    return <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">Loading...</div>;
+    return <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">{t("common.loading")}</div>;
   }
 
   return (
@@ -106,20 +108,20 @@ export default function ProjectsPage() {
       <Sidebar role={roleLabel(user)} />
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
-          <h1 className="page-title">Projects</h1>
-          <p className="page-subtitle">Create client-linked projects and track their delivery.</p>
+          <h1 className="page-title">{t("projects.title")}</h1>
+          <p className="page-subtitle">{t("projects.subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-5">
           <form onSubmit={createProject} className="app-panel col-span-1 h-fit p-4">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">Create Project</h2>
+            <h2 className="mb-3 text-sm font-bold text-slate-900">{t("projects.createNew")}</h2>
 
-            <label className="app-label">Project Name</label>
+            <label className="app-label">{t("projects.projectName")}</label>
             <input value={name} onChange={(e) => setName(e.target.value)} required className="app-input mb-3" />
 
-            <label className="app-label">Client</label>
+            <label className="app-label">{t("projects.client")}</label>
             <select value={clientId} onChange={(e) => setClientId(e.target.value)} required className="app-input mb-3">
-              <option value="">Select client</option>
+              <option value="">{t("common.search")}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
@@ -127,17 +129,17 @@ export default function ProjectsPage() {
 
             {user.role === "CEO" && (
               <>
-                <label className="app-label">Section</label>
+                <label className="app-label">{t("users.section")}</label>
                 <select value={sectionId} onChange={(e) => setSectionId(e.target.value)} required className="app-input mb-3">
-                  <option value="">Select section</option>
+                  <option value="">{t("common.search")}</option>
                   {sections.map((section) => (
                     <option key={section.id} value={section.id}>{section.name}</option>
                   ))}
                 </select>
 
-                <label className="app-label">Manager</label>
+                <label className="app-label">{t("projects.manager")}</label>
                 <select value={managerId} onChange={(e) => setManagerId(e.target.value)} required className="app-input mb-3">
-                  <option value="">Select manager</option>
+                  <option value="">{t("common.search")}</option>
                   {filteredManagers.map((manager) => (
                     <option key={manager.id} value={manager.id}>{manager.name}</option>
                   ))}
@@ -145,7 +147,7 @@ export default function ProjectsPage() {
               </>
             )}
 
-            <label className="app-label">Budget</label>
+            <label className="app-label">{t("projects.budget")}</label>
             <input value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="$25,000" className="app-input mb-3" />
 
             <label className="app-label">Deadline</label>
