@@ -78,7 +78,12 @@ export default function UsersPage() {
 
   async function deleteUser(id, e) {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this user? All their tasks and history will be permanently lost.")) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this user? All their tasks and history will be permanently lost.",
+      )
+    )
+      return;
 
     try {
       await api.delete(`/users/${id}`);
@@ -99,7 +104,8 @@ export default function UsersPage() {
   const managers = users.filter((u) => u.role === "MANAGER");
   const employees = users.filter((u) => u.role === "EMPLOYEE");
   const clients = users.filter((u) => u.role === "CLIENT");
-  const shouldShowSectionPicker = currentUser.role === "CEO" && role !== "CLIENT";
+  const shouldShowSectionPicker =
+    currentUser.role === "CEO" && role !== "CLIENT";
   const listUsers = users.filter((u) => u.id !== currentUser.id);
   const availableSections = sections.filter((section) =>
     listUsers.some((user) => user.section?.id === section.id),
@@ -107,7 +113,8 @@ export default function UsersPage() {
   const filteredUsers = listUsers.filter((user) => {
     const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
     const matchesSection =
-      sectionFilter === "ALL" || String(user.section?.id || "NONE") === sectionFilter;
+      sectionFilter === "ALL" ||
+      String(user.section?.id || "NONE") === sectionFilter;
     const searchValue = searchTerm.trim().toLowerCase();
     const matchesSearch =
       !searchValue ||
@@ -124,7 +131,9 @@ export default function UsersPage() {
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
           <h1 className="page-title">
-            {currentUser.role === "MANAGER" ? t("users.team") : t("users.title")}
+            {currentUser.role === "MANAGER"
+              ? t("users.team")
+              : t("users.title")}
           </h1>
           <p className="page-subtitle">
             {currentUser.role === "MANAGER"
@@ -134,8 +143,13 @@ export default function UsersPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-5">
-          <form onSubmit={createUser} className="app-panel col-span-1 h-fit p-4">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">{t("users.addUser")}</h2>
+          <form
+            onSubmit={createUser}
+            className="app-panel col-span-1 h-fit p-4"
+          >
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              {t("users.addUser")}
+            </h2>
 
             <div className="mb-3">
               <label className="app-label">{t("users.name")}</label>
@@ -210,7 +224,11 @@ export default function UsersPage() {
 
             {error && <p className="mb-3 text-xs text-rose-600">{error}</p>}
 
-            <button type="submit" disabled={saving} className="btn-primary w-full py-2 text-sm font-medium">
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-primary w-full py-2 text-sm font-medium"
+            >
               {saving ? "Creating..." : "Create User"}
             </button>
           </form>
@@ -219,8 +237,11 @@ export default function UsersPage() {
             <h2 className="mb-3 text-sm font-bold text-slate-900">All Users</h2>
 
             <div className="mb-4 text-xs text-slate-500">
-              Managers: <strong className="text-slate-900">{managers.length}</strong> | Employees:{" "}
-              <strong className="text-slate-900">{employees.length}</strong> | Clients:{" "}
+              Managers:{" "}
+              <strong className="text-slate-900">{managers.length}</strong> |
+              Employees:{" "}
+              <strong className="text-slate-900">{employees.length}</strong> |
+              Clients:{" "}
               <strong className="text-slate-900">{clients.length}</strong>
             </div>
 
@@ -268,8 +289,10 @@ export default function UsersPage() {
             </div>
 
             <div className="mb-4 text-xs text-slate-500">
-              Showing <strong className="text-slate-900">{filteredUsers.length}</strong> of{" "}
-              <strong className="text-slate-900">{listUsers.length}</strong> users
+              Showing{" "}
+              <strong className="text-slate-900">{filteredUsers.length}</strong>{" "}
+              of <strong className="text-slate-900">{listUsers.length}</strong>{" "}
+              users
             </div>
 
             {filteredUsers.map((user) => {
@@ -283,17 +306,26 @@ export default function UsersPage() {
                   className="mx-[-0.75rem] flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-3 transition hover:bg-slate-50"
                 >
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-slate-900">{user.name}</div>
-                    <div className="mt-1 text-xs text-slate-500">{user.email}</div>
+                    <div className="text-sm font-medium text-slate-900">
+                      {user.name}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {user.email}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-6 text-right">
                     {user.role !== "CEO" && user.role !== "CLIENT" && (
                       <div className="text-right">
                         <div className="text-sm font-bold text-slate-900">
-                          {totalScore} <span className="text-[10px] font-normal text-slate-400">Pts</span>
+                          {totalScore}{" "}
+                          <span className="text-[10px] font-normal text-slate-400">
+                            Pts
+                          </span>
                         </div>
-                        <div className="mt-0.5 text-[10px] text-slate-500">{uScores.length} Tasks</div>
+                        <div className="mt-0.5 text-[10px] text-slate-500">
+                          {uScores.length} Tasks
+                        </div>
                       </div>
                     )}
 
@@ -317,7 +349,8 @@ export default function UsersPage() {
                     </div>
 
                     {((currentUser.role === "CEO" && user.role !== "CEO") ||
-                      (currentUser.role === "MANAGER" && user.role === "EMPLOYEE")) && (
+                      (currentUser.role === "MANAGER" &&
+                        user.role === "EMPLOYEE")) && (
                       <button
                         onClick={(e) => deleteUser(user.id, e)}
                         className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
@@ -331,7 +364,9 @@ export default function UsersPage() {
               );
             })}
             {filteredUsers.length === 0 && (
-              <div className="py-6 text-center text-sm text-slate-500">No users match the current filters.</div>
+              <div className="py-6 text-center text-sm text-slate-500">
+                No users match the current filters.
+              </div>
             )}
           </div>
         </div>

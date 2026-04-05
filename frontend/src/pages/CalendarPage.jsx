@@ -14,10 +14,13 @@ function formatDateKey(date) {
 }
 
 function statusTone(status) {
-  if (status === "DONE") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (status === "PENDING_APPROVAL") return "bg-amber-50 text-amber-700 border-amber-200";
+  if (status === "DONE")
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (status === "PENDING_APPROVAL")
+    return "bg-amber-50 text-amber-700 border-amber-200";
   if (status === "LATE") return "bg-rose-50 text-rose-700 border-rose-200";
-  if (status === "IN_PROGRESS") return "bg-blue-50 text-blue-700 border-blue-200";
+  if (status === "IN_PROGRESS")
+    return "bg-blue-50 text-blue-700 border-blue-200";
   return "bg-slate-100 text-slate-700 border-slate-200";
 }
 
@@ -26,7 +29,11 @@ function statusLabel(status) {
 }
 
 function buildCalendarDays(currentMonth) {
-  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const firstDayOfMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+    1,
+  );
   const startDay = firstDayOfMonth.getDay();
   const gridStartDate = new Date(firstDayOfMonth);
   gridStartDate.setDate(firstDayOfMonth.getDate() - startDay);
@@ -108,20 +115,30 @@ export default function CalendarPage() {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return tasks.filter((task) => {
-      const matchesStatus = statusFilter === "ALL" || task.status === statusFilter;
-      const matchesProject = projectFilter === "ALL" || String(task.project?.id || "") === projectFilter;
-      const matchesAssignee = assigneeFilter === "ALL" || String(task.assignee?.id || "") === assigneeFilter;
+      const matchesStatus =
+        statusFilter === "ALL" || task.status === statusFilter;
+      const matchesProject =
+        projectFilter === "ALL" ||
+        String(task.project?.id || "") === projectFilter;
+      const matchesAssignee =
+        assigneeFilter === "ALL" ||
+        String(task.assignee?.id || "") === assigneeFilter;
       const matchesSearch =
         !normalizedSearch ||
         task.title.toLowerCase().includes(normalizedSearch) ||
         task.project?.name?.toLowerCase().includes(normalizedSearch) ||
         task.assignee?.name?.toLowerCase().includes(normalizedSearch);
 
-      return matchesStatus && matchesProject && matchesAssignee && matchesSearch;
+      return (
+        matchesStatus && matchesProject && matchesAssignee && matchesSearch
+      );
     });
   }, [assigneeFilter, projectFilter, searchTerm, statusFilter, tasks]);
 
-  const calendarDays = useMemo(() => buildCalendarDays(currentMonth), [currentMonth]);
+  const calendarDays = useMemo(
+    () => buildCalendarDays(currentMonth),
+    [currentMonth],
+  );
 
   const tasksByDate = useMemo(() => {
     return filteredTasks.reduce((map, task) => {
@@ -153,11 +170,15 @@ export default function CalendarPage() {
   );
 
   function goToPreviousMonth() {
-    setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1));
+    setCurrentMonth(
+      (month) => new Date(month.getFullYear(), month.getMonth() - 1, 1),
+    );
   }
 
   function goToNextMonth() {
-    setCurrentMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1));
+    setCurrentMonth(
+      (month) => new Date(month.getFullYear(), month.getMonth() + 1, 1),
+    );
   }
 
   function goToToday() {
@@ -182,7 +203,9 @@ export default function CalendarPage() {
           <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#5f78a3]">
             {t("calendar.title")}
           </div>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">{t("calendar.title")}</h1>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">
+            {t("calendar.title")}
+          </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
             {t("calendar.subtitle")}
           </p>
@@ -190,29 +213,52 @@ export default function CalendarPage() {
 
         <div className="mb-6 grid gap-4 xl:grid-cols-4">
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("calendar.visibleTasks")}</div>
-            <div className="mt-3 text-3xl font-bold text-slate-900">{filteredTasks.length}</div>
-            <div className="mt-1 text-xs text-slate-500">{t("common.filter")}</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              {t("calendar.visibleTasks")}
+            </div>
+            <div className="mt-3 text-3xl font-bold text-slate-900">
+              {filteredTasks.length}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              {t("common.filter")}
+            </div>
           </div>
 
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("calendar.thisMonth")}</div>
-            <div className="mt-3 text-3xl font-bold text-slate-900">{visibleMonthTasks.length}</div>
-            <div className="mt-1 text-xs text-slate-500">{t("calendar.tasksDue")} {currentMonth.toLocaleDateString("en-US", { month: "long" })}</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              {t("calendar.thisMonth")}
+            </div>
+            <div className="mt-3 text-3xl font-bold text-slate-900">
+              {visibleMonthTasks.length}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              {t("calendar.tasksDue")}{" "}
+              {currentMonth.toLocaleDateString("en-US", { month: "long" })}
+            </div>
           </div>
 
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("calendar.selectedDay")}</div>
-            <div className="mt-3 text-3xl font-bold text-slate-900">{selectedDateTasks.length}</div>
-            <div className="mt-1 text-xs text-slate-500">{t("calendar.tasksOn")} {selectedDateKey}</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              {t("calendar.selectedDay")}
+            </div>
+            <div className="mt-3 text-3xl font-bold text-slate-900">
+              {selectedDateTasks.length}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              {t("calendar.tasksOn")} {selectedDateKey}
+            </div>
           </div>
 
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("tasks.pending")}</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              {t("tasks.pending")}
+            </div>
             <div className="mt-3 text-3xl font-bold text-rose-600">
               {filteredTasks.filter((task) => task.status === "LATE").length}
             </div>
-            <div className="mt-1 text-xs text-slate-500">{t("common.error")}</div>
+            <div className="mt-1 text-xs text-slate-500">
+              {t("common.error")}
+            </div>
           </div>
         </div>
 
@@ -230,7 +276,11 @@ export default function CalendarPage() {
 
             <div>
               <label className="app-label">{t("tasks.status")}</label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="app-input">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">{t("common.view")}</option>
                 <option value="TODO">To Do</option>
                 <option value="IN_PROGRESS">{t("tasks.inProgress")}</option>
@@ -242,7 +292,11 @@ export default function CalendarPage() {
 
             <div>
               <label className="app-label">Project</label>
-              <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className="app-input">
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">All Projects</option>
                 {projectOptions.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -254,7 +308,11 @@ export default function CalendarPage() {
 
             <div>
               <label className="app-label">Assignee</label>
-              <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="app-input">
+              <select
+                value={assigneeFilter}
+                onChange={(e) => setAssigneeFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">All People</option>
                 {assigneeOptions.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
@@ -280,7 +338,9 @@ export default function CalendarPage() {
           <section className="app-panel p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <div className="text-sm font-semibold text-slate-900">Month View</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  Month View
+                </div>
                 <div className="mt-1 text-xs text-slate-500">
                   Select a day to inspect the full task list for that date.
                 </div>
@@ -302,7 +362,10 @@ export default function CalendarPage() {
                   Today
                 </button>
                 <div className="min-w-[190px] text-center text-sm font-semibold text-slate-900">
-                  {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                  {currentMonth.toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </div>
                 <button
                   type="button"
@@ -349,7 +412,9 @@ export default function CalendarPage() {
                       <div className="mb-3 flex items-center justify-between">
                         <div
                           className={`text-xs font-semibold ${
-                            day.isCurrentMonth ? "text-slate-700" : "text-slate-400"
+                            day.isCurrentMonth
+                              ? "text-slate-700"
+                              : "text-slate-400"
                           }`}
                         >
                           {day.date.getDate()}
@@ -363,14 +428,18 @@ export default function CalendarPage() {
 
                       <div className="space-y-2">
                         {dayTasks.length === 0 ? (
-                          <div className="text-[11px] text-slate-400">No tasks</div>
+                          <div className="text-[11px] text-slate-400">
+                            No tasks
+                          </div>
                         ) : (
                           dayTasks.slice(0, 3).map((task) => (
                             <div
                               key={task.id}
                               className={`rounded-lg border px-2 py-2 text-xs ${statusTone(task.status)}`}
                             >
-                              <div className="truncate font-semibold">{task.title}</div>
+                              <div className="truncate font-semibold">
+                                {task.title}
+                              </div>
                               <div className="mt-1 truncate opacity-80">
                                 {task.assignee?.name || "Unassigned"}
                               </div>
@@ -393,13 +462,18 @@ export default function CalendarPage() {
 
           <aside className="app-panel p-6">
             <div className="mb-4">
-              <div className="text-sm font-semibold text-slate-900">Selected Day</div>
+              <div className="text-sm font-semibold text-slate-900">
+                Selected Day
+              </div>
               <div className="mt-1 text-xs text-slate-500">
-                {new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
+                {new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString(
+                  "en-GB",
+                  {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  },
+                )}
               </div>
             </div>
 
@@ -424,24 +498,37 @@ export default function CalendarPage() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-semibold text-slate-900">{task.title}</div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          {task.title}
+                        </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          {task.project?.name || "No project"} • {task.assignee?.name || "Unassigned"}
+                          {task.project?.name || "No project"} •{" "}
+                          {task.assignee?.name || "Unassigned"}
                         </div>
                       </div>
-                      <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${statusTone(task.status)}`}>
+                      <span
+                        className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${statusTone(task.status)}`}
+                      >
                         {statusLabel(task.status)}
                       </span>
                     </div>
 
                     <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-500">
                       <div>
-                        <div className="uppercase tracking-wide text-slate-400">Section</div>
-                        <div className="mt-1 text-slate-700">{task.section?.name || "Not set"}</div>
+                        <div className="uppercase tracking-wide text-slate-400">
+                          Section
+                        </div>
+                        <div className="mt-1 text-slate-700">
+                          {task.section?.name || "Not set"}
+                        </div>
                       </div>
                       <div>
-                        <div className="uppercase tracking-wide text-slate-400">Priority</div>
-                        <div className="mt-1 capitalize text-slate-700">{task.priority || "medium"}</div>
+                        <div className="uppercase tracking-wide text-slate-400">
+                          Priority
+                        </div>
+                        <div className="mt-1 capitalize text-slate-700">
+                          {task.priority || "medium"}
+                        </div>
                       </div>
                     </div>
                   </button>

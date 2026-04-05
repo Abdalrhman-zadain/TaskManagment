@@ -80,8 +80,13 @@ export default function SectionsPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-5">
-          <form onSubmit={handleCreate} className="app-panel col-span-1 h-fit p-4">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">{t("sections.addSection")}</h2>
+          <form
+            onSubmit={handleCreate}
+            className="app-panel col-span-1 h-fit p-4"
+          >
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              {t("sections.addSection")}
+            </h2>
 
             <div className="mb-3">
               <label className="app-label">{t("sections.sectionName")}</label>
@@ -112,22 +117,36 @@ export default function SectionsPage() {
 
             {error && <p className="mb-3 text-xs text-rose-600">{error}</p>}
 
-            <button type="submit" disabled={saving} className="btn-primary w-full py-2 text-sm font-medium">
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-primary w-full py-2 text-sm font-medium"
+            >
               {saving ? "Creating..." : "Create Section"}
             </button>
           </form>
 
           <div className="app-panel col-span-2 p-4">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">All Sections</h2>
-            {sections.length === 0 && <p className="text-sm text-slate-500">No sections yet</p>}
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              All Sections
+            </h2>
+            {sections.length === 0 && (
+              <p className="text-sm text-slate-500">No sections yet</p>
+            )}
 
             {sections.map((section) => (
-              <div key={section.id} className="border-b border-slate-100 py-3 last:border-0">
+              <div
+                key={section.id}
+                className="border-b border-slate-100 py-3 last:border-0"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">{section.name}</div>
+                    <div className="text-sm font-semibold text-slate-900">
+                      {section.name}
+                    </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      Members: {section.members?.length || 0} | Tasks: {section._count?.tasks || 0}
+                      Members: {section.members?.length || 0} | Tasks:{" "}
+                      {section._count?.tasks || 0}
                     </div>
                   </div>
 
@@ -135,7 +154,9 @@ export default function SectionsPage() {
                     <label className="app-label">Manager</label>
                     <select
                       value={section.managerId || ""}
-                      onChange={(e) => updateManager(section.id, e.target.value)}
+                      onChange={(e) =>
+                        updateManager(section.id, e.target.value)
+                      }
                       className="app-input"
                     >
                       <option value="">Unassigned</option>
