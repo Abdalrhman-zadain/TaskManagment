@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
 export default function SectionsPage() {
+  const { t } = useTranslation();
   const [sections, setSections] = useState([]);
   const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function SectionsPage() {
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }
@@ -73,16 +75,16 @@ export default function SectionsPage() {
 
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
-          <h1 className="page-title">Sections</h1>
-          <p className="page-subtitle">Create sections and assign managers</p>
+          <h1 className="page-title">{t("sections.title")}</h1>
+          <p className="page-subtitle">{t("sections.subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-5">
           <form onSubmit={handleCreate} className="app-panel col-span-1 h-fit p-4">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">Create Section</h2>
+            <h2 className="mb-3 text-sm font-bold text-slate-900">{t("sections.addSection")}</h2>
 
             <div className="mb-3">
-              <label className="app-label">Section Name</label>
+              <label className="app-label">{t("sections.sectionName")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -93,7 +95,7 @@ export default function SectionsPage() {
             </div>
 
             <div className="mb-4">
-              <label className="app-label">Manager</label>
+              <label className="app-label">{t("sections.manager")}</label>
               <select
                 value={managerId}
                 onChange={(e) => setManagerId(e.target.value)}

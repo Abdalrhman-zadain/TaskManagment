@@ -32,7 +32,8 @@
     "filter": "Filter",
     "sort": "Sort",
     "view": "View",
-    "export": "Export"
+    "export": "Export",
+    "password": "Password"
   },
   "sidebar": {
     "overview": "OVERVIEW",
@@ -117,8 +118,9 @@
     "deadline": "Deadline"
   },
   "users": {
-    "title": "Users",
-    "addUser": "Add User",
+    "title": "Users Management",
+    "team": "Team Management",
+    "addUser": "Create User",
     "allUsers": "All Users",
     "name": "Name",
     "email": "Email",
@@ -129,7 +131,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "editUser": "Edit User",
-    "deleteUser": "Delete User"
+    "deleteUser": "Delete User",
+    "managerSubtitle": "Create employee accounts for your section",
+    "ceoSubtitle": "Create manager, employee, and client accounts"
   },
   "profile": {
     "title": "Profile",
@@ -156,7 +160,8 @@
   },
   "sections": {
     "title": "Sections",
-    "addSection": "Add Section",
+    "subtitle": "Create sections and assign managers",
+    "addSection": "Create Section",
     "allSections": "All Sections",
     "sectionName": "Section Name",
     "manager": "Manager",
@@ -166,6 +171,12 @@
   },
   "calendar": {
     "title": "Calendar",
+    "subtitle": "Track deadlines in a monthly view, filter the schedule, and inspect every task for the selected day",
+    "visibleTasks": "Visible Tasks",
+    "thisMonth": "This Month",
+    "tasksDue": "Tasks due in",
+    "selectedDay": "Selected Day",
+    "tasksOn": "Tasks on",
     "month": "Month",
     "week": "Week",
     "day": "Day",

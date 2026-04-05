@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
@@ -50,6 +51,7 @@ function roleLabel(user) {
 }
 
 export default function CalendarPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const todayKey = formatDateKey(new Date());
@@ -178,46 +180,46 @@ export default function CalendarPage() {
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-6">
           <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#5f78a3]">
-            Planning
+            {t("calendar.title")}
           </div>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">Calendar</h1>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">{t("calendar.title")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
-            Track deadlines in a monthly view, filter the schedule, and inspect every task for the selected day.
+            {t("calendar.subtitle")}
           </p>
         </div>
 
         <div className="mb-6 grid gap-4 xl:grid-cols-4">
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Visible Tasks</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("calendar.visibleTasks")}</div>
             <div className="mt-3 text-3xl font-bold text-slate-900">{filteredTasks.length}</div>
-            <div className="mt-1 text-xs text-slate-500">After current filters</div>
+            <div className="mt-1 text-xs text-slate-500">{t("common.filter")}</div>
           </div>
 
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">This Month</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("calendar.thisMonth")}</div>
             <div className="mt-3 text-3xl font-bold text-slate-900">{visibleMonthTasks.length}</div>
-            <div className="mt-1 text-xs text-slate-500">Tasks due in {currentMonth.toLocaleDateString("en-US", { month: "long" })}</div>
+            <div className="mt-1 text-xs text-slate-500">{t("calendar.tasksDue")} {currentMonth.toLocaleDateString("en-US", { month: "long" })}</div>
           </div>
 
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Selected Day</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("calendar.selectedDay")}</div>
             <div className="mt-3 text-3xl font-bold text-slate-900">{selectedDateTasks.length}</div>
-            <div className="mt-1 text-xs text-slate-500">Tasks on {selectedDateKey}</div>
+            <div className="mt-1 text-xs text-slate-500">{t("calendar.tasksOn")} {selectedDateKey}</div>
           </div>
 
           <div className="app-panel p-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Late Tasks</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{t("tasks.pending")}</div>
             <div className="mt-3 text-3xl font-bold text-rose-600">
               {filteredTasks.filter((task) => task.status === "LATE").length}
             </div>
-            <div className="mt-1 text-xs text-slate-500">Need attention first</div>
+            <div className="mt-1 text-xs text-slate-500">{t("common.error")}</div>
           </div>
         </div>
 
         <div className="mb-6 app-panel p-6">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div>
-              <label className="app-label">Search</label>
+              <label className="app-label">{t("common.search")}</label>
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -227,13 +229,13 @@ export default function CalendarPage() {
             </div>
 
             <div>
-              <label className="app-label">Status</label>
+              <label className="app-label">{t("tasks.status")}</label>
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="app-input">
-                <option value="ALL">All Statuses</option>
+                <option value="ALL">{t("common.view")}</option>
                 <option value="TODO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="PENDING_APPROVAL">Pending Approval</option>
-                <option value="DONE">Done</option>
+                <option value="IN_PROGRESS">{t("tasks.inProgress")}</option>
+                <option value="PENDING_APPROVAL">{t("tasks.pending")}</option>
+                <option value="DONE">{t("tasks.completed")}</option>
                 <option value="LATE">Late</option>
               </select>
             </div>

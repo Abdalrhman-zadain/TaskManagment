@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const [users, setUsers] = useState([]);
@@ -89,7 +91,7 @@ export default function UsersPage() {
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }
@@ -122,21 +124,21 @@ export default function UsersPage() {
       <main className="flex-1 overflow-y-auto p-7">
         <div className="mb-7">
           <h1 className="page-title">
-            {currentUser.role === "MANAGER" ? "Team Management" : "Users Management"}
+            {currentUser.role === "MANAGER" ? t("users.team") : t("users.title")}
           </h1>
           <p className="page-subtitle">
             {currentUser.role === "MANAGER"
-              ? "Create employee accounts for your section"
-              : "Create manager, employee, and client accounts"}
+              ? t("users.managerSubtitle")
+              : t("users.ceoSubtitle")}
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-5">
           <form onSubmit={createUser} className="app-panel col-span-1 h-fit p-4">
-            <h2 className="mb-3 text-sm font-bold text-slate-900">Create User</h2>
+            <h2 className="mb-3 text-sm font-bold text-slate-900">{t("users.addUser")}</h2>
 
             <div className="mb-3">
-              <label className="app-label">Name</label>
+              <label className="app-label">{t("users.name")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -147,7 +149,7 @@ export default function UsersPage() {
             </div>
 
             <div className="mb-3">
-              <label className="app-label">Email</label>
+              <label className="app-label">{t("users.email")}</label>
               <input
                 type="email"
                 value={email}
@@ -159,7 +161,7 @@ export default function UsersPage() {
             </div>
 
             <div className="mb-3">
-              <label className="app-label">Password</label>
+              <label className="app-label">{t("common.password")}</label>
               <input
                 type="password"
                 value={password}
@@ -174,7 +176,7 @@ export default function UsersPage() {
             {currentUser.role === "CEO" && (
               <>
                 <div className="mb-3">
-                  <label className="app-label">Role</label>
+                  <label className="app-label">{t("users.role")}</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
