@@ -41,7 +41,9 @@ export default function CEODashboard() {
   }, []);
 
   const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = tasks.filter((t) => ["TODO", "IN_PROGRESS"].includes(t.status)).length;
+  const progress = tasks.filter((t) =>
+    ["TODO", "IN_PROGRESS"].includes(t.status),
+  ).length;
   const overdue = tasks.filter(
     (t) => new Date(t.deadline) < new Date() && t.status !== "DONE",
   ).length;
@@ -53,13 +55,15 @@ export default function CEODashboard() {
 
   function getProjectProgress(project) {
     const totalTasks = project.tasks?.length || 0;
-    const doneTasks = project.tasks?.filter((task) => task.status === "DONE").length || 0;
+    const doneTasks =
+      project.tasks?.filter((task) => task.status === "DONE").length || 0;
     return totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
   }
 
   function getProjectStatus(project) {
     if (project.status === "COMPLETED") return "COMPLETED";
-    if (project.deadline && new Date(project.deadline) < new Date()) return "DELAYED";
+    if (project.deadline && new Date(project.deadline) < new Date())
+      return "DELAYED";
     return "ACTIVE";
   }
 
@@ -72,18 +76,22 @@ export default function CEODashboard() {
   );
 
   const filteredProjects = projects.filter((project) => {
-    const matchesStatus = projectFilter === "ALL" || getProjectStatus(project) === projectFilter;
+    const matchesStatus =
+      projectFilter === "ALL" || getProjectStatus(project) === projectFilter;
     const matchesClient =
-      projectClientFilter === "ALL" || String(project.client?.id) === projectClientFilter;
+      projectClientFilter === "ALL" ||
+      String(project.client?.id) === projectClientFilter;
     return matchesStatus && matchesClient;
   });
 
   const filteredTasks = tasks.filter((t) => {
     if (filter === "ALL") return true;
-    if (filter === "IN_PROGRESS") return t.status === "IN_PROGRESS" || t.status === "TODO";
+    if (filter === "IN_PROGRESS")
+      return t.status === "IN_PROGRESS" || t.status === "TODO";
     if (filter === "PENDING_APPROVAL") return t.status === "PENDING_APPROVAL";
     if (filter === "DONE") return t.status === "DONE";
-    if (filter === "OVERDUE") return new Date(t.deadline) < new Date() && t.status !== "DONE";
+    if (filter === "OVERDUE")
+      return new Date(t.deadline) < new Date() && t.status !== "DONE";
     return true;
   });
 
@@ -114,29 +122,59 @@ export default function CEODashboard() {
         </div>
 
         <div className="mb-7 grid grid-cols-4 gap-4">
-          <StatCard label={t("dashboard.completedTasks")} value={tasks.length} sub={`${sections.length} ${t("common.sections")}`} color="blue" />
-          <StatCard label={t("dashboard.completedTasks")} value={done} sub={`${onTimeRate}% ${t("dashboard.onTimeRate")}`} color="green" />
-          <StatCard label={t("dashboard.performance")} value={progress} sub={t("common.loading")} color="amber" />
-          <StatCard label={t("tasks.pending")} value={overdue} sub={overdue > 0 ? t("common.error") : t("common.success")} color={overdue > 0 ? "red" : "green"} />
+          <StatCard
+            label={t("dashboard.completedTasks")}
+            value={tasks.length}
+            sub={`${sections.length} ${t("common.sections")}`}
+            color="blue"
+          />
+          <StatCard
+            label={t("dashboard.completedTasks")}
+            value={done}
+            sub={`${onTimeRate}% ${t("dashboard.onTimeRate")}`}
+            color="green"
+          />
+          <StatCard
+            label={t("dashboard.performance")}
+            value={progress}
+            sub={t("common.loading")}
+            color="amber"
+          />
+          <StatCard
+            label={t("tasks.pending")}
+            value={overdue}
+            sub={overdue > 0 ? t("common.error") : t("common.success")}
+            color={overdue > 0 ? "red" : "green"}
+          />
         </div>
 
         <div className="grid grid-cols-3 gap-5">
           <div className="col-span-2 flex flex-col gap-5">
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">{t("sections.title")}</h2>
-                <button onClick={() => navigate("/sections")} className="text-xs font-medium text-[#1275e2]">
+                <h2 className="text-sm font-bold text-slate-900">
+                  {t("sections.title")}
+                </h2>
+                <button
+                  onClick={() => navigate("/sections")}
+                  className="text-xs font-medium text-[#1275e2]"
+                >
                   {t("common.view")} →
                 </button>
               </div>
               <div className="flex flex-col gap-3">
                 {sections.map((sec) => {
                   const secTasks = tasks.filter((t) => t.sectionId === sec.id);
-                  const secDone = secTasks.filter((t) => t.status === "DONE").length;
-                  const secOverdue = secTasks.filter(
-                    (t) => new Date(t.deadline) < new Date() && t.status !== "DONE",
+                  const secDone = secTasks.filter(
+                    (t) => t.status === "DONE",
                   ).length;
-                  const pct = secTasks.length ? Math.round((secDone / secTasks.length) * 100) : 0;
+                  const secOverdue = secTasks.filter(
+                    (t) =>
+                      new Date(t.deadline) < new Date() && t.status !== "DONE",
+                  ).length;
+                  const pct = secTasks.length
+                    ? Math.round((secDone / secTasks.length) * 100)
+                    : 0;
 
                   return (
                     <div key={sec.id} className="app-panel p-4">
@@ -149,20 +187,50 @@ export default function CEODashboard() {
                           </span>
                         </div>
                         <span className="text-xs text-slate-500">
-                          {t("projects.manager")}: {sec.manager?.name || "Unassigned"}
+                          {t("projects.manager")}:{" "}
+                          {sec.manager?.name || "Unassigned"}
                         </span>
                       </div>
                       <div className="mb-2 flex items-center gap-2">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                          <div className="h-full rounded-full bg-teal-400" style={{ width: `${pct}%` }} />
+                          <div
+                            className="h-full rounded-full bg-teal-400"
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
-                        <span className="w-8 text-right text-xs text-slate-500">{pct}%</span>
+                        <span className="w-8 text-right text-xs text-slate-500">
+                          {pct}%
+                        </span>
                       </div>
                       <div className="flex gap-4 text-xs text-slate-500">
-                        <span><strong className="text-slate-900">{secTasks.length}</strong> tasks</span>
-                        <span><strong className="text-slate-900">{secDone}</strong> done</span>
-                        <span><strong className={secOverdue > 0 ? "text-rose-600" : "text-slate-900"}>{secOverdue}</strong> overdue</span>
-                        <span><strong className="text-slate-900">{sec.members?.length || 0}</strong> members</span>
+                        <span>
+                          <strong className="text-slate-900">
+                            {secTasks.length}
+                          </strong>{" "}
+                          tasks
+                        </span>
+                        <span>
+                          <strong className="text-slate-900">{secDone}</strong>{" "}
+                          done
+                        </span>
+                        <span>
+                          <strong
+                            className={
+                              secOverdue > 0
+                                ? "text-rose-600"
+                                : "text-slate-900"
+                            }
+                          >
+                            {secOverdue}
+                          </strong>{" "}
+                          overdue
+                        </span>
+                        <span>
+                          <strong className="text-slate-900">
+                            {sec.members?.length || 0}
+                          </strong>{" "}
+                          members
+                        </span>
                       </div>
                     </div>
                   );
@@ -172,7 +240,9 @@ export default function CEODashboard() {
                   onClick={() => navigate("/sections")}
                   className="app-panel-muted flex cursor-pointer items-center gap-3 p-4 text-sm text-slate-500 transition hover:border-[#1275e2] hover:text-[#1275e2]"
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-base">+</div>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-base">
+                    +
+                  </div>
                   Create a new section
                 </div>
               </div>
@@ -200,7 +270,9 @@ export default function CEODashboard() {
                         key={status}
                         onClick={() => setProjectFilter(status)}
                         className={`rounded-md px-3 py-1 text-[10px] font-medium transition ${
-                          projectFilter === status ? "bg-[#1275e2] text-white" : "text-slate-500 hover:text-slate-900"
+                          projectFilter === status
+                            ? "bg-[#1275e2] text-white"
+                            : "text-slate-500 hover:text-slate-900"
                         }`}
                       >
                         {status.charAt(0) + status.slice(1).toLowerCase()}
@@ -221,15 +293,23 @@ export default function CEODashboard() {
                         : "bg-blue-50 text-blue-700";
 
                   return (
-                    <div key={project.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div
+                      key={project.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/80 p-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-sm font-semibold text-slate-900">{project.name}</div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            {project.name}
+                          </div>
                           <div className="mt-1 text-xs text-slate-500">
-                            Client: {project.client?.name || "Unknown"} · Manager: {project.manager?.name || "Unassigned"}
+                            Client: {project.client?.name || "Unknown"} ·
+                            Manager: {project.manager?.name || "Unassigned"}
                           </div>
                         </div>
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${statusClasses}`}>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] font-medium ${statusClasses}`}
+                        >
                           {status}
                         </span>
                       </div>
@@ -239,39 +319,59 @@ export default function CEODashboard() {
                           <span>{progressValue}%</span>
                         </div>
                         <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full rounded-full bg-[#1275e2]" style={{ width: `${progressValue}%` }} />
+                          <div
+                            className="h-full rounded-full bg-[#1275e2]"
+                            style={{ width: `${progressValue}%` }}
+                          />
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
                         <span>
                           Deadline:{" "}
                           <strong className="text-slate-900">
-                            {project.deadline ? new Date(project.deadline).toLocaleDateString() : "Not set"}
+                            {project.deadline
+                              ? new Date(project.deadline).toLocaleDateString()
+                              : "Not set"}
                           </strong>
                         </span>
                         <span>
-                          Tasks: <strong className="text-slate-900">{project.tasks?.length || 0}</strong>
+                          Tasks:{" "}
+                          <strong className="text-slate-900">
+                            {project.tasks?.length || 0}
+                          </strong>
                         </span>
                       </div>
                     </div>
                   );
                 })}
                 {filteredProjects.length === 0 && (
-                  <div className="py-6 text-center text-xs text-slate-500">No projects found in this category</div>
+                  <div className="py-6 text-center text-xs text-slate-500">
+                    No projects found in this category
+                  </div>
                 )}
               </div>
             </div>
 
             <div className="app-panel p-4">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Recent Tasks</h2>
+                <h2 className="text-sm font-bold text-slate-900">
+                  Recent Tasks
+                </h2>
                 <div className="flex gap-1 rounded-lg bg-slate-100 p-0.5">
-                  {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
+                  {[
+                    "ALL",
+                    "IN_PROGRESS",
+                    "PENDING_APPROVAL",
+                    "DONE",
+                    "OVERDUE",
+                  ].map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       className={`rounded-md px-3 py-1 text-[10px] font-medium transition ${
-                        filter === f ? "bg-[#1275e2] text-white" : "text-slate-500 hover:text-slate-900"
+                        filter === f
+                          ? "bg-[#1275e2] text-white"
+                          : "text-slate-500 hover:text-slate-900"
                       }`}
                     >
                       {f === "IN_PROGRESS"
@@ -282,7 +382,10 @@ export default function CEODashboard() {
                     </button>
                   ))}
                 </div>
-                <button onClick={() => navigate("/tasks")} className="ml-2 text-xs font-medium text-[#1275e2]">
+                <button
+                  onClick={() => navigate("/tasks")}
+                  className="ml-2 text-xs font-medium text-[#1275e2]"
+                >
                   View all →
                 </button>
               </div>
@@ -291,7 +394,9 @@ export default function CEODashboard() {
                   <TaskCard key={task.id} task={task} />
                 ))}
                 {filteredTasks.length === 0 && (
-                  <div className="py-6 text-center text-xs text-slate-500">No tasks found in this category</div>
+                  <div className="py-6 text-center text-xs text-slate-500">
+                    No tasks found in this category
+                  </div>
                 )}
               </div>
             </div>
@@ -300,16 +405,28 @@ export default function CEODashboard() {
           <div className="flex flex-col gap-5">
             {overdue > 0 && (
               <div className="app-panel p-4">
-                <h2 className="mb-3 text-sm font-bold text-rose-600">Overdue Alerts</h2>
+                <h2 className="mb-3 text-sm font-bold text-rose-600">
+                  Overdue Alerts
+                </h2>
                 {tasks
-                  .filter((t) => new Date(t.deadline) < new Date() && t.status !== "DONE")
+                  .filter(
+                    (t) =>
+                      new Date(t.deadline) < new Date() && t.status !== "DONE",
+                  )
                   .slice(0, 4)
                   .map((t) => (
-                    <div key={t.id} className="mb-2 flex gap-2.5 rounded-lg border border-rose-200 bg-rose-50 p-2.5 last:mb-0">
+                    <div
+                      key={t.id}
+                      className="mb-2 flex gap-2.5 rounded-lg border border-rose-200 bg-rose-50 p-2.5 last:mb-0"
+                    >
                       <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-rose-500" />
                       <div>
-                        <div className="text-sm font-medium text-slate-900">{t.title}</div>
-                        <div className="mt-0.5 text-xs text-slate-500">{t.assignee?.name} · {t.section?.name}</div>
+                        <div className="text-sm font-medium text-slate-900">
+                          {t.title}
+                        </div>
+                        <div className="mt-0.5 text-xs text-slate-500">
+                          {t.assignee?.name} · {t.section?.name}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -318,8 +435,15 @@ export default function CEODashboard() {
 
             <div className="app-panel flex max-h-[500px] flex-col p-4">
               <div className="mb-3 flex shrink-0 items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Team Performance</h2>
-                <button onClick={() => navigate("/users")} className="text-xs font-medium text-[#1275e2]">All users →</button>
+                <h2 className="text-sm font-bold text-slate-900">
+                  Team Performance
+                </h2>
+                <button
+                  onClick={() => navigate("/users")}
+                  className="text-xs font-medium text-[#1275e2]"
+                >
+                  All users →
+                </button>
               </div>
               <div className="-mr-2 overflow-y-auto pr-2">
                 {allPerformers.map((emp, i) => (
@@ -328,29 +452,48 @@ export default function CEODashboard() {
                     onClick={() => navigate(`/users/${emp.id}`)}
                     className="mx-[-0.5rem] flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2.5 transition hover:bg-slate-50"
                   >
-                    <div className={`w-5 text-center text-sm font-bold ${
-                      i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-700" : "text-slate-400"
-                    }`}>
+                    <div
+                      className={`w-5 text-center text-sm font-bold ${
+                        i === 0
+                          ? "text-yellow-500"
+                          : i === 1
+                            ? "text-slate-400"
+                            : i === 2
+                              ? "text-amber-700"
+                              : "text-slate-400"
+                      }`}
+                    >
                       {i + 1}
                     </div>
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-[#1275e2]">
-                      {emp.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      {emp.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-900">{emp.name}</div>
+                      <div className="text-sm font-medium text-slate-900">
+                        {emp.name}
+                      </div>
                       <div className="text-xs text-slate-500">
-                        {emp.role === "MANAGER" ? "Manager" : "Employee"} · {emp.section?.name || "No Section"}
+                        {emp.role === "MANAGER" ? "Manager" : "Employee"} ·{" "}
+                        {emp.section?.name || "No Section"}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-slate-900">{emp.onTimeCount}</div>
-                      <div className={`mt-0.5 rounded-full px-1.5 py-0.5 text-[10px] ${
-                        emp.level === "GOLD"
-                          ? "bg-yellow-50 text-yellow-700"
-                          : emp.level === "SILVER"
-                            ? "bg-slate-100 text-slate-600"
-                            : "bg-amber-50 text-amber-700"
-                      }`}>
+                      <div className="text-sm font-bold text-slate-900">
+                        {emp.onTimeCount}
+                      </div>
+                      <div
+                        className={`mt-0.5 rounded-full px-1.5 py-0.5 text-[10px] ${
+                          emp.level === "GOLD"
+                            ? "bg-yellow-50 text-yellow-700"
+                            : emp.level === "SILVER"
+                              ? "bg-slate-100 text-slate-600"
+                              : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
                         {emp.level}
                       </div>
                     </div>

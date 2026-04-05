@@ -15,7 +15,7 @@ export default function Sidebar({ role }) {
   useEffect(() => {
     // Sync language state with i18n
     setCurrentLang(i18n.language);
-    
+
     async function fetchUnread() {
       try {
         const res = await api.get("/notifications");
@@ -35,7 +35,7 @@ export default function Sidebar({ role }) {
     const handleLanguageChanged = (lang) => {
       setCurrentLang(lang);
     };
-    
+
     i18n.on("languageChanged", handleLanguageChanged);
 
     const interval = setInterval(fetchUnread, 30_000);
@@ -56,13 +56,13 @@ export default function Sidebar({ role }) {
   function changeLanguage(lang) {
     // Change language in i18n
     i18n.changeLanguage(lang);
-    
+
     // Save to localStorage
     localStorage.setItem("language", lang);
-    
+
     // Update current language state
     setCurrentLang(lang);
-    
+
     // Update document direction and language attribute
     if (lang === "ar") {
       document.documentElement.dir = "rtl";

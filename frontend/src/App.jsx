@@ -51,7 +51,7 @@ export default function App() {
     if (user) {
       connectSocket(user.id);
     }
-    
+
     // Set document direction based on saved language
     const savedLang = localStorage.getItem("language") || "en";
     if (savedLang === "ar") {
@@ -61,7 +61,7 @@ export default function App() {
       document.documentElement.dir = "ltr";
       document.documentElement.lang = "en";
     }
-    
+
     return () => disconnectSocket();
   }, []);
 
@@ -70,135 +70,135 @@ export default function App() {
       <LanguageProvider>
         <BrowserRouter>
           <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<RoleRoute />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<RoleRoute />} />
 
-        <Route
-          path="/ceo"
-          element={
-            <Protected roles={["CEO"]}>
-              <CEODashboard />
-            </Protected>
-          }
-        />
+            <Route
+              path="/ceo"
+              element={
+                <Protected roles={["CEO"]}>
+                  <CEODashboard />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/manager"
-          element={
-            <Protected roles={["MANAGER"]}>
-              <ManagerDashboard />
-            </Protected>
-          }
-        />
+            <Route
+              path="/manager"
+              element={
+                <Protected roles={["MANAGER"]}>
+                  <ManagerDashboard />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/employee"
-          element={
-            <Protected roles={["EMPLOYEE"]}>
-              <EmployeeDashboard />
-            </Protected>
-          }
-        />
+            <Route
+              path="/employee"
+              element={
+                <Protected roles={["EMPLOYEE"]}>
+                  <EmployeeDashboard />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/tasks/:id"
-          element={
-            <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
-              <TaskDetail />
-            </Protected>
-          }
-        />
+            <Route
+              path="/tasks/:id"
+              element={
+                <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
+                  <TaskDetail />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/tasks"
-          element={
-            <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
-              <TasksPage />
-            </Protected>
-          }
-        />
+            <Route
+              path="/tasks"
+              element={
+                <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
+                  <TasksPage />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/tasks/new"
-          element={
-            <Protected roles={["CEO", "MANAGER"]}>
-              <TaskCreate />
-            </Protected>
-          }
-        />
+            <Route
+              path="/tasks/new"
+              element={
+                <Protected roles={["CEO", "MANAGER"]}>
+                  <TaskCreate />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/sections"
-          element={
-            <Protected roles={["CEO"]}>
-              <SectionsPage />
-            </Protected>
-          }
-        />
+            <Route
+              path="/sections"
+              element={
+                <Protected roles={["CEO"]}>
+                  <SectionsPage />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/projects"
-          element={
-            <Protected roles={["CEO", "MANAGER"]}>
-              <ProjectsPage />
-            </Protected>
-          }
-        />
+            <Route
+              path="/projects"
+              element={
+                <Protected roles={["CEO", "MANAGER"]}>
+                  <ProjectsPage />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/calendar"
-          element={
-            <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
-              <CalendarPage />
-            </Protected>
-          }
-        />
+            <Route
+              path="/calendar"
+              element={
+                <Protected roles={["CEO", "MANAGER", "EMPLOYEE"]}>
+                  <CalendarPage />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/users"
-          element={
-            <Protected roles={["CEO", "MANAGER"]}>
-              <UsersPage />
-            </Protected>
-          }
-        />
+            <Route
+              path="/users"
+              element={
+                <Protected roles={["CEO", "MANAGER"]}>
+                  <UsersPage />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/profile"
-          element={
-            <Protected>
-              <Profile />
-            </Protected>
-          }
-        />
+            <Route
+              path="/profile"
+              element={
+                <Protected>
+                  <Profile />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/users/:id"
-          element={
-            <Protected roles={["CEO", "MANAGER"]}>
-              <Profile />
-            </Protected>
-          }
-        />
+            <Route
+              path="/users/:id"
+              element={
+                <Protected roles={["CEO", "MANAGER"]}>
+                  <Profile />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/notifications"
-          element={
-            <Protected>
-              <NotificationsPage />
-            </Protected>
-          }
-        />
+            <Route
+              path="/notifications"
+              element={
+                <Protected>
+                  <NotificationsPage />
+                </Protected>
+              }
+            />
 
-        <Route
-          path="/client"
-          element={
-            <Protected roles={["CLIENT"]}>
-              <ClientDashboard />
-            </Protected>
-          }
-        />
-        </Routes>
+            <Route
+              path="/client"
+              element={
+                <Protected roles={["CLIENT"]}>
+                  <ClientDashboard />
+                </Protected>
+              }
+            />
+          </Routes>
         </BrowserRouter>
       </LanguageProvider>
     </I18nextProvider>

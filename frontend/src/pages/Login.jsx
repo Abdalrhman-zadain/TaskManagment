@@ -18,7 +18,7 @@ export default function Login() {
     if (savedLang !== i18n.language) {
       i18n.changeLanguage(savedLang);
     }
-    
+
     setCurrentLang(i18n.language);
 
     // Listen for language changes
@@ -36,7 +36,7 @@ export default function Login() {
   function changeLanguage(lang) {
     i18n.changeLanguage(lang);
     localStorage.setItem("language", lang);
-    
+
     if (lang === "ar") {
       document.documentElement.dir = "rtl";
       document.documentElement.lang = "ar";
@@ -127,7 +127,9 @@ export default function Login() {
             />
           </div>
 
-          {error && <p className="text-center text-sm text-rose-600">{error}</p>}
+          {error && (
+            <p className="text-center text-sm text-rose-600">{error}</p>
+          )}
 
           <button
             type="submit"

@@ -89,7 +89,9 @@ export default function TasksPage() {
             : filter === "DONE"
               ? t.status === "DONE"
               : filter === "OVERDUE"
-                ? deadlineDate && deadlineDate < new Date() && t.status !== "DONE"
+                ? deadlineDate &&
+                  deadlineDate < new Date() &&
+                  t.status !== "DONE"
                 : true;
 
     const matchesProject =
@@ -97,15 +99,21 @@ export default function TasksPage() {
     const matchesSection =
       sectionFilter === "ALL" || String(t.section?.id || "") === sectionFilter;
     const matchesAssignee =
-      assigneeFilter === "ALL" || String(t.assignee?.id || "") === assigneeFilter;
+      assigneeFilter === "ALL" ||
+      String(t.assignee?.id || "") === assigneeFilter;
     const matchesScore =
       scoreFilter === "ALL" ||
       (scoreFilter === "HIGH" && taskScore >= 8 && taskScore <= 10) ||
       (scoreFilter === "MEDIUM" && taskScore >= 5 && taskScore <= 7) ||
       (scoreFilter === "LOW" && taskScore >= 0 && taskScore <= 4);
-    const matchesFromDate = !fromDate || (deadlineDate && deadlineDate >= new Date(`${fromDate}T00:00:00`));
-    const matchesToDate = !toDate || (deadlineDate && deadlineDate <= new Date(`${toDate}T23:59:59`));
-    const matchesSearch = !normalizedSearch || t.title.toLowerCase().includes(normalizedSearch);
+    const matchesFromDate =
+      !fromDate ||
+      (deadlineDate && deadlineDate >= new Date(`${fromDate}T00:00:00`));
+    const matchesToDate =
+      !toDate ||
+      (deadlineDate && deadlineDate <= new Date(`${toDate}T23:59:59`));
+    const matchesSearch =
+      !normalizedSearch || t.title.toLowerCase().includes(normalizedSearch);
 
     return (
       matchesStatus &&
@@ -160,33 +168,39 @@ export default function TasksPage() {
 
         <div className="app-panel p-6">
           <div className="mb-6 flex max-w-2xl gap-1 rounded-lg bg-slate-100 p-1">
-            {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
-                  filter === f
-                    ? "bg-[#1275e2] text-white shadow-sm"
-                    : "text-slate-500 hover:bg-white hover:text-slate-900"
-                }`}
-              >
-                {f === "IN_PROGRESS"
-                  ? t("tasks.inProgress")
-                  : f === "PENDING_APPROVAL"
-                    ? t("tasks.pending")
-                    : f === "DONE"
-                      ? t("tasks.completed")
-                      : f === "OVERDUE"
-                        ? "Overdue"
-                        : t("common.view")}
-              </button>
-            ))}
+            {["ALL", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "OVERDUE"].map(
+              (f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
+                    filter === f
+                      ? "bg-[#1275e2] text-white shadow-sm"
+                      : "text-slate-500 hover:bg-white hover:text-slate-900"
+                  }`}
+                >
+                  {f === "IN_PROGRESS"
+                    ? t("tasks.inProgress")
+                    : f === "PENDING_APPROVAL"
+                      ? t("tasks.pending")
+                      : f === "DONE"
+                        ? t("tasks.completed")
+                        : f === "OVERDUE"
+                          ? "Overdue"
+                          : t("common.view")}
+                </button>
+              ),
+            )}
           </div>
 
           <div className="mb-4 grid grid-cols-3 gap-3">
             <div>
               <label className="app-label">{t("common.projects")}</label>
-              <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className="app-input">
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">{t("projects.allProjects")}</option>
                 {projectOptions.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -198,7 +212,11 @@ export default function TasksPage() {
 
             <div>
               <label className="app-label">{t("users.section")}</label>
-              <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} className="app-input">
+              <select
+                value={sectionFilter}
+                onChange={(e) => setSectionFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">{t("sections.allSections")}</option>
                 {sectionOptions.map((section) => (
                   <option key={section.id} value={section.id}>
@@ -210,7 +228,11 @@ export default function TasksPage() {
 
             <div>
               <label className="app-label">Assigned To</label>
-              <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="app-input">
+              <select
+                value={assigneeFilter}
+                onChange={(e) => setAssigneeFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">All People</option>
                 {assigneeOptions.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
@@ -222,7 +244,11 @@ export default function TasksPage() {
 
             <div>
               <label className="app-label">Score</label>
-              <select value={scoreFilter} onChange={(e) => setScoreFilter(e.target.value)} className="app-input">
+              <select
+                value={scoreFilter}
+                onChange={(e) => setScoreFilter(e.target.value)}
+                className="app-input"
+              >
                 <option value="ALL">All Scores</option>
                 <option value="HIGH">High 8-10</option>
                 <option value="MEDIUM">Medium 5-7</option>
@@ -232,12 +258,22 @@ export default function TasksPage() {
 
             <div>
               <label className="app-label">From Date</label>
-              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="app-input" />
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="app-input"
+              />
             </div>
 
             <div>
               <label className="app-label">To Date</label>
-              <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="app-input" />
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="app-input"
+              />
             </div>
           </div>
 
@@ -261,8 +297,9 @@ export default function TasksPage() {
           </div>
 
           <div className="mb-4 text-xs text-slate-500">
-            Showing <strong className="text-slate-900">{filteredTasks.length}</strong> of{" "}
-            <strong className="text-slate-900">{tasks.length}</strong> tasks
+            Showing{" "}
+            <strong className="text-slate-900">{filteredTasks.length}</strong>{" "}
+            of <strong className="text-slate-900">{tasks.length}</strong> tasks
           </div>
 
           <div className="flex flex-col gap-2">
