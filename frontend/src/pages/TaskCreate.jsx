@@ -17,9 +17,14 @@ export default function TaskCreate() {
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [sectionId, setSectionId] = useState(user.sectionId ? String(user.sectionId) : "");
+  const [sectionId, setSectionId] = useState(
+    user.sectionId ? String(user.sectionId) : "",
+  );
   const [parentId, setParentId] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineHours, setDeadlineHours] = useState("00");
+  const [deadlineMinutes, setDeadlineMinutes] = useState("00");
+  const [deadlineSeconds, setDeadlineSeconds] = useState("00");
   const [priority, setPriority] = useState("medium");
 
   const [users, setUsers] = useState([]);
@@ -33,18 +38,21 @@ export default function TaskCreate() {
   useEffect(() => {
     async function load() {
       try {
-        const [usersRes, sectionsRes, tasksRes, projectsRes] = await Promise.all([
-          api.get("/users"),
-          api.get("/sections"),
-          api.get("/tasks"),
-          api.get("/projects"),
-        ]);
+        const [usersRes, sectionsRes, tasksRes, projectsRes] =
+          await Promise.all([
+            api.get("/users"),
+            api.get("/sections"),
+            api.get("/tasks"),
+            api.get("/projects"),
+          ]);
         setUsers(usersRes.data);
         setSections(sectionsRes.data);
         setTasks(tasksRes.data);
         setProjects(projectsRes.data);
       } catch (err) {
-        setError(err.response?.data?.error || "Failed to load users and sections");
+        setError(
+          err.response?.data?.error || "Failed to load users and sections",
+        );
       } finally {
         setLoading(false);
       }
@@ -53,7 +61,8 @@ export default function TaskCreate() {
   }, []);
 
   const allowedSections = useMemo(() => {
-    if (user.role === "MANAGER") return sections.filter((s) => s.id === user.sectionId);
+    if (user.role === "MANAGER")
+      return sections.filter((s) => s.id === user.sectionId);
     return sections;
   }, [sections, user.role, user.sectionId]);
 
@@ -91,14 +100,17 @@ export default function TaskCreate() {
     if (!clientId) return [];
     return projects.filter((project) => {
       const matchesClient = project.client?.id === Number(clientId);
-      const matchesSection = !sectionId || project.sectionId === Number(sectionId);
+      const matchesSection =
+        !sectionId || project.sectionId === Number(sectionId);
       return matchesClient && matchesSection;
     });
   }, [projects, clientId, sectionId]);
 
   const sectionOptions = useMemo(() => {
     if (!selectedProject) return allowedSections;
-    return allowedSections.filter((section) => section.id === selectedProject.sectionId);
+    return allowedSections.filter(
+      (section) => section.id === selectedProject.sectionId,
+    );
   }, [allowedSections, selectedProject]);
 
   const parentTaskOptions = useMemo(() => {
@@ -117,10 +129,16 @@ export default function TaskCreate() {
     e.preventDefault();
     setError("");
 
-    if (!title || !assigneeId || !sectionId || !projectId || !deadline) {
+    if (!title || !assigneeId || !sectionId || !projectId || !deadlineDate) {
       setError("Please fill all required fields");
       return;
     }
+
+    // Combine date and time into ISO format
+    const hours = String(deadlineHours).padStart(2, "0");
+    const minutes = String(deadlineMinutes).padStart(2, "0");
+    const seconds = String(deadlineSeconds).padStart(2, "0");
+    const deadline = `${deadlineDate}T${hours}:${minutes}:${seconds}`;
 
     setSaving(true);
     try {
@@ -160,7 +178,10 @@ export default function TaskCreate() {
           <p className="page-subtitle">Assign work to your team</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="app-panel flex max-w-3xl flex-col gap-4 p-6">
+        <form
+          onSubmit={handleSubmit}
+          className="app-panel flex max-w-3xl flex-col gap-4 p-6"
+        >
           <div>
             <label className="app-label">Title</label>
             <input
@@ -213,16 +234,22 @@ export default function TaskCreate() {
                 value={projectId}
                 onChange={(e) => {
                   const nextProjectId = e.target.value;
-                  const nextProject = projects.find((project) => project.id === Number(nextProjectId));
+                  const nextProject = projects.find(
+                    (project) => project.id === Number(nextProjectId),
+                  );
                   setProjectId(nextProjectId);
-                  setSectionId(nextProject?.sectionId ? String(nextProject.sectionId) : "");
+                  setSectionId(
+                    nextProject?.sectionId ? String(nextProject.sectionId) : "",
+                  );
                   setParentId("");
                   setAssigneeId("");
                 }}
                 className="app-input"
                 required
               >
-                <option value="">{clientId ? "Select project" : "Select a client first"}</option>
+                <option value="">
+                  {clientId ? "Select project" : "Select a client first"}
+                </option>
                 {projectOptions.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
@@ -261,7 +288,9 @@ export default function TaskCreate() {
                 required
               >
                 <option value="">
-                  {user.role === "CEO" ? "Select section manager" : "Select employee"}
+                  {user.role === "CEO"
+                    ? "Select section manager"
+                    : "Select employee"}
                 </option>
                 {assigneeOptions.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -270,11 +299,14 @@ export default function TaskCreate() {
                   </option>
                 ))}
               </select>
-              {user.role === "CEO" && projectId && assigneeOptions.length === 0 && (
-                <p className="mt-1.5 text-xs text-amber-600">
-                  This project's section has no assigned manager. Assign one in Projects or Sections first.
-                </p>
-              )}
+              {user.role === "CEO" &&
+                projectId &&
+                assigneeOptions.length === 0 && (
+                  <p className="mt-1.5 text-xs text-amber-600">
+                    This project's section has no assigned manager. Assign one
+                    in Projects or Sections first.
+                  </p>
+                )}
             </div>
           </div>
 
@@ -294,18 +326,20 @@ export default function TaskCreate() {
                 ))}
               </select>
               {parentTaskOptions.length === 0 && (
-                <p className="mt-1.5 text-xs text-amber-600">No CEO main task found for your section yet.</p>
+                <p className="mt-1.5 text-xs text-amber-600">
+                  No CEO main task found for your section yet.
+                </p>
               )}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="app-label">Deadline</label>
+              <label className="app-label">Deadline (Date)</label>
               <input
                 type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+                value={deadlineDate}
+                onChange={(e) => setDeadlineDate(e.target.value)}
                 className="app-input"
                 required
               />
@@ -325,13 +359,77 @@ export default function TaskCreate() {
             </div>
           </div>
 
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="app-label">Hours</label>
+              <input
+                type="number"
+                min="0"
+                max="23"
+                value={deadlineHours}
+                onChange={(e) => {
+                  const val = Math.max(
+                    0,
+                    Math.min(23, Number(e.target.value) || 0),
+                  );
+                  setDeadlineHours(String(val));
+                }}
+                className="app-input"
+              />
+            </div>
+
+            <div>
+              <label className="app-label">Minutes</label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={deadlineMinutes}
+                onChange={(e) => {
+                  const val = Math.max(
+                    0,
+                    Math.min(59, Number(e.target.value) || 0),
+                  );
+                  setDeadlineMinutes(String(val));
+                }}
+                className="app-input"
+              />
+            </div>
+
+            <div>
+              <label className="app-label">Seconds</label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={deadlineSeconds}
+                onChange={(e) => {
+                  const val = Math.max(
+                    0,
+                    Math.min(59, Number(e.target.value) || 0),
+                  );
+                  setDeadlineSeconds(String(val));
+                }}
+                className="app-input"
+              />
+            </div>
+          </div>
+
           {error && <p className="text-sm text-rose-600">{error}</p>}
 
           <div className="flex items-center gap-3 pt-2">
-            <button type="submit" disabled={saving} className="btn-primary px-4 py-2 text-sm font-medium">
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-primary px-4 py-2 text-sm font-medium"
+            >
               {saving ? "Creating..." : "Create Task"}
             </button>
-            <button type="button" onClick={() => navigate("/tasks")} className="text-sm text-slate-500 hover:text-slate-900">
+            <button
+              type="button"
+              onClick={() => navigate("/tasks")}
+              className="text-sm text-slate-500 hover:text-slate-900"
+            >
               Cancel
             </button>
           </div>
