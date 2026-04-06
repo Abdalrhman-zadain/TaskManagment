@@ -110,6 +110,23 @@ export default function ProjectsPage() {
     }
   }
 
+  async function deleteProject(projectId) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this project? All tasks and data will be permanently lost."
+      )
+    ) {
+      return;
+    }
+    setError("");
+    try {
+      await api.delete(`/projects/${projectId}`);
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to delete project");
+    }
+  }
+
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
@@ -270,6 +287,14 @@ export default function ProjectsPage() {
                               Finish Project
                             </button>
                           )}
+                        {user.role === "CEO" && (
+                          <button
+                            onClick={() => deleteProject(project.id)}
+                            className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs text-white transition hover:bg-rose-700"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                     {project.description && (

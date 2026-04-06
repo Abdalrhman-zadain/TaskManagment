@@ -57,6 +57,23 @@ export default function CEODashboard() {
     }
   }
 
+  async function deleteProject(projectId) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this project? All tasks and data will be permanently lost.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.delete(`/projects/${projectId}`);
+      setProjects(projects.filter((p) => p.id !== projectId));
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+      alert("Failed to delete project");
+    }
+  }
+
   const done = tasks.filter((t) => t.status === "DONE").length;
   const progress = tasks.filter((t) =>
     ["TODO", "IN_PROGRESS"].includes(t.status),
@@ -332,11 +349,19 @@ export default function CEODashboard() {
                             Manager: {project.manager?.name || "Unassigned"}
                           </div>
                         </div>
-                        <span
-                          className={`rounded-full px-2 py-1 text-[10px] font-medium ${statusClasses}`}
-                        >
-                          {status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2 py-1 text-[10px] font-medium ${statusClasses}`}
+                          >
+                            {status}
+                          </span>
+                          <button
+                            onClick={() => deleteProject(project.id)}
+                            className="rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-100"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div className="mt-3">
                         <div className="mb-1 flex items-center justify-between text-xs text-slate-500">

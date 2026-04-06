@@ -159,4 +159,45 @@ router.patch("/:id/complete", requireRole("CEO"), async (req, res) => {
   }
 });
 
+// ── DELETE /api/projects/:id ───────────────────────────
+// Only CEO can delete projects
+router.delete("/:id", requireRole("CEO"), async (req, res) => {
+  try {
+    const projectId = Number(req.params.id);
+
+    // Get all task IDs in this project
+    const tasks = await prisma.task.findMany({
+      where: { projectId },
+      select: { id: true }
+    });
+    const taskIds = tasks.map(t => t.id);
+
+    // Delete all scores associated with tasks in this project
+    if (taskIds.length > 0) {
+      await prisma.score.deleteMany({
+        where: { taskId: { in: taskIds } }
+      });
+    }
+
+    // Delete all project comments
+    await prisma.projectComment.deleteMany({
+      where: { projectId }
+    });
+
+    // Delete all tasks in the project
+    await prisma.task.deleteMany({
+      where: { projectId }
+    });
+
+    // Delete the project
+    await prisma.project.delete({
+      where: { id: projectId }
+    });
+
+    res.json({ message: "Project deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
