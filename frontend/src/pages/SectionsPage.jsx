@@ -170,7 +170,7 @@ export default function SectionsPage() {
                     <div className="w-56">
                       <label className="app-label">Manager</label>
                       <select
-                        value={section.managerId || ""}
+                        value={String(section.managerId || "")}
                         onChange={(e) =>
                           updateManager(section.id, e.target.value)
                         }
@@ -178,7 +178,7 @@ export default function SectionsPage() {
                       >
                         <option value="">Unassigned</option>
                         {managers.map((m) => (
-                          <option key={m.id} value={m.id}>
+                          <option key={m.id} value={String(m.id)}>
                             {m.name}
                           </option>
                         ))}

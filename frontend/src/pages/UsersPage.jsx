@@ -47,8 +47,13 @@ export default function UsersPage() {
     e.preventDefault();
     setError("");
 
-    // Check if manager is trying to create employee without section
-    if (currentUser.role === "MANAGER" && role === "EMPLOYEE" && !currentUser.sectionId) {
+    // Check if manager is trying to create employee without section (explicit check)
+    if (
+      currentUser.role === "MANAGER" &&
+      (currentUser.sectionId === null ||
+        currentUser.sectionId === undefined ||
+        currentUser.sectionId === "")
+    ) {
       setError("You must belong to a section to create employee accounts");
       return;
     }
@@ -157,13 +162,16 @@ export default function UsersPage() {
               {t("users.addUser")}
             </h2>
 
-            {currentUser.role === "MANAGER" && !currentUser.sectionId && (
-              <div className="mb-4 rounded-lg bg-amber-50 p-3">
-                <p className="text-xs text-amber-800">
-                  ⚠️ You must be assigned to a section to create employees
-                </p>
-              </div>
-            )}
+            {currentUser.role === "MANAGER" &&
+              (currentUser.sectionId === null ||
+                currentUser.sectionId === undefined ||
+                currentUser.sectionId === "") && (
+                <div className="mb-4 rounded-lg bg-amber-50 p-3">
+                  <p className="text-xs text-amber-800">
+                    ⚠️ You must be assigned to a section to create employees
+                  </p>
+                </div>
+              )}
 
             <div className="mb-3">
               <label className="app-label">{t("users.name")}</label>
@@ -240,7 +248,13 @@ export default function UsersPage() {
 
             <button
               type="submit"
-              disabled={saving || (currentUser.role === "MANAGER" && !currentUser.sectionId)}
+              disabled={
+                saving ||
+                (currentUser.role === "MANAGER" &&
+                  (currentUser.sectionId === null ||
+                    currentUser.sectionId === undefined ||
+                    currentUser.sectionId === ""))
+              }
               className="btn-primary w-full py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Creating..." : "Create User"}

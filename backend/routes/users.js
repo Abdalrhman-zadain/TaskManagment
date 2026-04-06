@@ -11,14 +11,16 @@ router.use(authMiddleware);
 // ── POST /api/users ───────────────────────────────────
 // CEO and Manager can create accounts
 router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  // Validate manager has section FIRST
+  if (req.user.role === 'MANAGER' && !req.user.sectionId) {
+    return res.status(403).json({ error: 'You must belong to a section to create employee accounts' });
+  }
+
   let { name, email, password, role, sectionId } = req.body;
   let parsedSectionId = sectionId ? parseInt(sectionId) : null;
 
   if (req.user.role === 'MANAGER') {
     if (role !== 'EMPLOYEE') return res.status(403).json({ error: 'Managers can only create Employee accounts' });
-    if (!req.user.sectionId) {
-      return res.status(403).json({ error: 'You must belong to a section to create employee accounts' });
-    }
     parsedSectionId = req.user.sectionId; // Force manager scope
   }
 
@@ -170,12 +172,31 @@ router.delete('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
       return res.status(400).json({ error: `Cannot delete client while linked to project "${clientProject.name}"` });
     }
 
+    // Get all tasks created by or assigned to this user
+    const userTasks = await prisma.task.findMany({
+      where: {
+        OR: [
+          { creatorId: targetId },
+          { assigneeId: targetId }
+        ]
+      },
+      select: { id: true }
+    });
+    const taskIds = userTasks.map(t => t.id);
+
+    // Delete in proper order to handle foreign key constraints
     await prisma.$transaction([
-      prisma.notification.deleteMany({ where: { userId: targetId } }),
-      prisma.projectComment.deleteMany({ where: { userId: targetId } }),
+      // Delete scores for tasks created/assigned to this user
+      ...(taskIds.length > 0 ? [prisma.score.deleteMany({ where: { taskId: { in: taskIds } } })] : []),
+      // Delete scores where this user is the scorer
       prisma.score.deleteMany({ where: { userId: targetId } }),
-      prisma.task.deleteMany({ where: { assigneeId: targetId } }),
-      prisma.task.deleteMany({ where: { creatorId: targetId } }),
+      // Delete notifications
+      prisma.notification.deleteMany({ where: { userId: targetId } }),
+      // Delete project comments
+      prisma.projectComment.deleteMany({ where: { userId: targetId } }),
+      // Delete tasks
+      ...(taskIds.length > 0 ? [prisma.task.deleteMany({ where: { id: { in: taskIds } } })] : []),
+      // Delete user
       prisma.user.delete({ where: { id: targetId } })
     ]);
 
