@@ -53,8 +53,11 @@ export default function SectionsPage() {
   async function updateManager(sectionId, newManagerId) {
     setError("");
     try {
+      // Convert empty string to null for unassignment
+      const managerId = newManagerId === "" ? null : (newManagerId ? parseInt(newManagerId) : null);
+      
       await api.patch(`/sections/${sectionId}`, {
-        managerId: newManagerId || null,
+        managerId: managerId,
       });
       await loadData();
     } catch (err) {

@@ -42,7 +42,12 @@ router.patch('/:id', requireRole('CEO'), async (req, res) => {
   const { name, managerId } = req.body;
   try {
     const sectionId = parseInt(req.params.id);
-    const parsedManagerId = managerId ? parseInt(managerId) : null;
+    
+    // Parse managerId - handle null, undefined, empty string, or numeric string
+    let parsedManagerId = null;
+    if (managerId && managerId !== "") {
+      parsedManagerId = parseInt(managerId);
+    }
 
     // If assigning a manager, first unassign them from any other section
     if (parsedManagerId) {
@@ -55,10 +60,19 @@ router.patch('/:id', requireRole('CEO'), async (req, res) => {
       });
     }
 
-    // Now update this section
+    // Build update data
+    const updateData = { managerId: parsedManagerId };
+    if (name) updateData.name = name;
+
+    // Update this section
     const section = await prisma.section.update({
       where: { id: sectionId },
-      data: { name, managerId: parsedManagerId }
+      data: updateData,
+      include: {
+        manager: { select: { id: true, name: true } },
+        members: { select: { id: true, name: true, role: true, stars: true, level: true } },
+        _count: { select: { tasks: true } }
+      }
     });
     res.json(section);
   } catch (err) {
