@@ -16,6 +16,9 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
 
   if (req.user.role === 'MANAGER') {
     if (role !== 'EMPLOYEE') return res.status(403).json({ error: 'Managers can only create Employee accounts' });
+    if (!req.user.sectionId) {
+      return res.status(403).json({ error: 'You must belong to a section to create employee accounts' });
+    }
     parsedSectionId = req.user.sectionId; // Force manager scope
   }
 

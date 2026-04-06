@@ -113,7 +113,7 @@ export default function ProjectsPage() {
   async function deleteProject(projectId) {
     if (
       !window.confirm(
-        "Are you sure you want to delete this project? All tasks and data will be permanently lost."
+        "Are you sure you want to delete this project? All tasks and data will be permanently lost.",
       )
     ) {
       return;

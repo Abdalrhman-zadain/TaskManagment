@@ -47,6 +47,12 @@ export default function UsersPage() {
     e.preventDefault();
     setError("");
 
+    // Check if manager is trying to create employee without section
+    if (currentUser.role === "MANAGER" && role === "EMPLOYEE" && !currentUser.sectionId) {
+      setError("You must belong to a section to create employee accounts");
+      return;
+    }
+
     if (!name || !email || !password || !role) {
       setError("Please fill all required fields");
       return;
@@ -151,6 +157,14 @@ export default function UsersPage() {
               {t("users.addUser")}
             </h2>
 
+            {currentUser.role === "MANAGER" && !currentUser.sectionId && (
+              <div className="mb-4 rounded-lg bg-amber-50 p-3">
+                <p className="text-xs text-amber-800">
+                  ⚠️ You must be assigned to a section to create employees
+                </p>
+              </div>
+            )}
+
             <div className="mb-3">
               <label className="app-label">{t("users.name")}</label>
               <input
@@ -226,8 +240,8 @@ export default function UsersPage() {
 
             <button
               type="submit"
-              disabled={saving}
-              className="btn-primary w-full py-2 text-sm font-medium"
+              disabled={saving || (currentUser.role === "MANAGER" && !currentUser.sectionId)}
+              className="btn-primary w-full py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Creating..." : "Create User"}
             </button>
