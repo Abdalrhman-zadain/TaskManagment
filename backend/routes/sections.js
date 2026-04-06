@@ -41,9 +41,24 @@ router.post('/', requireRole('CEO'), async (req, res) => {
 router.patch('/:id', requireRole('CEO'), async (req, res) => {
   const { name, managerId } = req.body;
   try {
+    const sectionId = parseInt(req.params.id);
+    const parsedManagerId = managerId ? parseInt(managerId) : null;
+
+    // If assigning a manager, first unassign them from any other section
+    if (parsedManagerId) {
+      await prisma.section.updateMany({
+        where: {
+          managerId: parsedManagerId,
+          id: { not: sectionId }
+        },
+        data: { managerId: null }
+      });
+    }
+
+    // Now update this section
     const section = await prisma.section.update({
-      where: { id: parseInt(req.params.id) },
-      data: { name, managerId: managerId ? parseInt(managerId) : null }
+      where: { id: sectionId },
+      data: { name, managerId: parsedManagerId }
     });
     res.json(section);
   } catch (err) {

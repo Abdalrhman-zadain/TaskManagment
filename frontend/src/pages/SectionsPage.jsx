@@ -51,6 +51,7 @@ export default function SectionsPage() {
   }
 
   async function updateManager(sectionId, newManagerId) {
+    setError("");
     try {
       await api.patch(`/sections/${sectionId}`, {
         managerId: newManagerId || null,
@@ -177,11 +178,17 @@ export default function SectionsPage() {
                         className="app-input"
                       >
                         <option value="">Unassigned</option>
-                        {managers.map((m) => (
-                          <option key={m.id} value={String(m.id)}>
-                            {m.name}
-                          </option>
-                        ))}
+                        {managers
+                          .filter(
+                            (m) =>
+                              !m.managedSection ||
+                              m.managedSection?.id === section.id,
+                          )
+                          .map((m) => (
+                            <option key={m.id} value={String(m.id)}>
+                              {m.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
                     <button

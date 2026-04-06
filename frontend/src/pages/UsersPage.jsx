@@ -58,6 +58,16 @@ export default function UsersPage() {
       return;
     }
 
+    // For CEO: Check if creating a MANAGER without section
+    if (
+      currentUser.role === "CEO" &&
+      role === "MANAGER" &&
+      (sectionId === null || sectionId === undefined || sectionId === "")
+    ) {
+      setError("Section is required when creating a Manager");
+      return;
+    }
+
     if (!name || !email || !password || !role) {
       setError("Please fill all required fields");
       return;
@@ -226,13 +236,21 @@ export default function UsersPage() {
 
                 {shouldShowSectionPicker && (
                   <div className="mb-4">
-                    <label className="app-label">Section (optional)</label>
+                    <label className="app-label">
+                      Section{" "}
+                      {role === "MANAGER" && (
+                        <span className="text-rose-600">*</span>
+                      )}
+                    </label>
                     <select
                       value={sectionId}
                       onChange={(e) => setSectionId(e.target.value)}
+                      required={role === "MANAGER"}
                       className="app-input"
                     >
-                      <option value="">Unassigned</option>
+                      <option value="">
+                        {role === "MANAGER" ? "Select a section" : "Unassigned"}
+                      </option>
                       {sections.map((section) => (
                         <option key={section.id} value={section.id}>
                           {section.name}

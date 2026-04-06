@@ -33,6 +33,11 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       return res.status(400).json({ error: 'Role must be MANAGER, EMPLOYEE, or CLIENT' });
     }
 
+    // Managers MUST have a section
+    if (role === 'MANAGER' && !parsedSectionId) {
+      return res.status(400).json({ error: 'Section is required when creating a Manager' });
+    }
+
     if (role === 'CLIENT') {
       parsedSectionId = null;
     }
@@ -55,24 +60,52 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashed,
-        role,
-        sectionId: parsedSectionId
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        section: { select: { id: true, name: true } }
-      }
-    });
+    // For managers: create user AND update section's managerId
+    if (role === 'MANAGER' && parsedSectionId) {
+      const user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashed,
+          role,
+          sectionId: parsedSectionId
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          section: { select: { id: true, name: true } }
+        }
+      });
 
-    res.status(201).json(user);
+      // Update section to assign this manager
+      await prisma.section.update({
+        where: { id: parsedSectionId },
+        data: { managerId: user.id }
+      });
+
+      res.status(201).json(user);
+    } else {
+      const user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashed,
+          role,
+          sectionId: parsedSectionId
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          section: { select: { id: true, name: true } }
+        }
+      });
+
+      res.status(201).json(user);
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -116,6 +149,7 @@ router.get('/', async (req, res) => {
         id: true, name: true, email: true, role: true,
         stars: true, level: true, onTimeCount: true,
         section: { select: { id: true, name: true } },
+        managedSection: { select: { id: true, name: true } },
         scores: { select: { value: true, isOnTime: true } }
       }
     });
