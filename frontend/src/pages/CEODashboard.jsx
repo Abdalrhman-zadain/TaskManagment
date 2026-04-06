@@ -40,6 +40,23 @@ export default function CEODashboard() {
     load();
   }, []);
 
+  async function deleteSection(sectionId) {
+    if (
+      !window.confirm(
+        "Are you sure? This will delete the section and all associated data.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.delete(`/sections/${sectionId}`);
+      setSections(sections.filter((s) => s.id !== sectionId));
+    } catch (err) {
+      console.error("Failed to delete section:", err);
+      alert("Failed to delete section");
+    }
+  }
+
   const done = tasks.filter((t) => t.status === "DONE").length;
   const progress = tasks.filter((t) =>
     ["TODO", "IN_PROGRESS"].includes(t.status),
@@ -186,10 +203,18 @@ export default function CEODashboard() {
                             {t("projects.active")}
                           </span>
                         </div>
-                        <span className="text-xs text-slate-500">
-                          {t("projects.manager")}:{" "}
-                          {sec.manager?.name || "Unassigned"}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-slate-500">
+                            {t("projects.manager")}:{" "}
+                            {sec.manager?.name || "Unassigned"}
+                          </span>
+                          <button
+                            onClick={() => deleteSection(sec.id)}
+                            className="rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-100"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div className="mb-2 flex items-center gap-2">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">

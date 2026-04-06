@@ -61,6 +61,22 @@ export default function SectionsPage() {
     }
   }
 
+  async function handleDelete(sectionId) {
+    if (
+      !window.confirm(
+        "Are you sure? This will delete the section and all associated data.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.delete(`/sections/${sectionId}`);
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.error || "Unable to delete section");
+    }
+  }
+
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
@@ -150,22 +166,30 @@ export default function SectionsPage() {
                     </div>
                   </div>
 
-                  <div className="w-56">
-                    <label className="app-label">Manager</label>
-                    <select
-                      value={section.managerId || ""}
-                      onChange={(e) =>
-                        updateManager(section.id, e.target.value)
-                      }
-                      className="app-input"
+                  <div className="flex items-center gap-3">
+                    <div className="w-56">
+                      <label className="app-label">Manager</label>
+                      <select
+                        value={section.managerId || ""}
+                        onChange={(e) =>
+                          updateManager(section.id, e.target.value)
+                        }
+                        className="app-input"
+                      >
+                        <option value="">Unassigned</option>
+                        {managers.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(section.id)}
+                      className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100"
                     >
-                      <option value="">Unassigned</option>
-                      {managers.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
+                      Delete
+                    </button>
                   </div>
                 </div>
               </div>
