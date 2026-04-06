@@ -42,7 +42,7 @@ router.patch('/:id', requireRole('CEO'), async (req, res) => {
   const { name, managerId } = req.body;
   try {
     const sectionId = parseInt(req.params.id);
-    
+
     // Parse managerId - handle null, undefined, empty string, or numeric string
     let parsedManagerId = null;
     if (managerId && managerId !== "") {
