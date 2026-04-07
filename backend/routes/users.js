@@ -131,6 +131,84 @@ router.get('/me', async (req, res) => {
 
 // ── GET /api/users ─────────────────────────────────────
 // CEO sees all users, Manager sees their section
+// Self profile update
+router.patch('/me', async (req, res) => {
+  try {
+    const { name, email, currentPassword, newPassword } = req.body;
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const updateData = {};
+
+    if (name !== undefined) {
+      const trimmedName = String(name).trim();
+      if (!trimmedName) {
+        return res.status(400).json({ error: 'Name cannot be empty' });
+      }
+      updateData.name = trimmedName;
+    }
+
+    if (email !== undefined) {
+      const trimmedEmail = String(email).trim();
+      if (!trimmedEmail) {
+        return res.status(400).json({ error: 'Email cannot be empty' });
+      }
+
+      const existingEmail = await prisma.user.findUnique({ where: { email: trimmedEmail } });
+      if (existingEmail && existingEmail.id !== req.user.id) {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
+      updateData.email = trimmedEmail;
+    }
+
+    if (newPassword !== undefined && String(newPassword).trim()) {
+      if (!currentPassword || !String(currentPassword).trim()) {
+        return res.status(400).json({ error: 'Current password is required to set a new password' });
+      }
+
+      const validPassword = await bcrypt.compare(String(currentPassword), currentUser.password);
+      if (!validPassword) {
+        return res.status(400).json({ error: 'Current password is incorrect' });
+      }
+
+      if (String(newPassword).length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters' });
+      }
+
+      updateData.password = await bcrypt.hash(String(newPassword), 10);
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        stars: true,
+        level: true,
+        onTimeCount: true,
+        createdAt: true,
+        section: { select: { id: true, name: true } }
+      }
+    });
+
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     let where = {};

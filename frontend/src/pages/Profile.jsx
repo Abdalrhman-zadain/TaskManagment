@@ -7,7 +7,19 @@ export default function Profile() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    currentPassword: "",
+    newPassword: "",
+  });
+
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isOwnProfile = !id;
   const role =
     user.role === "CEO"
       ? "CEO"
@@ -24,6 +36,60 @@ export default function Profile() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    setForm((prev) => ({
+      ...prev,
+      name: profile.name || "",
+      email: profile.email || "",
+    }));
+  }, [profile]);
+
+  async function saveProfile(e) {
+    e.preventDefault();
+    setSaveError("");
+    setSaveSuccess("");
+
+    const payload = {
+      name: form.name,
+      email: form.email,
+    };
+
+    if (form.newPassword.trim()) {
+      payload.currentPassword = form.currentPassword;
+      payload.newPassword = form.newPassword;
+    }
+
+    try {
+      setSaving(true);
+      const res = await api.patch("/users/me", payload);
+
+      setProfile((prev) => ({ ...prev, ...res.data }));
+      setEditMode(false);
+      setForm((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+      }));
+      setSaveSuccess("Profile updated successfully.");
+
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...storedUser,
+          name: res.data.name,
+          email: res.data.email,
+        })
+      );
+    } catch (err) {
+      setSaveError(err.response?.data?.error || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -71,9 +137,24 @@ export default function Profile() {
             </div>
 
             <div className="text-base font-bold text-slate-900">{profile.name}</div>
+            <div className="text-xs text-slate-500">{profile.email}</div>
             <div className="mt-0.5 text-xs text-slate-500">
-              {profile.section?.name || "No section"} · {profile.role}
+              {profile.section?.name || "No section"} - {profile.role}
             </div>
+
+            {isOwnProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditMode((prev) => !prev);
+                  setSaveError("");
+                  setSaveSuccess("");
+                }}
+                className="mt-4 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                {editMode ? "Cancel Edit" : "Edit Profile"}
+              </button>
+            )}
 
             {showsPerformance && (
               <>
@@ -104,11 +185,9 @@ export default function Profile() {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <span
                         key={star}
-                        className={`text-base ${
-                          star <= profile.stars ? "text-yellow-500" : "text-slate-200"
-                        }`}
+                        className={`text-base ${star <= profile.stars ? "text-yellow-500" : "text-slate-200"}`}
                       >
-                        ★
+                        &#9733;
                       </span>
                     ))}
                   </div>
@@ -140,6 +219,73 @@ export default function Profile() {
                 year: "numeric",
               })}
             </div>
+
+            {isOwnProfile && editMode && (
+              <form onSubmit={saveProfile} className="mt-4 w-full border-t border-slate-200 pt-4 text-left">
+                <div className="mb-3">
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-[#1275e2] transition focus:ring-2"
+                    required
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-[#1275e2] transition focus:ring-2"
+                    required
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={form.currentPassword}
+                    onChange={(e) => setForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                    placeholder="Required only when changing password"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-[#1275e2] transition focus:ring-2"
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={form.newPassword}
+                    onChange={(e) => setForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="Leave blank to keep current password"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-[#1275e2] transition focus:ring-2"
+                  />
+                </div>
+
+                {saveError && <p className="mb-2 text-xs text-rose-600">{saveError}</p>}
+                {saveSuccess && <p className="mb-2 text-xs text-emerald-600">{saveSuccess}</p>}
+
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full rounded-lg bg-[#1275e2] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#0f66c7] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+              </form>
+            )}
           </div>
 
           {showsPerformance ? (
