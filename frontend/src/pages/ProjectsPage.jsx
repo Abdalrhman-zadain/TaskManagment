@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
@@ -11,6 +12,7 @@ function roleLabel(user) {
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -18,6 +20,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [expandedProjectId, setExpandedProjectId] = useState(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -261,65 +264,132 @@ export default function ProjectsPage() {
                 return (
                   <div
                     key={project.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-4"
+                    className="rounded-xl border border-slate-200 bg-slate-50/80"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">
-                          {project.name}
+                    <div
+                      onClick={() =>
+                        setExpandedProjectId(
+                          expandedProjectId === project.id ? null : project.id,
+                        )
+                      }
+                      className="cursor-pointer p-4 transition hover:bg-slate-100"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-semibold text-slate-900">
+                              {project.name}
+                            </div>
+                            <span className="text-lg text-slate-400">
+                              {expandedProjectId === project.id ? "▼" : "▶"}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            Client: {project.client?.name} · Manager:{" "}
+                            {project.manager?.name} · Section:{" "}
+                            {project.section?.name}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          Client: {project.client?.name} · Manager:{" "}
-                          {project.manager?.name} · Section:{" "}
-                          {project.section?.name}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                          {project.status}
-                        </span>
-                        {user.role === "CEO" &&
-                          project.status !== "COMPLETED" && (
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                            {project.status}
+                          </span>
+                          {user.role === "CEO" &&
+                            project.status !== "COMPLETED" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  completeProject(project.id);
+                                }}
+                                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs text-white transition hover:bg-emerald-700"
+                              >
+                                Finish Project
+                              </button>
+                            )}
+                          {user.role === "CEO" && (
                             <button
-                              onClick={() => completeProject(project.id)}
-                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs text-white transition hover:bg-emerald-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteProject(project.id);
+                              }}
+                              className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs text-white transition hover:bg-rose-700"
                             >
-                              Finish Project
+                              Delete
                             </button>
                           )}
-                        {user.role === "CEO" && (
-                          <button
-                            onClick={() => deleteProject(project.id)}
-                            className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs text-white transition hover:bg-rose-700"
-                          >
-                            Delete
-                          </button>
+                        </div>
+                      </div>
+                      {project.description && (
+                        <p className="mt-3 text-sm text-slate-600">
+                          {project.description}
+                        </p>
+                      )}
+                      <div className="mt-3 text-xs text-slate-500">
+                        Budget: {project.budget || "Not set"} · Deadline:{" "}
+                        {project.deadline
+                          ? new Date(project.deadline).toLocaleDateString()
+                          : "Not set"}
+                      </div>
+                      <div className="mt-3">
+                        <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                          <span>Task Progress</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-[#1275e2]"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {expandedProjectId === project.id && (
+                      <div className="border-t border-slate-200 bg-white p-4">
+                        <h3 className="mb-3 text-sm font-bold text-slate-900">
+                          Project Tasks ({project.tasks?.length || 0})
+                        </h3>
+                        {project.tasks && project.tasks.length > 0 ? (
+                          <div className="space-y-2">
+                            {project.tasks.map((task) => (
+                              <div
+                                key={task.id}
+                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                className="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-blue-300 hover:bg-blue-50"
+                              >
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-slate-900">
+                                    {task.title}
+                                  </div>
+                                  <div className="mt-0.5 text-xs text-slate-500">
+                                    {task.assignee?.name} · {task.section?.name}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                                      task.status === "DONE"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : task.status === "PENDING_APPROVAL"
+                                          ? "bg-amber-50 text-amber-700"
+                                          : task.status === "IN_PROGRESS"
+                                            ? "bg-blue-50 text-blue-700"
+                                            : "bg-slate-100 text-slate-600"
+                                    }`}
+                                  >
+                                    {task.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-500">
+                            No tasks assigned to this project yet.
+                          </p>
                         )}
                       </div>
-                    </div>
-                    {project.description && (
-                      <p className="mt-3 text-sm text-slate-600">
-                        {project.description}
-                      </p>
                     )}
-                    <div className="mt-3 text-xs text-slate-500">
-                      Budget: {project.budget || "Not set"} · Deadline:{" "}
-                      {project.deadline
-                        ? new Date(project.deadline).toLocaleDateString()
-                        : "Not set"}
-                    </div>
-                    <div className="mt-3">
-                      <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
-                        <span>Task Progress</span>
-                        <span>{progress}%</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                        <div
-                          className="h-full rounded-full bg-[#1275e2]"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
                   </div>
                 );
               })}

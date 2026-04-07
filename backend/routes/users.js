@@ -178,6 +178,100 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// ── PATCH /api/users/:id ──────────────────────────────
+// CEO and Manager can update users
+router.patch('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  try {
+    const targetId = parseInt(req.params.id);
+    const { name, email, password, role, sectionId } = req.body;
+
+    // Get the target user
+    const targetUser = await prisma.user.findUnique({ where: { id: targetId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    // Can't edit yourself or CEO
+    if (targetUser.id === req.user.id) {
+      return res.status(403).json({ error: 'You cannot edit your own account' });
+    }
+    if (targetUser.role === 'CEO') {
+      return res.status(403).json({ error: 'Cannot edit CEO account' });
+    }
+
+    // Managers can only edit employees in their section
+    if (req.user.role === 'MANAGER') {
+      if (targetUser.role !== 'EMPLOYEE' || targetUser.sectionId !== req.user.sectionId) {
+        return res.status(403).json({ error: 'Managers can only edit employees in their section' });
+      }
+    }
+
+    // Validate inputs
+    const updateData = {};
+
+    if (name !== undefined && name.trim()) {
+      updateData.name = name.trim();
+    }
+
+    if (email !== undefined && email.trim()) {
+      const existingEmail = await prisma.user.findUnique({ where: { email: email.trim() } });
+      if (existingEmail && existingEmail.id !== targetId) {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
+      updateData.email = email.trim();
+    }
+
+    if (password !== undefined && password.trim()) {
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      }
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    // Only CEO can change role
+    if (req.user.role === 'CEO' && role !== undefined) {
+      if (!['MANAGER', 'EMPLOYEE', 'CLIENT'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role' });
+      }
+      // If changing to MANAGER, sectionId is required
+      if (role === 'MANAGER' && !sectionId) {
+        return res.status(400).json({ error: 'Section is required for Manager role' });
+      }
+      updateData.role = role;
+    }
+
+    // Handle section changes
+    let newSectionId = undefined;
+    if (sectionId !== undefined) {
+      if (sectionId === null || sectionId === '') {
+        newSectionId = null; // Remove from section (only for CLIENT or unassign)
+      } else {
+        const section = await prisma.section.findUnique({ where: { id: parseInt(sectionId) } });
+        if (!section) {
+          return res.status(404).json({ error: 'Section not found' });
+        }
+        newSectionId = parseInt(sectionId);
+      }
+      updateData.sectionId = newSectionId;
+    }
+
+    // Update the user
+    const updatedUser = await prisma.user.update({
+      where: { id: targetId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        section: { select: { id: true, name: true } }
+      }
+    });
+
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── DELETE /api/users/:id ─────────────────────────────
 router.delete('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
   try {

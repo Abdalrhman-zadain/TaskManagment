@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
+import Toast from "../components/Toast";
+import EditUserModal from "../components/EditUserModal";
 import api from "../api/client";
 
 export default function UsersPage() {
@@ -20,8 +22,12 @@ export default function UsersPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("EMPLOYEE");
   const [sectionId, setSectionId] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("info");
+  const [editingUser, setEditingUser] = useState(null);
 
   async function loadData() {
     setLoading(true);
@@ -46,6 +52,7 @@ export default function UsersPage() {
   async function createUser(e) {
     e.preventDefault();
     setError("");
+    setToastMessage("");
 
     // Check if manager is trying to create employee without section (explicit check)
     if (
@@ -54,7 +61,10 @@ export default function UsersPage() {
         currentUser.sectionId === undefined ||
         currentUser.sectionId === "")
     ) {
-      setError("You must belong to a section to create employee accounts");
+      const msg = "You must belong to a section to create employee accounts";
+      setError(msg);
+      setToastMessage(msg);
+      setToastType("error");
       return;
     }
 
@@ -64,18 +74,24 @@ export default function UsersPage() {
       role === "MANAGER" &&
       (sectionId === null || sectionId === undefined || sectionId === "")
     ) {
-      setError("Section is required when creating a Manager");
+      const msg = "Section is required when creating a Manager";
+      setError(msg);
+      setToastMessage(msg);
+      setToastType("error");
       return;
     }
 
     if (!name || !email || !password || !role) {
-      setError("Please fill all required fields");
+      const msg = "Please fill all required fields";
+      setError(msg);
+      setToastMessage(msg);
+      setToastType("error");
       return;
     }
 
     setSaving(true);
     try {
-      await api.post("/users", {
+      const res = await api.post("/users", {
         name,
         email,
         password,
@@ -83,15 +99,23 @@ export default function UsersPage() {
         sectionId: sectionId || null,
       });
 
+      // Success notification
+      setToastMessage(`✓ User "${res.data.name}" created successfully!`);
+      setToastType("success");
+
       setName("");
       setEmail("");
       setPassword("");
+      setShowPassword(false);
       setRole("EMPLOYEE");
       setSectionId("");
 
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to create user");
+      const errorMsg = err.response?.data?.error || "Failed to create user";
+      setError(errorMsg);
+      setToastMessage(errorMsg);
+      setToastType("error");
     } finally {
       setSaving(false);
     }
@@ -108,10 +132,20 @@ export default function UsersPage() {
 
     try {
       await api.delete(`/users/${id}`);
+      setToastMessage("✓ User deleted successfully");
+      setToastType("success");
       await loadData();
     } catch (err) {
-      alert(err.response?.data?.error || "Error deleting user");
+      const errorMsg = err.response?.data?.error || "Error deleting user";
+      setToastMessage(errorMsg);
+      setToastType("error");
     }
+  }
+
+  async function handleEditSuccess() {
+    setToastMessage("✓ User updated successfully");
+    setToastType("success");
+    await loadData();
   }
 
   if (loading) {
@@ -208,15 +242,25 @@ export default function UsersPage() {
 
             <div className="mb-3">
               <label className="app-label">{t("common.password")}</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="app-input"
-                placeholder="Minimum 6 characters"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="app-input pr-10"
+                  placeholder="Minimum 6 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                </button>
+              </div>
             </div>
 
             {currentUser.role === "CEO" && (
@@ -397,13 +441,25 @@ export default function UsersPage() {
                     {((currentUser.role === "CEO" && user.role !== "CEO") ||
                       (currentUser.role === "MANAGER" &&
                         user.role === "EMPLOYEE")) && (
-                      <button
-                        onClick={(e) => deleteUser(user.id, e)}
-                        className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
-                        title="Delete user"
-                      >
-                        Delete
-                      </button>
+                      <div className="ml-3 flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingUser(user);
+                          }}
+                          className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-500 hover:text-white"
+                          title="Edit user"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => deleteUser(user.id, e)}
+                          className="rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
+                          title="Delete user"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -417,6 +473,22 @@ export default function UsersPage() {
           </div>
         </div>
       </main>
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          sections={sections}
+          onClose={() => setEditingUser(null)}
+          onSuccess={handleEditSuccess}
+          currentUserRole={currentUser.role}
+        />
+      )}
+
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        onClose={() => setToastMessage("")}
+      />
     </div>
   );
 }
