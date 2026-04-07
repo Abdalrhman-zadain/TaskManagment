@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = `http://${window.location.hostname}:5000`;
+// Use current origin (works for localhost and deployed via Cloudflare)
+const SOCKET_URL = window.location.origin;
 
 export const socket = io(SOCKET_URL, {
     autoConnect: false,

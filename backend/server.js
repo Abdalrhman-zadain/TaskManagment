@@ -34,7 +34,26 @@ const swaggerSpec = swaggerJsdoc({
 });
 
 // ── Middleware ─────────────────────────────────────────
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'http://192.168.1.251:5173', 'http://192.168.1.251:5173', 'http://0.0.0.0:5173'] }));
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Allow localhost variants
+    if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('192.168')) {
+      return callback(null, true);
+    }
+
+    // Allow Cloudflare tunnel URLs (trycloudflare.com) and any deployed URL
+    if (origin.includes('trycloudflare.com') || origin.includes('.ngrok') || origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+
+    // Allow from same origin
+    return callback(null, true);
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
