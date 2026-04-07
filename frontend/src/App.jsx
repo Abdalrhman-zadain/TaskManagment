@@ -8,6 +8,7 @@ import ManagerDashboard from "./pages/ManagerDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import TaskDetail from "./pages/TaskDetail";
 import Profile from "./pages/Profile";
+import ProfileEdit from "./pages/ProfileEdit";
 import TasksPage from "./pages/TasksPage";
 import TaskCreate from "./pages/TaskCreate";
 import SectionsPage from "./pages/SectionsPage";
@@ -168,6 +169,15 @@ export default function App() {
               element={
                 <Protected>
                   <Profile />
+                </Protected>
+              }
+            />
+
+            <Route
+              path="/profile/edit"
+              element={
+                <Protected>
+                  <ProfileEdit />
                 </Protected>
               }
             />
