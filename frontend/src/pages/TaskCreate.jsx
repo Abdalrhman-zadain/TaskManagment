@@ -116,9 +116,11 @@ export default function TaskCreate() {
   const assigneeOptions = useMemo(() => {
     if (user.role === "CEO") {
       if (!sectionId) return [];
-      const selectedSection = sections.find((s) => s.id === Number(sectionId));
-      if (!selectedSection?.managerId) return [];
-      return users.filter((u) => u.id === selectedSection.managerId);
+      return users.filter(
+        (u) =>
+          u.section?.id === Number(sectionId) &&
+          (u.role === "MANAGER" || u.role === "EMPLOYEE"),
+      );
     }
 
     const eligible = users.filter((u) => u.role === "EMPLOYEE");
@@ -385,7 +387,7 @@ export default function TaskCreate() {
               >
                 <option value="">
                   {user.role === "CEO"
-                    ? "Select section manager"
+                    ? "Select manager or employee"
                     : "Select employee"}
                 </option>
                 {assigneeOptions.map((u) => (
@@ -399,8 +401,7 @@ export default function TaskCreate() {
                 projectId &&
                 assigneeOptions.length === 0 && (
                   <p className="mt-1.5 text-xs text-amber-600">
-                    This project's section has no assigned manager. Assign one
-                    in Projects or Sections first.
+                    No eligible assignee found in this section.
                   </p>
                 )}
             </div>

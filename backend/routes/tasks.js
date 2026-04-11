@@ -165,15 +165,17 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         return res.status(400).json({ error: 'CEO must create a main task (without parent task)' });
       }
 
-      if (assignee.role !== 'MANAGER') {
-        return res.status(400).json({ error: 'CEO can only assign main tasks to a section manager' });
+      if (!['MANAGER', 'EMPLOYEE'].includes(assignee.role)) {
+        return res.status(400).json({ error: 'CEO can only assign main tasks to a section manager or employee' });
       }
 
-      if (!section.managerId || section.managerId !== parsedAssigneeId) {
-        return res.status(400).json({ error: 'Selected assignee must be the manager of the selected section' });
-      }
-      if (project.managerId !== parsedAssigneeId) {
-        return res.status(400).json({ error: 'Selected assignee must be the manager for this project' });
+      if (assignee.role === 'MANAGER') {
+        if (!section.managerId || section.managerId !== parsedAssigneeId) {
+          return res.status(400).json({ error: 'Selected assignee must be the manager of the selected section' });
+        }
+        if (project.managerId !== parsedAssigneeId) {
+          return res.status(400).json({ error: 'Selected assignee must be the manager for this project' });
+        }
       }
     }
 
