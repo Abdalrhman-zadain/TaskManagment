@@ -32,9 +32,9 @@ export default function Toast({ message, type, onClose }) {
     }[type] || "text-slate-600";
 
   const icons = {
-    success: "✓",
-    error: "✕",
-    info: "ⓘ",
+    success: "\u2713",
+    error: "\u2715",
+    info: "\u24D8",
   };
 
   return (
@@ -46,3 +46,4 @@ export default function Toast({ message, type, onClose }) {
     </div>
   );
 }
+

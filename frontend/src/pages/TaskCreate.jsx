@@ -172,11 +172,53 @@ export default function TaskCreate() {
       return;
     }
 
-    // Combine date and time into ISO format
-    const hours = String(deadlineHours).padStart(2, "0");
-    const minutes = String(deadlineMinutes).padStart(2, "0");
-    const seconds = String(deadlineSeconds).padStart(2, "0");
-    const deadline = `${deadlineDate}T${hours}:${minutes}:${seconds}`;
+    const hours = Number(deadlineHours);
+    const minutes = Number(deadlineMinutes);
+    const seconds = Number(deadlineSeconds);
+
+    if (
+      Number.isNaN(hours) ||
+      Number.isNaN(minutes) ||
+      Number.isNaN(seconds) ||
+      hours < 0 ||
+      hours > 23 ||
+      minutes < 0 ||
+      minutes > 59 ||
+      seconds < 0 ||
+      seconds > 59
+    ) {
+      setError("Invalid deadline time");
+      return;
+    }
+
+    const [year, month, day] = deadlineDate.split("-").map(Number);
+    const deadlineDateObj = new Date(
+      year,
+      (month || 1) - 1,
+      day || 1,
+      hours,
+      minutes,
+      seconds,
+      0,
+    );
+
+    if (Number.isNaN(deadlineDateObj.getTime())) {
+      setError("Invalid deadline date/time");
+      return;
+    }
+
+    const deadline = deadlineDateObj.toISOString();
+
+    const selectedProjectForValidation = projects.find(
+      (project) => project.id === Number(projectId),
+    );
+    if (
+      selectedProjectForValidation &&
+      selectedProjectForValidation.sectionId !== Number(sectionId)
+    ) {
+      setError("Project must belong to the selected section");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -316,6 +358,7 @@ export default function TaskCreate() {
                 value={sectionId}
                 onChange={(e) => {
                   setSectionId(e.target.value);
+                  setProjectId("");
                   setAssigneeId("");
                   setParentId("");
                   setPrTransactionType("");

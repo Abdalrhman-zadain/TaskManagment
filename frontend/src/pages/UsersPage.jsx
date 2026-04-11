@@ -100,7 +100,7 @@ export default function UsersPage() {
       });
 
       // Success notification
-      setToastMessage(`✓ User "${res.data.name}" created successfully!`);
+      setToastMessage(`User "${res.data.name}" created successfully!`);
       setToastType("success");
 
       setName("");
@@ -132,7 +132,7 @@ export default function UsersPage() {
 
     try {
       await api.delete(`/users/${id}`);
-      setToastMessage("✓ User deleted successfully");
+      setToastMessage("User deleted successfully");
       setToastType("success");
       await loadData();
     } catch (err) {
@@ -143,7 +143,7 @@ export default function UsersPage() {
   }
 
   async function handleEditSuccess() {
-    setToastMessage("✓ User updated successfully");
+    setToastMessage("User updated successfully");
     setToastType("success");
     await loadData();
   }

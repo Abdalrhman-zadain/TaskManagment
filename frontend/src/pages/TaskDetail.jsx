@@ -28,6 +28,7 @@ export default function TaskDetail() {
   const [linkInput, setLinkInput] = useState("");
   const [evidenceNoteInput, setEvidenceNoteInput] = useState("");
   const [activeEvidenceIndex, setActiveEvidenceIndex] = useState(0);
+  const [nowMs, setNowMs] = useState(Date.now());
   const fileInputRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isArabic = i18n.language?.startsWith("ar");
@@ -36,6 +37,14 @@ export default function TaskDetail() {
   useEffect(() => {
     loadTask();
   }, [id]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   async function loadTask() {
     try {
@@ -335,6 +344,41 @@ export default function TaskDetail() {
   const isOverdue =
     new Date(task.deadline) < new Date() && task.status !== "DONE";
   const daysLeft = Math.ceil((new Date(task.deadline) - new Date()) / 86400000);
+  const deadlineDateTime = new Date(task.deadline);
+  const remainingMs = deadlineDateTime.getTime() - nowMs;
+  const hasRemainingTime = remainingMs > 0;
+  const remainingDays = hasRemainingTime
+    ? Math.floor(remainingMs / (1000 * 60 * 60 * 24))
+    : 0;
+  const remainingHours = String(
+    hasRemainingTime
+      ? Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      : 0,
+  ).padStart(2, "0");
+  const remainingMinutes = String(
+    hasRemainingTime ? Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60)) : 0,
+  ).padStart(2, "0");
+  const remainingSeconds = String(
+    hasRemainingTime ? Math.floor((remainingMs % (1000 * 60)) / 1000) : 0,
+  ).padStart(2, "0");
+  const remainingTimerLabel = hasRemainingTime
+    ? `${remainingDays}${tx("ي ", "d ")}${remainingHours}:${remainingMinutes}:${remainingSeconds}`
+    : `00${tx("ي ", "d ")}00:00:00`;
+  const deadlineDateLabel = deadlineDateTime.toLocaleDateString(
+    isArabic ? "ar-EG" : "en-GB",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    },
+  );
+  const deadlineTimeLabel = deadlineDateTime.toLocaleTimeString(
+    isArabic ? "ar-EG" : "en-GB",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
   const isAssignee = user.id === task.assigneeId;
   const isCreator = user.id === task.creatorId;
   const isPendingApproval = task.status === "PENDING_APPROVAL";
@@ -756,14 +800,13 @@ export default function TaskDetail() {
                 {tx("الموعد النهائي", "Deadline")}
               </div>
               <div className="text-lg font-bold text-slate-900">
-                {new Date(task.deadline).toLocaleDateString(
-                  isArabic ? "ar-EG" : "en-GB",
-                  {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  },
-                )}
+                {deadlineDateLabel}
+              </div>
+              <div className="mt-1 text-sm font-medium text-slate-700">
+                {tx("الوقت:", "Time:")} {deadlineTimeLabel}
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">
+                {tx("\u0627\u0644\u0639\u062f \u0627\u0644\u062a\u0646\u0627\u0632\u0644\u064a:", "Countdown:")} {remainingTimerLabel}
               </div>
               <div
                 className={`mt-1 text-xs ${
@@ -1230,4 +1273,5 @@ export default function TaskDetail() {
     </div>
   );
 }
+
 

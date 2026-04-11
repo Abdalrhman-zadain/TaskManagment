@@ -49,7 +49,7 @@
     "team": "الفريق",
     "myTasks": "مهامي",
     "myProfile": "ملفي الشخصي",
-    "notifications": "الإخطارات"
+    "notifications": "الإشعارات"
   },
   "login": {
     "title": "تسجيل الدخول",
@@ -149,14 +149,14 @@
     "changePassword": "تغيير كلمة المرور"
   },
   "notifications": {
-    "title": "الإخطارات",
-    "allNotifications": "جميع الإخطارات",
+    "title": "الإشعارات",
+    "allNotifications": "جميع الإشعارات",
     "unread": "غير مقروءة",
     "read": "مقروءة",
     "markAsRead": "تحديد كمقروءة",
     "markAsUnread": "تحديد كغير مقروءة",
     "deleteNotification": "حذف",
-    "noNotifications": "لا توجد إخطارات"
+    "noNotifications": "لا توجد إشعارات"
   },
   "sections": {
     "title": "الأقسام",

@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { createNotification } = require('../utils/notify');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -85,6 +86,12 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         data: { managerId: user.id }
       });
 
+      await createNotification({
+        userId: user.id,
+        type: 'account_created',
+        message: `Your account has been created by ${req.user.role}.`
+      });
+
       res.status(201).json(user);
     } else {
       const user = await prisma.user.create({
@@ -102,6 +109,12 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
           role: true,
           section: { select: { id: true, name: true } }
         }
+      });
+
+      await createNotification({
+        userId: user.id,
+        type: 'account_created',
+        message: `Your account has been created by ${req.user.role}.`
       });
 
       res.status(201).json(user);
