@@ -11,6 +11,19 @@ export default function Sidebar({ role }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const isArabic = currentLang?.startsWith("ar");
+  const rolePortalLabelMap = {
+    CEO: isArabic ? "بوابة المدير التنفيذي" : "CEO Portal",
+    Manager: isArabic ? "بوابة المدير" : "Manager Portal",
+    Employee: isArabic ? "بوابة الموظف" : "Employee Portal",
+    Client: isArabic ? "بوابة العميل" : "Client Portal",
+  };
+  const userRoleLabelMap = {
+    CEO: isArabic ? "مدير تنفيذي" : "CEO",
+    MANAGER: isArabic ? "مدير" : "MANAGER",
+    EMPLOYEE: isArabic ? "موظف" : "EMPLOYEE",
+    CLIENT: isArabic ? "عميل" : "CLIENT",
+  };
 
   useEffect(() => {
     // Sync language state with i18n
@@ -96,7 +109,9 @@ export default function Sidebar({ role }) {
         <div className="text-xl font-bold tracking-tight text-slate-900">
           Team<span className="text-[#1275e2]">Task</span>
         </div>
-        <div className="mt-0.5 text-xs text-slate-500">{role} Portal</div>
+        <div className="mt-0.5 text-xs text-slate-500">
+          {rolePortalLabelMap[role] || (isArabic ? "بوابة المستخدم" : `${role} Portal`)}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -192,7 +207,9 @@ export default function Sidebar({ role }) {
             <div className="text-sm font-medium text-slate-900">
               {user.name}
             </div>
-            <div className="text-xs text-slate-500">{user.role}</div>
+            <div className="text-xs text-slate-500">
+              {userRoleLabelMap[user.role] || user.role}
+            </div>
           </div>
         </div>
         <button

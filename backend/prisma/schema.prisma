@@ -124,6 +124,7 @@ model Task {
   score              Score?
   evidenceUrl        String?
   evidenceUrls       String[]       @default([])
+  evidenceNote       String?
   evidenceUploadedAt DateTime?
   approvalStatus     ApprovalStatus @default(PENDING)
   approvalComment    String?

@@ -42,6 +42,7 @@ router.use(authMiddleware);
 router.post('/upload', upload.array('files', 10), async (req, res) => {
     const { taskId } = req.body;
     const taskIdNum = parseInt(taskId);
+    const evidenceNote = String(req.body.note || '').trim();
 
     try {
         const submittedLinks = req.body.links
@@ -75,6 +76,7 @@ router.post('/upload', upload.array('files', 10), async (req, res) => {
             data: {
                 evidenceUrl: evidenceItems[0],
                 evidenceUrls: evidenceItems,
+                evidenceNote: evidenceNote || null,
                 evidenceUploadedAt: new Date(),
                 status: 'PENDING_APPROVAL',
                 approvalStatus: 'PENDING'
@@ -319,6 +321,7 @@ router.delete('/:id', async (req, res) => {
             data: {
                 evidenceUrl: null,
                 evidenceUrls: [],
+                evidenceNote: null,
                 evidenceUploadedAt: null,
                 status: 'IN_PROGRESS',
                 approvalStatus: 'PENDING'

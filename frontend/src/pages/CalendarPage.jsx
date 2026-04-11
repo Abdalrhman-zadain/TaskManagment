@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
-const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const weekDaysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const weekDaysAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -22,10 +23,6 @@ function statusTone(status) {
   if (status === "IN_PROGRESS")
     return "bg-blue-50 text-blue-700 border-blue-200";
   return "bg-slate-100 text-slate-700 border-slate-200";
-}
-
-function statusLabel(status) {
-  return String(status || "TODO").replaceAll("_", " ");
 }
 
 function buildCalendarDays(currentMonth) {
@@ -58,7 +55,10 @@ function roleLabel(user) {
 }
 
 export default function CalendarPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language?.startsWith("ar");
+  const tx = (ar, en) => (isArabic ? ar : en);
+  const locale = isArabic ? "ar-EG" : "en-US";
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const todayKey = formatDateKey(new Date());
@@ -155,6 +155,18 @@ export default function CalendarPage() {
   }, [filteredTasks]);
 
   const selectedDateTasks = tasksByDate[selectedDateKey] || [];
+  const weekDays = isArabic ? weekDaysAr : weekDaysEn;
+  const statusLabel = (status) => {
+    const key = String(status || "TODO");
+    const map = {
+      TODO: tx("قيد البدء", "TODO"),
+      IN_PROGRESS: tx("قيد التنفيذ", "IN PROGRESS"),
+      PENDING_APPROVAL: tx("بانتظار الاعتماد", "PENDING APPROVAL"),
+      DONE: tx("مكتملة", "DONE"),
+      LATE: tx("متأخرة", "LATE"),
+    };
+    return map[key] || key.replaceAll("_", " ");
+  };
 
   const visibleMonthTasks = useMemo(
     () =>
@@ -270,7 +282,7 @@ export default function CalendarPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="app-input"
-                placeholder="Task, project, or assignee"
+                placeholder={tx("مهمة، مشروع، أو موظف", "Task, project, or assignee")}
               />
             </div>
 
@@ -282,22 +294,22 @@ export default function CalendarPage() {
                 className="app-input"
               >
                 <option value="ALL">{t("common.view")}</option>
-                <option value="TODO">To Do</option>
+                <option value="TODO">{tx("قيد البدء", "To Do")}</option>
                 <option value="IN_PROGRESS">{t("tasks.inProgress")}</option>
                 <option value="PENDING_APPROVAL">{t("tasks.pending")}</option>
                 <option value="DONE">{t("tasks.completed")}</option>
-                <option value="LATE">Late</option>
+                <option value="LATE">{tx("متأخرة", "Late")}</option>
               </select>
             </div>
 
             <div>
-              <label className="app-label">Project</label>
+              <label className="app-label">{tx("المشروع", "Project")}</label>
               <select
                 value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
                 className="app-input"
               >
-                <option value="ALL">All Projects</option>
+                <option value="ALL">{tx("كل المشاريع", "All Projects")}</option>
                 {projectOptions.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
@@ -307,13 +319,13 @@ export default function CalendarPage() {
             </div>
 
             <div>
-              <label className="app-label">Assignee</label>
+              <label className="app-label">{tx("المسند إليه", "Assignee")}</label>
               <select
                 value={assigneeFilter}
                 onChange={(e) => setAssigneeFilter(e.target.value)}
                 className="app-input"
               >
-                <option value="ALL">All People</option>
+                <option value="ALL">{tx("كل الأشخاص", "All People")}</option>
                 {assigneeOptions.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
                     {assignee.name}
@@ -328,7 +340,7 @@ export default function CalendarPage() {
                 onClick={clearFilters}
                 className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
               >
-                Clear Filters
+                {tx("مسح الفلاتر", "Clear Filters")}
               </button>
             </div>
           </div>
@@ -339,10 +351,13 @@ export default function CalendarPage() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-slate-900">
-                  Month View
+                  {tx("عرض الشهر", "Month View")}
                 </div>
                 <div className="mt-1 text-xs text-slate-500">
-                  Select a day to inspect the full task list for that date.
+                  {tx(
+                    "اختر يومًا لعرض قائمة المهام الكاملة لذلك التاريخ.",
+                    "Select a day to inspect the full task list for that date.",
+                  )}
                 </div>
               </div>
 
@@ -352,17 +367,17 @@ export default function CalendarPage() {
                   onClick={goToPreviousMonth}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                 >
-                  Previous
+                  {tx("السابق", "Previous")}
                 </button>
                 <button
                   type="button"
                   onClick={goToToday}
                   className="rounded-lg bg-[#1275e2] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#0f63c0]"
                 >
-                  Today
+                  {tx("اليوم", "Today")}
                 </button>
                 <div className="min-w-[190px] text-center text-sm font-semibold text-slate-900">
-                  {currentMonth.toLocaleDateString("en-US", {
+                  {currentMonth.toLocaleDateString(locale, {
                     month: "long",
                     year: "numeric",
                   })}
@@ -372,14 +387,14 @@ export default function CalendarPage() {
                   onClick={goToNextMonth}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                 >
-                  Next
+                  {tx("التالي", "Next")}
                 </button>
               </div>
             </div>
 
             {loading ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                Loading calendar tasks...
+                {tx("جارٍ تحميل مهام التقويم...", "Loading calendar tasks...")}
               </div>
             ) : (
               <div className="grid grid-cols-7 gap-3">
@@ -421,7 +436,7 @@ export default function CalendarPage() {
                         </div>
                         {day.isToday && (
                           <span className="rounded-full bg-[#1275e2] px-2 py-0.5 text-[10px] font-semibold text-white">
-                            Today
+                            {tx("اليوم", "Today")}
                           </span>
                         )}
                       </div>
@@ -429,7 +444,7 @@ export default function CalendarPage() {
                       <div className="space-y-2">
                         {dayTasks.length === 0 ? (
                           <div className="text-[11px] text-slate-400">
-                            No tasks
+                            {tx("لا توجد مهام", "No tasks")}
                           </div>
                         ) : (
                           dayTasks.slice(0, 3).map((task) => (
@@ -441,7 +456,7 @@ export default function CalendarPage() {
                                 {task.title}
                               </div>
                               <div className="mt-1 truncate opacity-80">
-                                {task.assignee?.name || "Unassigned"}
+                                {task.assignee?.name || tx("غير مسند", "Unassigned")}
                               </div>
                             </div>
                           ))
@@ -449,7 +464,9 @@ export default function CalendarPage() {
 
                         {dayTasks.length > 3 && (
                           <div className="text-[11px] font-medium text-slate-500">
-                            +{dayTasks.length - 3} more
+                            {isArabic
+                              ? `+${dayTasks.length - 3} أكثر`
+                              : `+${dayTasks.length - 3} more`}
                           </div>
                         )}
                       </div>
@@ -463,11 +480,11 @@ export default function CalendarPage() {
           <aside className="app-panel p-6">
             <div className="mb-4">
               <div className="text-sm font-semibold text-slate-900">
-                Selected Day
+                {tx("اليوم المحدد", "Selected Day")}
               </div>
               <div className="mt-1 text-xs text-slate-500">
                 {new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString(
-                  "en-GB",
+                  isArabic ? "ar-EG" : "en-GB",
                   {
                     day: "numeric",
                     month: "long",
@@ -479,14 +496,19 @@ export default function CalendarPage() {
 
             <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
               {selectedDateTasks.length === 0
-                ? "No tasks scheduled for this date."
-                : `${selectedDateTasks.length} task${selectedDateTasks.length > 1 ? "s" : ""} scheduled for this date.`}
+                ? tx("لا توجد مهام مجدولة لهذا التاريخ.", "No tasks scheduled for this date.")
+                : isArabic
+                  ? `يوجد ${selectedDateTasks.length} مهمة مجدولة لهذا التاريخ.`
+                  : `${selectedDateTasks.length} task${selectedDateTasks.length > 1 ? "s" : ""} scheduled for this date.`}
             </div>
 
             <div className="space-y-3">
               {selectedDateTasks.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-400">
-                  Choose another day or remove some filters.
+                  {tx(
+                    "اختر يومًا آخر أو قم بإزالة بعض الفلاتر.",
+                    "Choose another day or remove some filters.",
+                  )}
                 </div>
               ) : (
                 selectedDateTasks.map((task) => (
@@ -502,8 +524,8 @@ export default function CalendarPage() {
                           {task.title}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          {task.project?.name || "No project"} •{" "}
-                          {task.assignee?.name || "Unassigned"}
+                          {task.project?.name || tx("بدون مشروع", "No project")} •{" "}
+                          {task.assignee?.name || tx("غير مسند", "Unassigned")}
                         </div>
                       </div>
                       <span
@@ -516,18 +538,18 @@ export default function CalendarPage() {
                     <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-500">
                       <div>
                         <div className="uppercase tracking-wide text-slate-400">
-                          Section
+                          {tx("القسم", "Section")}
                         </div>
                         <div className="mt-1 text-slate-700">
-                          {task.section?.name || "Not set"}
+                          {task.section?.name || tx("غير محدد", "Not set")}
                         </div>
                       </div>
                       <div>
                         <div className="uppercase tracking-wide text-slate-400">
-                          Priority
+                          {tx("الأولوية", "Priority")}
                         </div>
                         <div className="mt-1 capitalize text-slate-700">
-                          {task.priority || "medium"}
+                          {task.priority || tx("متوسطة", "medium")}
                         </div>
                       </div>
                     </div>

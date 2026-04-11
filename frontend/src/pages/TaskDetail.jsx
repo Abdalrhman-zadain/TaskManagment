@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import api, { getBackendUrl } from "../api/client";
 
@@ -14,6 +15,7 @@ function statusBadge(status) {
 export default function TaskDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -24,9 +26,12 @@ export default function TaskDetail() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [selectedLinks, setSelectedLinks] = useState([]);
   const [linkInput, setLinkInput] = useState("");
+  const [evidenceNoteInput, setEvidenceNoteInput] = useState("");
   const [activeEvidenceIndex, setActiveEvidenceIndex] = useState(0);
   const fileInputRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isArabic = i18n.language?.startsWith("ar");
+  const tx = (ar, en) => (isArabic ? ar : en);
 
   useEffect(() => {
     loadTask();
@@ -36,6 +41,7 @@ export default function TaskDetail() {
     try {
       const res = await api.get(`/tasks/${id}`);
       setTask(res.data);
+      setEvidenceNoteInput(res.data.evidenceNote || "");
     } catch (err) {
       console.error(err);
     } finally {
@@ -46,17 +52,25 @@ export default function TaskDetail() {
   async function markDone() {
     if (!task.evidenceUrl && !task.evidenceUrls?.length) {
       alert(
-        "Please upload evidence (photo or video) first before marking the task as complete.",
+        tx(
+          "يرجى رفع الإثبات (صورة أو فيديو) قبل تعليم المهمة كمكتملة.",
+          "Please upload evidence (photo or video) first before marking the task as complete.",
+        ),
       );
       return;
     }
 
     try {
       await api.patch(`/tasks/${id}/done`);
-      alert("Task marked as complete. Waiting for approval.");
+      alert(
+        tx(
+          "تم إرسال المهمة كمكتملة وبانتظار الاعتماد.",
+          "Task marked as complete. Waiting for approval.",
+        ),
+      );
       loadTask();
     } catch (err) {
-      alert(err.response?.data?.error || "Error");
+      alert(err.response?.data?.error || tx("حدث خطأ", "Error"));
     }
   }
 
@@ -73,12 +87,15 @@ export default function TaskDetail() {
 
   function getFileTypeLabel(file) {
     const extension = getFileExtension(file.name);
-    if (["jpg", "jpeg", "png"].includes(extension)) return "Image";
-    if (["mp4", "mov"].includes(extension)) return "Video";
-    if (["ppt", "pptx"].includes(extension)) return "Presentation";
-    if (["xls", "xlsx"].includes(extension)) return "Spreadsheet";
+    if (["jpg", "jpeg", "png"].includes(extension))
+      return tx("صورة", "Image");
+    if (["mp4", "mov"].includes(extension)) return tx("فيديو", "Video");
+    if (["ppt", "pptx"].includes(extension))
+      return tx("عرض تقديمي", "Presentation");
+    if (["xls", "xlsx"].includes(extension))
+      return tx("جدول بيانات", "Spreadsheet");
     if (extension === "pdf") return "PDF";
-    return "File";
+    return tx("ملف", "File");
   }
 
   function getFileKey(file) {
@@ -86,13 +103,15 @@ export default function TaskDetail() {
   }
 
   function getEvidenceTypeLabel(evidenceUrl) {
-    if (/^https?:\/\//i.test(evidenceUrl)) return "Link";
-    if (/\.(jpg|jpeg|png)$/i.test(evidenceUrl)) return "Image";
-    if (/\.(mp4|mov)$/i.test(evidenceUrl)) return "Video";
-    if (/\.(ppt|pptx)$/i.test(evidenceUrl)) return "Presentation";
-    if (/\.(xls|xlsx)$/i.test(evidenceUrl)) return "Spreadsheet";
+    if (/^https?:\/\//i.test(evidenceUrl)) return tx("رابط", "Link");
+    if (/\.(jpg|jpeg|png)$/i.test(evidenceUrl)) return tx("صورة", "Image");
+    if (/\.(mp4|mov)$/i.test(evidenceUrl)) return tx("فيديو", "Video");
+    if (/\.(ppt|pptx)$/i.test(evidenceUrl))
+      return tx("عرض تقديمي", "Presentation");
+    if (/\.(xls|xlsx)$/i.test(evidenceUrl))
+      return tx("جدول بيانات", "Spreadsheet");
     if (/\.pdf$/i.test(evidenceUrl)) return "PDF";
-    return "File";
+    return tx("ملف", "File");
   }
 
   function getEvidenceFileName(evidenceUrl) {
@@ -120,13 +139,18 @@ export default function TaskDetail() {
 
   function getEvidenceLinkLabel(evidenceUrl) {
     const type = getEvidenceTypeLabel(evidenceUrl);
-    if (type === "Image") return "Open image evidence";
-    if (type === "Video") return "Open video evidence";
-    if (type === "PDF") return "Open PDF evidence";
-    if (type === "Presentation") return "Open presentation evidence";
-    if (type === "Spreadsheet") return "Open spreadsheet evidence";
-    if (type === "Link") return "Open link";
-    return "Open evidence";
+    if (type === "Image" || type === "صورة")
+      return tx("فتح إثبات الصورة", "Open image evidence");
+    if (type === "Video" || type === "فيديو")
+      return tx("فتح إثبات الفيديو", "Open video evidence");
+    if (type === "PDF") return tx("فتح ملف PDF", "Open PDF evidence");
+    if (type === "Presentation" || type === "عرض تقديمي")
+      return tx("فتح العرض التقديمي", "Open presentation evidence");
+    if (type === "Spreadsheet" || type === "جدول بيانات")
+      return tx("فتح جدول البيانات", "Open spreadsheet evidence");
+    if (type === "Link" || type === "رابط")
+      return tx("فتح الرابط", "Open link");
+    return tx("فتح الإثبات", "Open evidence");
   }
 
   function handleFileSelection(e) {
@@ -156,7 +180,12 @@ export default function TaskDetail() {
     try {
       const parsedUrl = new URL(trimmedLink);
       if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-        alert("Please enter a valid http or https URL.");
+        alert(
+          tx(
+            "يرجى إدخال رابط صحيح يبدأ بـ http أو https.",
+            "Please enter a valid http or https URL.",
+          ),
+        );
         return;
       }
 
@@ -167,7 +196,7 @@ export default function TaskDetail() {
       );
       setLinkInput("");
     } catch {
-      alert("Please enter a valid URL.");
+      alert(tx("يرجى إدخال رابط صحيح.", "Please enter a valid URL."));
     }
   }
 
@@ -185,6 +214,7 @@ export default function TaskDetail() {
       formData.append("files", file);
     });
     formData.append("links", JSON.stringify(selectedLinks));
+    formData.append("note", evidenceNoteInput.trim());
     formData.append("taskId", id);
 
     setUploading(true);
@@ -192,14 +222,15 @@ export default function TaskDetail() {
       await api.post("/evidence/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Evidence uploaded successfully!");
+      alert(tx("تم رفع الإثبات بنجاح.", "Evidence uploaded successfully!"));
       setSelectedFiles([]);
       setSelectedLinks([]);
       setLinkInput("");
+      setEvidenceNoteInput("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       loadTask();
     } catch (err) {
-      alert(err.response?.data?.error || "Upload failed");
+      alert(err.response?.data?.error || tx("فشل رفع الإثبات.", "Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -210,7 +241,7 @@ export default function TaskDetail() {
       customScore !== "" &&
       (Number(customScore) < 1 || Number(customScore) > 10)
     ) {
-      alert("Score must be between 1 and 10");
+      alert(tx("يجب أن تكون الدرجة بين 1 و 10", "Score must be between 1 and 10"));
       return;
     }
 
@@ -219,10 +250,17 @@ export default function TaskDetail() {
         approvalComment,
         customScore: customScore !== "" ? Number(customScore) : null,
       });
-      alert(`Task approved! Score: ${res.data.score.value}/10`);
+      alert(
+        tx(
+          `تم اعتماد المهمة! الدرجة: ${res.data.score.value}/10`,
+          `Task approved! Score: ${res.data.score.value}/10`,
+        ),
+      );
       loadTask();
     } catch (err) {
-      alert(err.response?.data?.error || "Error approving task");
+      alert(
+        err.response?.data?.error || tx("حدث خطأ أثناء اعتماد المهمة", "Error approving task"),
+      );
     }
   }
 
@@ -231,17 +269,27 @@ export default function TaskDetail() {
       await api.patch(`/evidence/${id}/reject`, {
         rejectionReason,
       });
-      alert("Task rejected and sent back for revision.");
+      alert(
+        tx(
+          "تم رفض المهمة وإعادتها للتعديل.",
+          "Task rejected and sent back for revision.",
+        ),
+      );
       loadTask();
     } catch (err) {
-      alert(err.response?.data?.error || "Error rejecting task");
+      alert(
+        err.response?.data?.error || tx("حدث خطأ أثناء رفض المهمة", "Error rejecting task"),
+      );
     }
   }
 
   async function deleteEvidence() {
     if (
       !window.confirm(
-        "Are you sure you want to delete this evidence? You can re-upload a new one.",
+        tx(
+          "هل أنت متأكد من حذف هذا الإثبات؟ يمكنك رفع إثبات جديد بعد ذلك.",
+          "Are you sure you want to delete this evidence? You can re-upload a new one.",
+        ),
       )
     ) {
       return;
@@ -250,11 +298,19 @@ export default function TaskDetail() {
     setUploading(true);
     try {
       await api.delete(`/evidence/${id}`);
-      alert("Evidence deleted. You can now upload a new one.");
+      alert(
+        tx(
+          "تم حذف الإثبات. يمكنك الآن رفع إثبات جديد.",
+          "Evidence deleted. You can now upload a new one.",
+        ),
+      );
       setShowEvidenceModal(false);
+      setEvidenceNoteInput("");
       loadTask();
     } catch (err) {
-      alert(err.response?.data?.error || "Error deleting evidence");
+      alert(
+        err.response?.data?.error || tx("حدث خطأ أثناء حذف الإثبات", "Error deleting evidence"),
+      );
     } finally {
       setUploading(false);
     }
@@ -263,7 +319,7 @@ export default function TaskDetail() {
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
-        Loading...
+        {tx("جارٍ التحميل...", "Loading...")}
       </div>
     );
   }
@@ -271,7 +327,7 @@ export default function TaskDetail() {
   if (!task) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
-        Task not found
+        {tx("المهمة غير موجودة", "Task not found")}
       </div>
     );
   }
@@ -299,6 +355,18 @@ export default function TaskDetail() {
       : [];
   const activeEvidenceFile =
     evidenceFiles[activeEvidenceIndex] || evidenceFiles[0] || null;
+  const statusLabelMap = {
+    TODO: tx("قيد البدء", "TODO"),
+    IN_PROGRESS: tx("قيد التنفيذ", "IN PROGRESS"),
+    PENDING_APPROVAL: tx("بانتظار الاعتماد", "PENDING APPROVAL"),
+    DONE: tx("مكتملة", "DONE"),
+    LATE: tx("متأخرة", "LATE"),
+  };
+  const approvalLabelMap = {
+    PENDING: tx("قيد الانتظار", "PENDING"),
+    APPROVED: tx("معتمد", "APPROVED"),
+    REJECTED: tx("مرفوض", "REJECTED"),
+  };
   const hasPrGovernmentDetails =
     !!task.prTransactionType &&
     [
@@ -330,7 +398,7 @@ export default function TaskDetail() {
           onClick={() => navigate(-1)}
           className="mb-5 inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-900"
         >
-          ← Back
+          {isArabic ? "→ رجوع" : "← Back"}
         </button>
 
         <div className="grid grid-cols-3 gap-5">
@@ -343,7 +411,7 @@ export default function TaskDetail() {
                 <span
                   className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${statusBadge(task.status)}`}
                 >
-                  {task.status.replace("_", " ")}
+                  {statusLabelMap[task.status] || task.status.replaceAll("_", " ")}
                 </span>
               </div>
 
@@ -400,7 +468,7 @@ export default function TaskDetail() {
                 <div className="mb-6 border-b border-slate-200 pb-6">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="text-sm font-bold text-slate-900">
-                      Evidence
+                      {tx("الإثبات", "Evidence")}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -410,7 +478,7 @@ export default function TaskDetail() {
                         }}
                         className="btn-primary px-2 py-1 text-xs"
                       >
-                        View Full
+                        {tx("عرض كامل", "View Full")}
                       </button>
                       {isAssignee &&
                         (task.status === "PENDING_APPROVAL" ||
@@ -421,7 +489,7 @@ export default function TaskDetail() {
                             disabled={uploading}
                             className="rounded bg-rose-600 px-2 py-1 text-xs text-white transition disabled:opacity-50 hover:bg-rose-700"
                           >
-                            Delete
+                            {tx("حذف", "Delete")}
                           </button>
                         )}
                     </div>
@@ -445,12 +513,12 @@ export default function TaskDetail() {
                         style={{ minHeight: "200px" }}
                       >
                         <div className="text-center">
-                          <div className="mb-2 text-3xl">Video</div>
+                          <div className="mb-2 text-3xl">{tx("فيديو", "Video")}</div>
                           <div className="text-sm text-slate-700">
-                            Video Evidence
+                            {tx("إثبات فيديو", "Video Evidence")}
                           </div>
                           <div className="mt-1 text-xs text-slate-500">
-                            Click to view
+                            {tx("اضغط للعرض", "Click to view")}
                           </div>
                         </div>
                       </div>
@@ -485,10 +553,22 @@ export default function TaskDetail() {
                         </div>
                       ))}
                     </div>
+                    {task.evidenceNote && (
+                      <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                        <div className="text-xs text-slate-500">
+                          {tx("ملاحظات الإثبات", "Evidence Note")}
+                        </div>
+                        <div className="mt-1 text-sm text-slate-800">
+                          {task.evidenceNote}
+                        </div>
+                      </div>
+                    )}
                     <div className="mt-2 text-xs text-slate-500">
-                      Uploaded:{" "}
-                      {new Date(task.evidenceUploadedAt).toLocaleString()} ·
-                      Click to expand
+                      {tx("تم الرفع:", "Uploaded:")}{" "}
+                      {new Date(task.evidenceUploadedAt).toLocaleString(
+                        isArabic ? "ar-EG" : "en-GB",
+                      )}{" "}
+                      · {tx("اضغط للتوسيع", "Click to expand")}
                     </div>
                   </div>
                 </div>
@@ -497,7 +577,7 @@ export default function TaskDetail() {
               {task.approvalAt && (
                 <div className="mb-6 border-b border-slate-200 pb-6">
                   <div className="mb-3 text-sm font-bold text-slate-900">
-                    Approval Status
+                    {tx("حالة الاعتماد", "Approval Status")}
                   </div>
                   <div
                     className={`rounded-lg border p-3 text-sm ${
@@ -509,7 +589,7 @@ export default function TaskDetail() {
                     }`}
                   >
                     <div className="font-semibold capitalize text-slate-900">
-                      {task.approvalStatus}
+                      {approvalLabelMap[task.approvalStatus] || task.approvalStatus}
                     </div>
                     {task.approvalComment && (
                       <div className="mt-1 text-xs text-slate-600">
@@ -522,14 +602,14 @@ export default function TaskDetail() {
 
               <div className="mb-5">
                 <div className="mb-2 text-[10px] uppercase tracking-widest text-slate-500">
-                  Delegation chain
+                  {tx("سلسلة التفويض", "Delegation chain")}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {[
                     { name: task.creator?.name, role: task.creator?.role },
                     task.creator?.id !== task.assigneeId && {
                       name: task.assignee?.name,
-                      role: "Assignee",
+                      role: tx("المكلّف", "Assignee"),
                     },
                   ]
                     .filter(Boolean)
@@ -560,10 +640,10 @@ export default function TaskDetail() {
 
               <div className="mb-5 grid grid-cols-2 gap-4 border-t border-slate-200 pt-5">
                 {[
-                  { label: "Assigned to", value: task.assignee?.name },
-                  { label: "Section", value: task.section?.name },
+                  { label: tx("المسند إليه", "Assigned to"), value: task.assignee?.name },
+                  { label: tx("القسم", "Section"), value: task.section?.name },
                   {
-                    label: "Priority",
+                    label: tx("الأولوية", "Priority"),
                     value: task.priority,
                     color:
                       task.priority === "high"
@@ -573,8 +653,10 @@ export default function TaskDetail() {
                           : "text-emerald-700",
                   },
                   {
-                    label: "Created",
-                    value: new Date(task.createdAt).toLocaleDateString(),
+                    label: tx("تاريخ الإنشاء", "Created"),
+                    value: new Date(task.createdAt).toLocaleDateString(
+                      isArabic ? "ar-EG" : "en-GB",
+                    ),
                   },
                 ].map((m) => (
                   <div key={m.label}>
@@ -593,10 +675,10 @@ export default function TaskDetail() {
               {task.subtasks?.length > 0 && (
                 <div className="mb-5 border-t border-slate-200 pt-5">
                   <div className="mb-3 text-sm font-bold text-slate-900">
-                    Subtasks
+                    {tx("المهام الفرعية", "Subtasks")}
                     <span className="ml-2 font-normal text-slate-500">
                       {task.subtasks.filter((s) => s.status === "DONE").length}/
-                      {task.subtasks.length} done
+                      {task.subtasks.length} {tx("مكتملة", "done")}
                     </span>
                   </div>
                   {task.subtasks.map((sub) => (
@@ -629,7 +711,7 @@ export default function TaskDetail() {
               {task.score && (
                 <div className="border-t border-slate-200 pt-5">
                   <div className="mb-2 text-sm font-bold text-slate-900">
-                    Score
+                    {tx("التقييم", "Score")}
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span
@@ -651,11 +733,13 @@ export default function TaskDetail() {
                           : "bg-rose-50 text-rose-700"
                       }`}
                     >
-                      {task.score.isOnTime ? "On time" : "Late"}
+                      {task.score.isOnTime
+                        ? tx("في الموعد", "On time")
+                        : tx("متأخر", "Late")}
                     </span>
                     {task.score.adjusted && (
                       <span className="text-xs text-slate-500">
-                        (manually adjusted)
+                        {tx("(تم تعديلها يدويًا)", "(manually adjusted)")}
                       </span>
                     )}
                   </div>
@@ -669,14 +753,17 @@ export default function TaskDetail() {
               className={`rounded-xl border p-4 ${isOverdue ? "border-rose-200 bg-rose-50" : "border-blue-200 bg-blue-50"}`}
             >
               <div className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">
-                Deadline
+                {tx("الموعد النهائي", "Deadline")}
               </div>
               <div className="text-lg font-bold text-slate-900">
-                {new Date(task.deadline).toLocaleDateString("en-GB", {
+                {new Date(task.deadline).toLocaleDateString(
+                  isArabic ? "ar-EG" : "en-GB",
+                  {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
-                })}
+                  },
+                )}
               </div>
               <div
                 className={`mt-1 text-xs ${
@@ -688,10 +775,14 @@ export default function TaskDetail() {
                 }`}
               >
                 {isOverdue
-                  ? `${Math.abs(daysLeft)} days overdue`
+                  ? isArabic
+                    ? `متأخرة ${Math.abs(daysLeft)} يوم`
+                    : `${Math.abs(daysLeft)} days overdue`
                   : daysLeft === 0
-                    ? "Due today!"
-                    : `${daysLeft} days remaining`}
+                    ? tx("مستحقة اليوم!", "Due today!")
+                    : isArabic
+                      ? `متبقي ${daysLeft} يوم`
+                      : `${daysLeft} days remaining`}
               </div>
             </div>
 
@@ -702,7 +793,7 @@ export default function TaskDetail() {
               evidenceFiles.length === 0 && (
                 <div className="app-panel p-4">
                   <div className="mb-3 text-sm font-bold text-slate-900">
-                    Upload Evidence
+                    {tx("رفع الإثبات", "Upload Evidence")}
                   </div>
                   <input
                     ref={fileInputRef}
@@ -714,13 +805,17 @@ export default function TaskDetail() {
                     className="w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#1275e2] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#0f63c0] disabled:opacity-50"
                   />
                   <div className="mt-2 text-xs text-slate-500">
-                    JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 100MB per
-                    file)
+                    {tx(
+                      "JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (حد أقصى 100MB لكل ملف)",
+                      "JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 100MB per file)",
+                    )}
                   </div>
                   <div className="mt-2 text-xs text-slate-500">
                     {selectedFiles.length === 1
-                      ? "1 file selected"
-                      : `${selectedFiles.length} files selected`}
+                      ? tx("تم اختيار ملف واحد", "1 file selected")
+                      : isArabic
+                        ? `تم اختيار ${selectedFiles.length} ملفات`
+                        : `${selectedFiles.length} files selected`}
                   </div>
                   {selectedFiles.length > 0 && (
                     <div className="mt-3 space-y-2">
@@ -732,11 +827,15 @@ export default function TaskDetail() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
                               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-[#1275e2]">
-                                {getFileTypeLabel(file) === "Video"
+                                {["Video", "فيديو"].includes(getFileTypeLabel(file))
                                   ? "VID"
-                                  : getFileTypeLabel(file) === "Presentation"
+                                  : ["Presentation", "عرض تقديمي"].includes(
+                                        getFileTypeLabel(file),
+                                      )
                                     ? "PPT"
-                                    : getFileTypeLabel(file) === "Spreadsheet"
+                                    : ["Spreadsheet", "جدول بيانات"].includes(
+                                          getFileTypeLabel(file),
+                                        )
                                       ? "XLS"
                                       : getFileTypeLabel(file) === "PDF"
                                         ? "PDF"
@@ -754,7 +853,7 @@ export default function TaskDetail() {
                             onClick={() => removeSelectedFile(index)}
                             className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
                           >
-                            Remove
+                            {tx("إزالة", "Remove")}
                           </button>
                         </div>
                       ))}
@@ -762,7 +861,7 @@ export default function TaskDetail() {
                   )}
                   <div className="mt-4">
                     <label className="mb-2 block text-xs font-medium text-slate-700">
-                      External Link
+                      {tx("رابط خارجي", "External Link")}
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -777,9 +876,24 @@ export default function TaskDetail() {
                         onClick={addLink}
                         className="btn-primary px-4 py-2 text-xs"
                       >
-                        Add Link
+                        {tx("إضافة رابط", "Add Link")}
                       </button>
                     </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="mb-2 block text-xs font-medium text-slate-700">
+                      {tx("\u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0627\u0644\u0625\u062b\u0628\u0627\u062a", "Evidence Note")}
+                    </label>
+                    <textarea
+                      value={evidenceNoteInput}
+                      onChange={(e) => setEvidenceNoteInput(e.target.value)}
+                      rows={3}
+                      placeholder={tx(
+                        "\u0627\u0643\u062a\u0628 \u0645\u0644\u0627\u062d\u0638\u0627\u062a\u0643 \u062d\u0648\u0644 \u0627\u0644\u0625\u062b\u0628\u0627\u062a \u0627\u0644\u0645\u0631\u0641\u0648\u0639",
+                        "Write your notes about the uploaded evidence",
+                      )}
+                      className="app-input resize-none text-sm"
+                    />
                   </div>
                   {selectedLinks.length > 0 && (
                     <div className="mt-3 space-y-2">
@@ -803,7 +917,7 @@ export default function TaskDetail() {
                               </a>
                             </div>
                             <div className="mt-1 text-xs text-slate-500">
-                              Link
+                              {tx("رابط", "Link")}
                             </div>
                           </div>
                           <button
@@ -811,7 +925,7 @@ export default function TaskDetail() {
                             onClick={() => removeSelectedLink(link)}
                             className="ml-3 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-500 hover:text-white"
                           >
-                            Remove
+                            {tx("إزالة", "Remove")}
                           </button>
                         </div>
                       ))}
@@ -826,7 +940,9 @@ export default function TaskDetail() {
                     }
                     className="mt-3 w-full rounded-lg bg-[#1275e2] py-2.5 text-sm font-medium text-white transition hover:bg-[#0f63c0] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {uploading ? "Uploading..." : "Upload Evidence"}
+                    {uploading
+                      ? tx("جارٍ الرفع...", "Uploading...")
+                      : tx("رفع الإثبات", "Upload Evidence")}
                   </button>
                 </div>
               )}
@@ -838,12 +954,12 @@ export default function TaskDetail() {
                     onClick={markDone}
                     className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
                   >
-                    Mark Complete & Submit
+                    {tx("تعليم كمكتملة وإرسال", "Mark Complete & Submit")}
                   </button>
                   <div className="mt-2 text-center text-xs text-slate-500">
                     {!isOverdue
-                      ? "Submit on time for a score of 8-10"
-                      : "Late submission: score will be lower"}
+                      ? tx("سلّم في الوقت لتحصل على تقييم 8-10", "Submit on time for a score of 8-10")
+                      : tx("التسليم المتأخر: التقييم سيكون أقل", "Late submission: score will be lower")}
                   </div>
                 </div>
               )}
@@ -851,7 +967,7 @@ export default function TaskDetail() {
             {isPendingApproval && isCreator && evidenceFiles.length > 0 && (
               <div className="app-panel p-4">
                 <div className="mb-3 text-sm font-bold text-slate-900">
-                  Approve or Reject
+                  {tx("اعتماد أو رفض", "Approve or Reject")}
                 </div>
 
                 <div className="mb-3">
@@ -860,14 +976,20 @@ export default function TaskDetail() {
                       type="number"
                       min="1"
                       max="10"
-                      placeholder="Custom Score (1-10, overrides auto-score)"
+                      placeholder={tx(
+                        "تقييم مخصص (1-10) ويلغي التقييم التلقائي",
+                        "Custom Score (1-10, overrides auto-score)",
+                      )}
                       value={customScore}
                       onChange={(e) => setCustomScore(e.target.value)}
                       className="app-input mb-2 text-xs"
                     />
                   )}
                   <textarea
-                    placeholder="Approval comment (optional)"
+                    placeholder={tx(
+                      "ملاحظة الاعتماد (اختياري)",
+                      "Approval comment (optional)",
+                    )}
                     value={approvalComment}
                     onChange={(e) => setApprovalComment(e.target.value)}
                     className="app-input resize-none text-xs"
@@ -877,7 +999,7 @@ export default function TaskDetail() {
                     onClick={approveTask}
                     className="mt-2 w-full rounded-lg bg-emerald-600 py-2 text-xs font-medium text-white transition hover:bg-emerald-700"
                   >
-                    Approve
+                    {tx("اعتماد", "Approve")}
                   </button>
                 </div>
 
@@ -885,7 +1007,7 @@ export default function TaskDetail() {
 
                 <div>
                   <textarea
-                    placeholder="Rejection reason"
+                    placeholder={tx("سبب الرفض", "Rejection reason")}
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     className="app-input resize-none text-xs"
@@ -895,7 +1017,7 @@ export default function TaskDetail() {
                     onClick={rejectTask}
                     className="mt-2 w-full rounded-lg bg-rose-600 py-2 text-xs font-medium text-white transition hover:bg-rose-700"
                   >
-                    Reject & Send Back
+                    {tx("رفض وإرجاع", "Reject & Send Back")}
                   </button>
                 </div>
               </div>
@@ -904,21 +1026,21 @@ export default function TaskDetail() {
             {task.status !== "DONE" && task.status !== "PENDING_APPROVAL" && (
               <div className="app-panel p-4">
                 <div className="mb-3 text-sm font-bold text-slate-900">
-                  Score Preview
+                  {tx("معاينة التقييم", "Score Preview")}
                 </div>
                 {[
                   {
-                    label: "On time",
+                    label: tx("في الموعد", "On time"),
                     score: "8 - 10",
                     color: "text-emerald-700",
                   },
                   {
-                    label: "1-2 days late",
+                    label: tx("متأخر 1-2 يوم", "1-2 days late"),
                     score: "5 - 7",
                     color: "text-amber-700",
                   },
                   {
-                    label: "3+ days late",
+                    label: tx("متأخر 3+ أيام", "3+ days late"),
                     score: "1 - 4",
                     color: "text-rose-700",
                   },
@@ -938,17 +1060,19 @@ export default function TaskDetail() {
 
             <div className="app-panel p-4">
               <div className="mb-3 text-sm font-bold text-slate-900">
-                Task Info
+                {tx("معلومات المهمة", "Task Info")}
               </div>
               {[
-                { label: "Created by", value: task.creator?.name },
+                { label: tx("أنشأها", "Created by"), value: task.creator?.name },
                 ...(task.project?.client?.name
-                  ? [{ label: "Client", value: task.project.client.name }]
+                  ? [{ label: tx("العميل", "Client"), value: task.project.client.name }]
                   : []),
-                { label: "Section", value: task.section?.name },
+                { label: tx("القسم", "Section"), value: task.section?.name },
                 {
-                  label: "Subtasks",
-                  value: `${task.subtasks?.filter((s) => s.status === "DONE").length || 0} / ${task.subtasks?.length || 0} done`,
+                  label: tx("المهام الفرعية", "Subtasks"),
+                  value: isArabic
+                    ? `${task.subtasks?.filter((s) => s.status === "DONE").length || 0} / ${task.subtasks?.length || 0} مكتملة`
+                    : `${task.subtasks?.filter((s) => s.status === "DONE").length || 0} / ${task.subtasks?.length || 0} done`,
                 },
               ].map((r) => (
                 <div
@@ -977,15 +1101,15 @@ export default function TaskDetail() {
             >
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="text-lg font-bold text-slate-900">
-                  Evidence Viewer
+                  {tx("عارض الإثبات", "Evidence Viewer")}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => loadTask()}
-                    title="Refresh evidence"
+                    title={tx("تحديث الإثبات", "Refresh evidence")}
                     className="btn-primary flex items-center gap-1 px-3 py-1.5 text-xs"
                   >
-                    Refresh
+                    {tx("تحديث", "Refresh")}
                   </button>
                   {isAssignee &&
                     (task.status === "PENDING_APPROVAL" ||
@@ -994,10 +1118,10 @@ export default function TaskDetail() {
                       <button
                         onClick={deleteEvidence}
                         disabled={uploading}
-                        title="Delete evidence and re-upload"
+                        title={tx("حذف الإثبات وإعادة الرفع", "Delete evidence and re-upload")}
                         className="rounded bg-rose-600 px-3 py-1.5 text-xs text-white transition disabled:opacity-50 hover:bg-rose-700"
                       >
-                        Delete
+                        {tx("حذف", "Delete")}
                       </button>
                     )}
                   <button
@@ -1007,7 +1131,7 @@ export default function TaskDetail() {
                     }}
                     className="btn-secondary px-3 py-1.5 text-xs"
                   >
-                    Close
+                    {tx("إغلاق", "Close")}
                   </button>
                 </div>
               </div>
@@ -1022,14 +1146,14 @@ export default function TaskDetail() {
                   disabled={activeEvidenceIndex === 0}
                   className="btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Previous
+                  {tx("السابق", "Previous")}
                 </button>
                 <div className="min-w-0 text-center">
                   <div className="truncate text-sm font-semibold text-slate-900">
                     {activeEvidenceFile.name}
                   </div>
                   <div className="mt-0.5 text-xs text-slate-500">
-                    {activeEvidenceIndex + 1} of {evidenceFiles.length} ·{" "}
+                    {activeEvidenceIndex + 1} {tx("من", "of")} {evidenceFiles.length} ·{" "}
                     {activeEvidenceFile.type}
                   </div>
                 </div>
@@ -1042,7 +1166,7 @@ export default function TaskDetail() {
                   disabled={activeEvidenceIndex === evidenceFiles.length - 1}
                   className="btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Next
+                  {tx("التالي", "Next")}
                 </button>
               </div>
 
@@ -1060,7 +1184,10 @@ export default function TaskDetail() {
                     className="max-h-full max-w-full rounded-lg"
                   >
                     <source src={getEvidenceHref(activeEvidenceFile.url)} />
-                    Your browser does not support video playback.
+                    {tx(
+                      "متصفحك لا يدعم تشغيل الفيديو.",
+                      "Your browser does not support video playback.",
+                    )}
                   </video>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
@@ -1068,7 +1195,7 @@ export default function TaskDetail() {
                       {activeEvidenceFile.name}
                     </div>
                     <div className="mt-2 text-xs text-slate-500">
-                      Preview not available for this file.
+                      {tx("المعاينة غير متاحة لهذا الملف.", "Preview not available for this file.")}
                     </div>
                     <a
                       href={getEvidenceHref(activeEvidenceFile.url)}
@@ -1085,10 +1212,15 @@ export default function TaskDetail() {
               <div className="border-t border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    Uploaded:{" "}
-                    {new Date(task.evidenceUploadedAt).toLocaleString()}
+                    {tx("تم الرفع:", "Uploaded:")}{" "}
+                    {new Date(task.evidenceUploadedAt).toLocaleString(
+                      isArabic ? "ar-EG" : "en-GB",
+                    )}
                   </div>
-                  <div>Approved: {task.approvalStatus || "Pending"}</div>
+                  <div>
+                    {tx("الاعتماد:", "Approved:")}{" "}
+                    {approvalLabelMap[task.approvalStatus] || tx("قيد الانتظار", "Pending")}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1098,3 +1230,4 @@ export default function TaskDetail() {
     </div>
   );
 }
+
