@@ -3,6 +3,13 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
+const GOVERNMENT_TRANSACTION_TYPE_AR = "معاملات حكومية";
+
+function isPublicRelationsSectionName(sectionName = "") {
+  const normalized = String(sectionName).trim().toLowerCase();
+  return normalized === "public relations" || normalized === "العلاقات العامة";
+}
+
 function roleLabel(user) {
   if (user.role === "CEO") return "CEO";
   if (user.role === "MANAGER") return "Manager";
@@ -26,6 +33,15 @@ export default function TaskCreate() {
   const [deadlineMinutes, setDeadlineMinutes] = useState("00");
   const [deadlineSeconds, setDeadlineSeconds] = useState("00");
   const [priority, setPriority] = useState("medium");
+  const [prTransactionType, setPrTransactionType] = useState("");
+  const [prCompanyName, setPrCompanyName] = useState("");
+  const [prGovernmentEntity, setPrGovernmentEntity] = useState("");
+  const [prGovernmentEmployee, setPrGovernmentEmployee] = useState("");
+  const [prApplicationNumber, setPrApplicationNumber] = useState("");
+  const [prTaxIdNumber, setPrTaxIdNumber] = useState("");
+  const [prNationalIdNumber, setPrNationalIdNumber] = useState("");
+  const [prNotes, setPrNotes] = useState("");
+  const [prUpdates, setPrUpdates] = useState("");
 
   const [users, setUsers] = useState([]);
   const [sections, setSections] = useState([]);
@@ -82,6 +98,20 @@ export default function TaskCreate() {
     () => projects.find((project) => project.id === Number(projectId)) || null,
     [projects, projectId],
   );
+  const selectedSection = useMemo(
+    () => sections.find((section) => section.id === Number(sectionId)) || null,
+    [sections, sectionId],
+  );
+  const isPublicRelationsSection = useMemo(
+    () => isPublicRelationsSectionName(selectedSection?.name),
+    [selectedSection],
+  );
+  const shouldShowGovernmentFields = useMemo(
+    () =>
+      isPublicRelationsSection &&
+      prTransactionType === GOVERNMENT_TRANSACTION_TYPE_AR,
+    [isPublicRelationsSection, prTransactionType],
+  );
 
   const assigneeOptions = useMemo(() => {
     if (user.role === "CEO") {
@@ -134,6 +164,14 @@ export default function TaskCreate() {
       return;
     }
 
+    if (
+      shouldShowGovernmentFields &&
+      (!prCompanyName.trim() || !prGovernmentEntity.trim())
+    ) {
+      setError("Company Name and Government Entity are required");
+      return;
+    }
+
     // Combine date and time into ISO format
     const hours = String(deadlineHours).padStart(2, "0");
     const minutes = String(deadlineMinutes).padStart(2, "0");
@@ -151,6 +189,19 @@ export default function TaskCreate() {
         deadline,
         priority,
         parentId: user.role === "MANAGER" ? parentId || null : null,
+        prGovernmentData: shouldShowGovernmentFields
+          ? {
+              companyName: prCompanyName,
+              governmentEntity: prGovernmentEntity,
+              transactionType: prTransactionType,
+              governmentEmployee: prGovernmentEmployee,
+              applicationNumber: prApplicationNumber,
+              taxIdNumber: prTaxIdNumber,
+              nationalIdNumber: prNationalIdNumber,
+              notes: prNotes,
+              updates: prUpdates,
+            }
+          : null,
       });
       navigate("/tasks");
     } catch (err) {
@@ -243,6 +294,7 @@ export default function TaskCreate() {
                   );
                   setParentId("");
                   setAssigneeId("");
+                  setPrTransactionType("");
                 }}
                 className="app-input"
                 required
@@ -266,6 +318,7 @@ export default function TaskCreate() {
                   setSectionId(e.target.value);
                   setAssigneeId("");
                   setParentId("");
+                  setPrTransactionType("");
                 }}
                 className="app-input"
                 required
@@ -309,6 +362,108 @@ export default function TaskCreate() {
                 )}
             </div>
           </div>
+
+          {isPublicRelationsSection && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-3 text-sm font-semibold text-slate-900">
+                Public Relations - معاملات حكومية
+              </div>
+
+              <div>
+                <label className="app-label">نوع المعاملة</label>
+                <select
+                  value={prTransactionType}
+                  onChange={(e) => setPrTransactionType(e.target.value)}
+                  className="app-input"
+                >
+                  <option value="">اختر نوع المعاملة</option>
+                  <option value={GOVERNMENT_TRANSACTION_TYPE_AR}>
+                    {GOVERNMENT_TRANSACTION_TYPE_AR}
+                  </option>
+                </select>
+              </div>
+
+              {shouldShowGovernmentFields && (
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="app-label">اسم الشركة</label>
+                    <input
+                      value={prCompanyName}
+                      onChange={(e) => setPrCompanyName(e.target.value)}
+                      className="app-input"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="app-label">الجهة الحكومية</label>
+                    <input
+                      value={prGovernmentEntity}
+                      onChange={(e) => setPrGovernmentEntity(e.target.value)}
+                      className="app-input"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="app-label">موظف الجهة الحكومية</label>
+                    <input
+                      value={prGovernmentEmployee}
+                      onChange={(e) => setPrGovernmentEmployee(e.target.value)}
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="app-label">رقم الطلب</label>
+                    <input
+                      value={prApplicationNumber}
+                      onChange={(e) => setPrApplicationNumber(e.target.value)}
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="app-label">الرقم الضريبي</label>
+                    <input
+                      value={prTaxIdNumber}
+                      onChange={(e) => setPrTaxIdNumber(e.target.value)}
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="app-label">الرقم الوطني</label>
+                    <input
+                      value={prNationalIdNumber}
+                      onChange={(e) => setPrNationalIdNumber(e.target.value)}
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="app-label">الملاحظات</label>
+                    <textarea
+                      value={prNotes}
+                      onChange={(e) => setPrNotes(e.target.value)}
+                      rows={3}
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="app-label">المستجدات</label>
+                    <textarea
+                      value={prUpdates}
+                      onChange={(e) => setPrUpdates(e.target.value)}
+                      rows={3}
+                      className="app-input"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {user.role === "MANAGER" && (
             <div>

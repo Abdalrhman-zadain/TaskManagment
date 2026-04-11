@@ -299,6 +299,19 @@ export default function TaskDetail() {
       : [];
   const activeEvidenceFile =
     evidenceFiles[activeEvidenceIndex] || evidenceFiles[0] || null;
+  const hasPrGovernmentDetails =
+    !!task.prTransactionType &&
+    [
+      task.prCompanyName,
+      task.prGovernmentEntity,
+      task.prTransactionType,
+      task.prGovernmentEmployee,
+      task.prApplicationNumber,
+      task.prTaxIdNumber,
+      task.prNationalIdNumber,
+      task.prNotes,
+      task.prUpdates,
+    ].some((value) => Boolean(value));
 
   const role =
     user.role === "CEO"
@@ -338,6 +351,49 @@ export default function TaskDetail() {
                 <p className="mb-6 text-sm leading-relaxed text-slate-600">
                   {task.description}
                 </p>
+              )}
+
+              {hasPrGovernmentDetails && (
+                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-3 text-sm font-bold text-slate-900">
+                    بيانات المعاملات الحكومية
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {[
+                      { label: "اسم الشركة", value: task.prCompanyName },
+                      { label: "الجهة الحكومية", value: task.prGovernmentEntity },
+                      { label: "نوع المعاملة", value: task.prTransactionType },
+                      {
+                        label: "موظف الجهة الحكومية",
+                        value: task.prGovernmentEmployee,
+                      },
+                      { label: "رقم الطلب", value: task.prApplicationNumber },
+                      { label: "الرقم الضريبي", value: task.prTaxIdNumber },
+                      { label: "الرقم الوطني", value: task.prNationalIdNumber },
+                      { label: "الملاحظات", value: task.prNotes },
+                      { label: "المستجدات", value: task.prUpdates },
+                    ]
+                      .filter((item) => item.value)
+                      .map((item) => (
+                        <div
+                          key={item.label}
+                          className={
+                            item.label === "الملاحظات" ||
+                            item.label === "المستجدات"
+                              ? "col-span-2"
+                              : ""
+                          }
+                        >
+                          <div className="text-xs text-slate-500">
+                            {item.label}
+                          </div>
+                          <div className="mt-1 font-medium text-slate-900">
+                            {item.value}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               )}
 
               {evidenceFiles.length > 0 && (

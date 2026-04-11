@@ -6,6 +6,9 @@ TeamTask is a full-stack web application designed for team and task management w
 - **User Roles:** CEO, Manager, Employee (role-based permissions)
 - **Authentication:** Secure login system
 - **Task Management:** Create, assign, and track tasks
+- **Public Relations Workflow:** "Government Transactions" tasks in Public Relations can capture dedicated fields:
+  Company Name, Government Entity, Transaction Type, Government Employee,
+  Application Number, Tax ID Number, National ID Number, Notes, and Updates.
 - **Section & Score Management:** Organize work and monitor performance
 - **Notifications:** Stay updated on important events
 - **Modern UI:** Built with React and Tailwind CSS

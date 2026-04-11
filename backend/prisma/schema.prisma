@@ -96,6 +96,15 @@ model Task {
   id                 Int            @id @default(autoincrement())
   title              String
   description        String?
+  prCompanyName      String?
+  prGovernmentEntity String?
+  prTransactionType  String?
+  prGovernmentEmployee String?
+  prApplicationNumber String?
+  prTaxIdNumber      String?
+  prNationalIdNumber String?
+  prNotes            String?
+  prUpdates          String?
   status             TaskStatus     @default(TODO)
   priority           String         @default("medium")
   deadline           DateTime

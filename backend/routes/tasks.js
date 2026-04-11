@@ -5,6 +5,37 @@ const { createNotification } = require('../utils/notify');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const GOVERNMENT_TRANSACTION_TYPE_AR = 'معاملات حكومية';
+
+function normalizeText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase();
+}
+
+function isPublicRelationsSectionName(sectionName) {
+  const normalized = normalizeText(sectionName);
+  return normalized === 'public relations' || normalized === 'العلاقات العامة';
+}
+
+function sanitizePrGovernmentData(input) {
+  if (!input || typeof input !== 'object') return null;
+
+  const fields = {
+    companyName: String(input.companyName || '').trim(),
+    governmentEntity: String(input.governmentEntity || '').trim(),
+    transactionType: String(input.transactionType || '').trim(),
+    governmentEmployee: String(input.governmentEmployee || '').trim(),
+    applicationNumber: String(input.applicationNumber || '').trim(),
+    taxIdNumber: String(input.taxIdNumber || '').trim(),
+    nationalIdNumber: String(input.nationalIdNumber || '').trim(),
+    notes: String(input.notes || '').trim(),
+    updates: String(input.updates || '').trim()
+  };
+
+  const hasAnyValue = Object.values(fields).some((value) => value.length > 0);
+  return hasAnyValue ? fields : null;
+}
 
 // All task routes require login
 router.use(authMiddleware);
@@ -66,11 +97,22 @@ router.get('/:id', requireRole('CEO', 'MANAGER', 'EMPLOYEE'), async (req, res) =
 // ── POST /api/tasks ────────────────────────────────────
 // CEO or Manager can create tasks
 router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
-  const { title, description, assigneeId, sectionId, deadline, priority, parentId, projectId } = req.body;
+  const {
+    title,
+    description,
+    assigneeId,
+    sectionId,
+    deadline,
+    priority,
+    parentId,
+    projectId,
+    prGovernmentData
+  } = req.body;
   const parsedAssigneeId = parseInt(assigneeId);
   const parsedSectionId = parseInt(sectionId);
   const parsedParentId = parentId ? parseInt(parentId) : null;
   const parsedProjectId = parseInt(projectId);
+  const sanitizedPrGovernmentData = sanitizePrGovernmentData(prGovernmentData);
 
   try {
     if (!title || !deadline || Number.isNaN(parsedAssigneeId) || Number.isNaN(parsedSectionId) || Number.isNaN(parsedProjectId)) {
@@ -107,6 +149,16 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
     if (project.sectionId !== parsedSectionId) {
       return res.status(400).json({ error: 'Project must belong to the selected section' });
     }
+
+    const isPublicRelationsSection = isPublicRelationsSectionName(section.name);
+    if (sanitizedPrGovernmentData && !isPublicRelationsSection) {
+      return res.status(400).json({ error: 'Government transaction fields are only allowed for Public Relations section tasks' });
+    }
+
+    const shouldStorePrGovernmentData =
+      isPublicRelationsSection &&
+      sanitizedPrGovernmentData &&
+      sanitizedPrGovernmentData.transactionType === GOVERNMENT_TRANSACTION_TYPE_AR;
 
     if (req.user.role === 'CEO') {
       if (parsedParentId) {
@@ -183,7 +235,16 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         deadline: new Date(deadline),
         priority: priority || 'medium',
         parentId: parsedParentId,
-        projectId: parsedProjectId
+        projectId: parsedProjectId,
+        prCompanyName: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.companyName : null,
+        prGovernmentEntity: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.governmentEntity : null,
+        prTransactionType: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.transactionType : null,
+        prGovernmentEmployee: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.governmentEmployee : null,
+        prApplicationNumber: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.applicationNumber : null,
+        prTaxIdNumber: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.taxIdNumber : null,
+        prNationalIdNumber: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.nationalIdNumber : null,
+        prNotes: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.notes : null,
+        prUpdates: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.updates : null
       }
     });
 

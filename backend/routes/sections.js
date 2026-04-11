@@ -4,6 +4,10 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const BUILT_IN_PUBLIC_RELATIONS_SECTION_NAMES = [
+  'Public Relations',
+  'العلاقات العامة'
+];
 
 router.use(authMiddleware);
 
@@ -42,6 +46,22 @@ router.patch('/:id', requireRole('CEO'), async (req, res) => {
   const { name, managerId } = req.body;
   try {
     const sectionId = parseInt(req.params.id);
+    const existingSection = await prisma.section.findUnique({
+      where: { id: sectionId },
+      select: { id: true, name: true }
+    });
+
+    if (!existingSection) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+
+    if (
+      name &&
+      BUILT_IN_PUBLIC_RELATIONS_SECTION_NAMES.includes(existingSection.name) &&
+      !BUILT_IN_PUBLIC_RELATIONS_SECTION_NAMES.includes(String(name).trim())
+    ) {
+      return res.status(400).json({ error: 'Built-in Public Relations section name cannot be changed' });
+    }
 
     // Parse managerId - handle null, undefined, empty string, or numeric string
     let parsedManagerId = null;
@@ -85,6 +105,18 @@ router.patch('/:id', requireRole('CEO'), async (req, res) => {
 router.delete('/:id', requireRole('CEO'), async (req, res) => {
   try {
     const sectionId = parseInt(req.params.id);
+    const sectionToDelete = await prisma.section.findUnique({
+      where: { id: sectionId },
+      select: { id: true, name: true }
+    });
+
+    if (!sectionToDelete) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+
+    if (BUILT_IN_PUBLIC_RELATIONS_SECTION_NAMES.includes(sectionToDelete.name)) {
+      return res.status(400).json({ error: 'Built-in Public Relations section cannot be deleted' });
+    }
 
     // Get all task IDs in this section
     const tasks = await prisma.task.findMany({

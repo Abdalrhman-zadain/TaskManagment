@@ -19,6 +19,10 @@ const clientRoutes = require('./routes/client');
 
 const app = express();
 const prisma = new PrismaClient();
+const BUILT_IN_PUBLIC_RELATIONS_SECTION_NAMES = [
+  'Public Relations',
+  'العلاقات العامة'
+];
 const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
@@ -102,6 +106,27 @@ async function markLateTasks() {
 }
 
 // ── Start server ───────────────────────────────────────
+async function ensureBuiltInSections() {
+  try {
+    const existingPublicRelationsSection = await prisma.section.findFirst({
+      where: {
+        name: { in: BUILT_IN_PUBLIC_RELATIONS_SECTION_NAMES }
+      },
+      select: { id: true, name: true }
+    });
+
+    if (!existingPublicRelationsSection) {
+      const createdSection = await prisma.section.create({
+        data: { name: 'Public Relations' },
+        select: { id: true, name: true }
+      });
+      console.log(`[bootstrap] Created built-in section: ${createdSection.name}`);
+    }
+  } catch (err) {
+    console.error('[bootstrap] Error ensuring built-in sections:', err.message);
+  }
+}
+
 const http = require('http');
 const { initSocket } = require('./socket');
 const server = http.createServer(app);
@@ -110,6 +135,7 @@ const io = initSocket(server);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`✓ Server running on http://0.0.0.0:${PORT} (LAN: http://192.168.1.251:${PORT})`);
+  ensureBuiltInSections();
   markLateTasks();
   setInterval(markLateTasks, 15 * 60 * 1000); // every 15 min
 });
