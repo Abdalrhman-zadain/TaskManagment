@@ -444,8 +444,35 @@ router.patch('/:id/status', requireRole('CEO', 'MANAGER', 'EMPLOYEE'), async (re
 
 // ── DELETE /api/tasks/:id ──────────────────────────────
 router.delete('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  const taskId = parseInt(req.params.id);
+
   try {
-    await prisma.task.delete({ where: { id: parseInt(req.params.id) } });
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: {
+        id: true,
+        creatorId: true,
+        subtasks: { select: { id: true } }
+      }
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    if (task.creatorId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the creator can delete this task' });
+    }
+
+    if (task.subtasks.length > 0) {
+      return res.status(400).json({ error: 'Delete subtasks first before deleting this task' });
+    }
+
+    await prisma.$transaction([
+      prisma.score.deleteMany({ where: { taskId } }),
+      prisma.task.delete({ where: { id: taskId } })
+    ]);
+
     res.json({ message: 'Task deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

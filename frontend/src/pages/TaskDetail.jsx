@@ -325,6 +325,30 @@ export default function TaskDetail() {
     }
   }
 
+  async function deleteTask() {
+    if (
+      !window.confirm(
+        tx(
+          "هل أنت متأكد من حذف هذه المهمة؟",
+          "Are you sure you want to delete this task?",
+        ),
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await api.delete(`/tasks/${id}`);
+      alert(tx("تم حذف المهمة بنجاح.", "Task deleted successfully."));
+      navigate("/tasks");
+    } catch (err) {
+      alert(
+        err.response?.data?.error ||
+          tx("حدث خطأ أثناء حذف المهمة", "Error deleting task"),
+      );
+    }
+  }
+
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
@@ -381,6 +405,8 @@ export default function TaskDetail() {
   );
   const isAssignee = user.id === task.assigneeId;
   const isCreator = user.id === task.creatorId;
+  const canDeleteTask =
+    (user.role === "CEO" || user.role === "MANAGER") && isCreator;
   const isPendingApproval = task.status === "PENDING_APPROVAL";
   const evidenceFiles = task.evidenceUrls?.length
     ? task.evidenceUrls.map((url) => ({
@@ -452,11 +478,23 @@ export default function TaskDetail() {
                 <h1 className="text-xl font-bold leading-snug text-slate-900">
                   {task.title}
                 </h1>
-                <span
-                  className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${statusBadge(task.status)}`}
-                >
-                  {statusLabelMap[task.status] || task.status.replaceAll("_", " ")}
-                </span>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  {canDeleteTask && (
+                    <button
+                      type="button"
+                      onClick={deleteTask}
+                      className="rounded bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700"
+                    >
+                      {tx("حذف المهمة", "Delete Task")}
+                    </button>
+                  )}
+                  <span
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusBadge(task.status)}`}
+                  >
+                    {statusLabelMap[task.status] ||
+                      task.status.replaceAll("_", " ")}
+                  </span>
+                </div>
               </div>
 
               {task.description && (
