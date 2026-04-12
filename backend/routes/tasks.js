@@ -5,7 +5,6 @@ const { createNotification } = require('../utils/notify');
 
 const router = express.Router();
 const prisma = new PrismaClient();
-const GOVERNMENT_TRANSACTION_TYPE_AR = 'معاملات حكومية';
 
 function normalizeText(value) {
   return String(value || '')
@@ -158,7 +157,7 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
     const shouldStorePrGovernmentData =
       isPublicRelationsSection &&
       sanitizedPrGovernmentData &&
-      sanitizedPrGovernmentData.transactionType === GOVERNMENT_TRANSACTION_TYPE_AR;
+      sanitizedPrGovernmentData.transactionType.length > 0;
 
     if (req.user.role === 'CEO') {
       if (parsedParentId) {

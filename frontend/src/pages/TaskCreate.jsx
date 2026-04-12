@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import api from "../api/client";
 
-const GOVERNMENT_TRANSACTION_TYPE_AR = "معاملات حكومية";
-
 function isPublicRelationsSectionName(sectionName = "") {
   const normalized = String(sectionName).trim().toLowerCase();
   return normalized === "public relations" || normalized === "العلاقات العامة";
@@ -109,7 +107,7 @@ export default function TaskCreate() {
   const shouldShowGovernmentFields = useMemo(
     () =>
       isPublicRelationsSection &&
-      prTransactionType === GOVERNMENT_TRANSACTION_TYPE_AR,
+      prTransactionType.trim().length > 0,
     [isPublicRelationsSection, prTransactionType],
   );
 
@@ -410,21 +408,17 @@ export default function TaskCreate() {
           {isPublicRelationsSection && (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="mb-3 text-sm font-semibold text-slate-900">
-                Public Relations - معاملات حكومية
+                Public Relations
               </div>
 
               <div>
                 <label className="app-label">نوع المعاملة</label>
-                <select
+                <input
                   value={prTransactionType}
                   onChange={(e) => setPrTransactionType(e.target.value)}
                   className="app-input"
-                >
-                  <option value="">اختر نوع المعاملة</option>
-                  <option value={GOVERNMENT_TRANSACTION_TYPE_AR}>
-                    {GOVERNMENT_TRANSACTION_TYPE_AR}
-                  </option>
-                </select>
+                  placeholder="اكتب نوع المعاملة"
+                />
               </div>
 
               {shouldShowGovernmentFields && (
