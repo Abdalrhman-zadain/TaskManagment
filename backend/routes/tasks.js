@@ -1,4 +1,5 @@
 const express = require('express');
+const { randomUUID } = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { createNotification } = require('../utils/notify');
@@ -34,6 +35,53 @@ function sanitizePrGovernmentData(input) {
 
   const hasAnyValue = Object.values(fields).some((value) => value.length > 0);
   return hasAnyValue ? fields : null;
+}
+
+const REPEAT_TYPES = new Set(['NONE', 'DAILY', 'WEEKLY', 'MONTHLY']);
+const MAX_RECURRING_TASKS = 120;
+const REPEAT_LIMITS = {
+  DAILY: 31,
+  WEEKLY: 52,
+  MONTHLY: 12
+};
+
+function addRepeatInterval(date, repeatType, repeatEvery) {
+  const next = new Date(date);
+
+  if (repeatType === 'DAILY') {
+    next.setDate(next.getDate() + repeatEvery);
+  } else if (repeatType === 'WEEKLY') {
+    next.setDate(next.getDate() + repeatEvery * 7);
+  } else if (repeatType === 'MONTHLY') {
+    next.setMonth(next.getMonth() + repeatEvery);
+  }
+
+  return next;
+}
+
+function buildRecurringDeadlines(startDeadline, repeatType, repeatEvery, repeatUntil) {
+  if (repeatType === 'NONE') return [startDeadline];
+
+  const deadlines = [];
+  let nextDeadline = new Date(startDeadline);
+
+  while (nextDeadline <= repeatUntil) {
+    deadlines.push(new Date(nextDeadline));
+
+    if (deadlines.length > MAX_RECURRING_TASKS) {
+      const err = new Error(`Recurring tasks are limited to ${MAX_RECURRING_TASKS} occurrences`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    nextDeadline = addRepeatInterval(nextDeadline, repeatType, repeatEvery);
+  }
+
+  return deadlines;
+}
+
+function formatDateForMessage(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 // All task routes require login
@@ -105,17 +153,53 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
     priority,
     parentId,
     projectId,
-    prGovernmentData
+    prGovernmentData,
+    repeatType = 'NONE',
+    repeatEvery = 1,
+    repeatUntil
   } = req.body;
   const parsedAssigneeId = parseInt(assigneeId);
   const parsedSectionId = parseInt(sectionId);
   const parsedParentId = parentId ? parseInt(parentId) : null;
   const parsedProjectId = parseInt(projectId);
+  const normalizedRepeatType = String(repeatType || 'NONE').toUpperCase();
+  const parsedRepeatEvery = parseInt(repeatEvery, 10);
+  const parsedDeadline = new Date(deadline);
+  const parsedRepeatUntil = repeatUntil ? new Date(repeatUntil) : null;
   const sanitizedPrGovernmentData = sanitizePrGovernmentData(prGovernmentData);
 
   try {
     if (!title || !deadline || Number.isNaN(parsedAssigneeId) || Number.isNaN(parsedSectionId) || Number.isNaN(parsedProjectId)) {
       return res.status(400).json({ error: 'Missing or invalid task fields' });
+    }
+    if (Number.isNaN(parsedDeadline.getTime())) {
+      return res.status(400).json({ error: 'Invalid deadline' });
+    }
+    if (parsedDeadline < new Date()) {
+      return res.status(400).json({ error: 'Deadline date/time cannot be in the past' });
+    }
+    if (!REPEAT_TYPES.has(normalizedRepeatType)) {
+      return res.status(400).json({ error: 'Invalid repeat type' });
+    }
+    if (normalizedRepeatType !== 'NONE') {
+      const repeatLimit = REPEAT_LIMITS[normalizedRepeatType];
+
+      if (!Number.isInteger(parsedRepeatEvery) || parsedRepeatEvery < 1 || parsedRepeatEvery > repeatLimit) {
+        return res.status(400).json({ error: `Repeat interval must be between 1 and ${repeatLimit}` });
+      }
+      if (!parsedRepeatUntil || Number.isNaN(parsedRepeatUntil.getTime())) {
+        return res.status(400).json({ error: 'Repeat until date is required' });
+      }
+      if (parsedRepeatUntil < parsedDeadline) {
+        return res.status(400).json({ error: 'Repeat until date must be after the first deadline' });
+      }
+
+      const nextOccurrence = addRepeatInterval(parsedDeadline, normalizedRepeatType, parsedRepeatEvery);
+      if (parsedRepeatUntil < nextOccurrence) {
+        return res.status(400).json({
+          error: `Repeat until must be on or after ${formatDateForMessage(nextOccurrence)} to create at least one repeated task`
+        });
+      }
     }
 
     const assignee = await prisma.user.findUnique({
@@ -226,14 +310,19 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       }
     }
 
-    const task = await prisma.task.create({
-      data: {
+    const recurrenceDeadlines = buildRecurringDeadlines(
+      parsedDeadline,
+      normalizedRepeatType,
+      parsedRepeatEvery,
+      parsedRepeatUntil
+    );
+    const recurrenceGroupId = recurrenceDeadlines.length > 1 ? randomUUID() : null;
+    const baseTaskData = {
         title,
         description,
         assigneeId: parsedAssigneeId,
         sectionId: parsedSectionId,
         creatorId: req.user.id,
-        deadline: new Date(deadline),
         priority: priority || 'medium',
         parentId: parsedParentId,
         projectId: parsedProjectId,
@@ -246,20 +335,38 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         prNationalIdNumber: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.nationalIdNumber : null,
         prNotes: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.notes : null,
         prUpdates: shouldStorePrGovernmentData ? sanitizedPrGovernmentData.updates : null
-      }
-    });
+    };
+    const taskCreateOperations = recurrenceDeadlines.map((occurrenceDeadline, index) =>
+      prisma.task.create({
+        data: {
+          ...baseTaskData,
+          deadline: occurrenceDeadline,
+          repeatType: recurrenceDeadlines.length > 1 ? normalizedRepeatType : 'NONE',
+          repeatEvery: recurrenceDeadlines.length > 1 ? parsedRepeatEvery : 1,
+          repeatUntil: recurrenceDeadlines.length > 1 ? parsedRepeatUntil : null,
+          recurrenceGroupId,
+          recurrenceIndex: index
+        }
+      })
+    );
+
+    const createdTasks = await prisma.$transaction(taskCreateOperations);
+    const firstTask = createdTasks[0];
 
     // Notify the assignee that a task was assigned to them
     await createNotification({
       userId: parsedAssigneeId,
       type: 'task_assigned',
-      message: `You have been assigned a new task: "${title}"`,
-      taskId: task.id
+      message:
+        createdTasks.length > 1
+          ? `You have been assigned ${createdTasks.length} recurring tasks: "${title}"`
+          : `You have been assigned a new task: "${title}"`,
+      taskId: firstTask.id
     });
 
-    res.status(201).json(task);
+    res.status(201).json(createdTasks.length > 1 ? { tasks: createdTasks, count: createdTasks.length } : firstTask);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message });
   }
 });
 

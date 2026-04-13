@@ -34,6 +34,13 @@ enum ApprovalStatus {
   REJECTED
 }
 
+enum TaskRepeatType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 enum ProjectStatus {
   IN_PROGRESS
   AT_RISK
@@ -108,6 +115,11 @@ model Task {
   status             TaskStatus     @default(TODO)
   priority           String         @default("medium")
   deadline           DateTime
+  repeatType         TaskRepeatType @default(NONE)
+  repeatEvery        Int            @default(1)
+  repeatUntil        DateTime?
+  recurrenceGroupId  String?
+  recurrenceIndex    Int            @default(0)
   createdAt          DateTime       @default(now())
   completedAt        DateTime?
   creatorId          Int
@@ -130,6 +142,8 @@ model Task {
   approvalComment    String?
   approvalBy         Int?
   approvalAt         DateTime?
+
+  @@index([recurrenceGroupId])
 }
 
 model Score {

@@ -14,6 +14,56 @@ function roleLabel(user) {
   return "Employee";
 }
 
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const repeatLimits = {
+  DAILY: { max: 31, singular: "day", plural: "days" },
+  WEEKLY: { max: 52, singular: "week", plural: "weeks" },
+  MONTHLY: { max: 12, singular: "month", plural: "months" },
+};
+
+const maxRecurringTasks = 120;
+
+function addRepeatInterval(date, repeatType, repeatEvery) {
+  const next = new Date(date);
+
+  if (repeatType === "DAILY") {
+    next.setDate(next.getDate() + repeatEvery);
+  } else if (repeatType === "WEEKLY") {
+    next.setDate(next.getDate() + repeatEvery * 7);
+  } else if (repeatType === "MONTHLY") {
+    next.setMonth(next.getMonth() + repeatEvery);
+  }
+
+  return next;
+}
+
+function countRecurringOccurrences(startDate, repeatType, repeatEvery, repeatUntil) {
+  let count = 0;
+  let nextDate = new Date(startDate);
+
+  while (nextDate <= repeatUntil) {
+    count += 1;
+    if (count > maxRecurringTasks) return count;
+    nextDate = addRepeatInterval(nextDate, repeatType, repeatEvery);
+  }
+
+  return count;
+}
+
+function formatDisplayDate(date) {
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export default function TaskCreate() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -27,9 +77,14 @@ export default function TaskCreate() {
   );
   const [parentId, setParentId] = useState("");
   const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineTimeEnabled, setDeadlineTimeEnabled] = useState(false);
   const [deadlineHours, setDeadlineHours] = useState("00");
   const [deadlineMinutes, setDeadlineMinutes] = useState("00");
   const [deadlineSeconds, setDeadlineSeconds] = useState("00");
+  const [repeatEnabled, setRepeatEnabled] = useState(false);
+  const [repeatType, setRepeatType] = useState("NONE");
+  const [repeatEvery, setRepeatEvery] = useState("1");
+  const [repeatUntilDate, setRepeatUntilDate] = useState("");
   const [priority, setPriority] = useState("medium");
   const [prTransactionType, setPrTransactionType] = useState("");
   const [prCompanyName, setPrCompanyName] = useState("");
@@ -48,6 +103,7 @@ export default function TaskCreate() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const todayInputValue = useMemo(() => formatDateInputValue(new Date()), []);
 
   useEffect(() => {
     async function load() {
@@ -155,6 +211,13 @@ export default function TaskCreate() {
     );
   }, [tasks, sectionId, projectId, user.role, user.id]);
 
+  const repeatLimit = repeatLimits[repeatType];
+  const repeatUnitLabel = repeatLimit
+    ? Number(repeatEvery) === 1
+      ? repeatLimit.singular
+      : repeatLimit.plural
+    : "";
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -172,9 +235,9 @@ export default function TaskCreate() {
       return;
     }
 
-    const hours = Number(deadlineHours);
-    const minutes = Number(deadlineMinutes);
-    const seconds = Number(deadlineSeconds);
+    const hours = deadlineTimeEnabled ? Number(deadlineHours) : 0;
+    const minutes = deadlineTimeEnabled ? Number(deadlineMinutes) : 0;
+    const seconds = deadlineTimeEnabled ? Number(deadlineSeconds) : 0;
 
     if (
       Number.isNaN(hours) ||
@@ -206,8 +269,84 @@ export default function TaskCreate() {
       setError("Invalid deadline date/time");
       return;
     }
+    if (deadlineDateObj < new Date()) {
+      setError("Deadline date/time cannot be in the past");
+      return;
+    }
 
     const deadline = deadlineDateObj.toISOString();
+    const selectedRepeatType = repeatEnabled ? repeatType : "NONE";
+    const repeatEveryValue = Number(repeatEvery);
+    let repeatUntil = null;
+
+    if (selectedRepeatType !== "NONE") {
+      const selectedRepeatLimit = repeatLimits[selectedRepeatType];
+
+      if (
+        !selectedRepeatLimit ||
+        !repeatUntilDate ||
+        !Number.isInteger(repeatEveryValue) ||
+        repeatEveryValue < 1 ||
+        repeatEveryValue > selectedRepeatLimit.max
+      ) {
+        setError(
+          `Every must be between 1 and ${selectedRepeatLimit?.max || 1} ${
+            selectedRepeatLimit?.plural || "periods"
+          }`,
+        );
+        return;
+      }
+
+      const [untilYear, untilMonth, untilDay] = repeatUntilDate
+        .split("-")
+        .map(Number);
+      const repeatUntilDateObj = new Date(
+        untilYear,
+        (untilMonth || 1) - 1,
+        untilDay || 1,
+        hours,
+        minutes,
+        seconds,
+        0,
+      );
+
+      if (
+        Number.isNaN(repeatUntilDateObj.getTime()) ||
+        repeatUntilDateObj < deadlineDateObj
+      ) {
+        setError("Repeat until date must be after the first deadline");
+        return;
+      }
+
+      const nextOccurrenceDate = addRepeatInterval(
+        deadlineDateObj,
+        selectedRepeatType,
+        repeatEveryValue,
+      );
+
+      if (repeatUntilDateObj < nextOccurrenceDate) {
+        setError(
+          `Repeat until must be on or after ${formatDisplayDate(
+            nextOccurrenceDate,
+          )} to create at least one repeated task`,
+        );
+        return;
+      }
+
+      const recurrenceCount = countRecurringOccurrences(
+        deadlineDateObj,
+        selectedRepeatType,
+        repeatEveryValue,
+        repeatUntilDateObj,
+      );
+
+      if (recurrenceCount > maxRecurringTasks) {
+        setError(`Repeat settings can create at most ${maxRecurringTasks} tasks`);
+        return;
+      }
+
+      repeatUntil = repeatUntilDateObj.toISOString();
+    }
 
     const selectedProjectForValidation = projects.find(
       (project) => project.id === Number(projectId),
@@ -230,6 +369,9 @@ export default function TaskCreate() {
         projectId,
         deadline,
         priority,
+        repeatType: selectedRepeatType,
+        repeatEvery: selectedRepeatType === "NONE" ? 1 : repeatEveryValue,
+        repeatUntil,
         parentId: user.role === "MANAGER" ? parentId || null : null,
         prGovernmentData: shouldShowGovernmentFields
           ? {
@@ -532,6 +674,7 @@ export default function TaskCreate() {
               <input
                 type="date"
                 value={deadlineDate}
+                min={todayInputValue}
                 onChange={(e) => setDeadlineDate(e.target.value)}
                 className="app-input"
                 required
@@ -552,61 +695,176 @@ export default function TaskCreate() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="app-label">Hours</label>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <label className="flex items-center gap-3 text-sm font-semibold text-slate-800">
               <input
-                type="number"
-                min="0"
-                max="23"
-                value={deadlineHours}
+                type="checkbox"
+                checked={deadlineTimeEnabled}
                 onChange={(e) => {
-                  const val = Math.max(
-                    0,
-                    Math.min(23, Number(e.target.value) || 0),
-                  );
-                  setDeadlineHours(String(val));
+                  const checked = e.target.checked;
+                  setDeadlineTimeEnabled(checked);
+                  if (!checked) {
+                    setDeadlineHours("00");
+                    setDeadlineMinutes("00");
+                    setDeadlineSeconds("00");
+                  }
                 }}
-                className="app-input"
+                className="h-4 w-4 rounded border-slate-300 text-[#1275e2]"
               />
-            </div>
+              Do you want to set a deadline time?
+            </label>
 
-            <div>
-              <label className="app-label">Minutes</label>
-              <input
-                type="number"
-                min="0"
-                max="59"
-                value={deadlineMinutes}
-                onChange={(e) => {
-                  const val = Math.max(
-                    0,
-                    Math.min(59, Number(e.target.value) || 0),
-                  );
-                  setDeadlineMinutes(String(val));
-                }}
-                className="app-input"
-              />
-            </div>
+            {deadlineTimeEnabled && (
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                <div>
+                  <label className="app-label">Hours</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={deadlineHours}
+                    onChange={(e) => {
+                      const val = Math.max(
+                        0,
+                        Math.min(23, Number(e.target.value) || 0),
+                      );
+                      setDeadlineHours(String(val));
+                    }}
+                    className="app-input"
+                  />
+                </div>
 
-            <div>
-              <label className="app-label">Seconds</label>
-              <input
-                type="number"
-                min="0"
-                max="59"
-                value={deadlineSeconds}
-                onChange={(e) => {
-                  const val = Math.max(
-                    0,
-                    Math.min(59, Number(e.target.value) || 0),
-                  );
-                  setDeadlineSeconds(String(val));
-                }}
-                className="app-input"
-              />
-            </div>
+                <div>
+                  <label className="app-label">Minutes</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={deadlineMinutes}
+                    onChange={(e) => {
+                      const val = Math.max(
+                        0,
+                        Math.min(59, Number(e.target.value) || 0),
+                      );
+                      setDeadlineMinutes(String(val));
+                    }}
+                    className="app-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="app-label">Seconds</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={deadlineSeconds}
+                    onChange={(e) => {
+                      const val = Math.max(
+                        0,
+                        Math.min(59, Number(e.target.value) || 0),
+                      );
+                      setDeadlineSeconds(String(val));
+                    }}
+                    className="app-input"
+                  />
+                </div>
+              </div>
+            )}
           </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <label className="flex items-center gap-3 text-sm font-semibold text-slate-800">
+              <input
+                type="checkbox"
+                checked={repeatEnabled}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setRepeatEnabled(checked);
+                  if (checked) {
+                    setRepeatType("DAILY");
+                  } else {
+                    setRepeatType("NONE");
+                    setRepeatEvery("1");
+                    setRepeatUntilDate("");
+                  }
+                }}
+                className="h-4 w-4 rounded border-slate-300 text-[#1275e2]"
+              />
+              Do you want to repeat this task?
+            </label>
+
+            {repeatEnabled && (
+              <>
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="app-label">Repeat task</label>
+                    <select
+                      value={repeatType}
+                      onChange={(e) => {
+                        const nextRepeatType = e.target.value;
+                        const nextLimit = repeatLimits[nextRepeatType];
+
+                        setRepeatType(nextRepeatType);
+                        if (nextLimit && Number(repeatEvery) > nextLimit.max) {
+                          setRepeatEvery(String(nextLimit.max));
+                        }
+                      }}
+                      className="app-input"
+                    >
+                      <option value="DAILY">Daily</option>
+                      <option value="WEEKLY">Weekly</option>
+                      <option value="MONTHLY">Monthly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="app-label">Every</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={repeatLimit?.max || 1}
+                      value={repeatEvery}
+                      onChange={(e) => {
+                        const maxValue = repeatLimit?.max || 1;
+                        const val = Math.max(
+                          1,
+                          Math.min(maxValue, Number(e.target.value) || 1),
+                        );
+                        setRepeatEvery(String(val));
+                      }}
+                      className="app-input"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="app-label">Repeats until</label>
+                    <input
+                      type="date"
+                      value={repeatUntilDate}
+                      min={deadlineDate || todayInputValue}
+                      onChange={(e) => setRepeatUntilDate(e.target.value)}
+                      className="app-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-slate-500">
+                  Repeats every {repeatEvery} {repeatUnitLabel}. This creates
+                  separate tasks for each occurrence, so scoring and completion
+                  stay independent.
+                </p>
+              </>
+            )}
+          </div>
+
+          {!repeatEnabled && (
+            <p className="text-xs text-slate-500">
+              This task will be created once.
+            </p>
+          )}
 
           {error && <p className="text-sm text-rose-600">{error}</p>}
 

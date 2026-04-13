@@ -16,6 +16,12 @@ const statusDot = {
   PENDING_APPROVAL: "bg-[#c55b00]",
 };
 
+const repeatLabels = {
+  DAILY: "Daily",
+  WEEKLY: "Weekly",
+  MONTHLY: "Monthly",
+};
+
 export default function TaskCard({ task, onMarkDone }) {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -43,6 +49,12 @@ export default function TaskCard({ task, onMarkDone }) {
         {task.score && (
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-700">
             {task.score.value}/10
+          </span>
+        )}
+
+        {task.repeatType && task.repeatType !== "NONE" && (
+          <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
+            {repeatLabels[task.repeatType] || "Repeats"}
           </span>
         )}
 
