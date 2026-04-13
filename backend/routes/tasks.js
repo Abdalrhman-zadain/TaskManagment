@@ -480,6 +480,93 @@ router.patch('/:id/done', requireRole('EMPLOYEE'), async (req, res) => {
 
 // ── PATCH /api/tasks/:id ───────────────────────────────
 // Managers/CEO can update task details (priority, deadline, etc.)
+router.post('/:id/repeat', requireRole('CEO', 'MANAGER'), async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { deadline } = req.body;
+  const parsedDeadline = new Date(deadline);
+
+  try {
+    if (Number.isNaN(taskId)) {
+      return res.status(400).json({ error: 'Invalid task id' });
+    }
+    if (!deadline || Number.isNaN(parsedDeadline.getTime())) {
+      return res.status(400).json({ error: 'Valid new deadline is required' });
+    }
+    if (parsedDeadline < new Date()) {
+      return res.status(400).json({ error: 'New deadline cannot be in the past' });
+    }
+
+    const originalTask = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: {
+        title: true,
+        description: true,
+        prCompanyName: true,
+        prGovernmentEntity: true,
+        prTransactionType: true,
+        prGovernmentEmployee: true,
+        prApplicationNumber: true,
+        prTaxIdNumber: true,
+        prNationalIdNumber: true,
+        prNotes: true,
+        prUpdates: true,
+        priority: true,
+        creatorId: true,
+        assigneeId: true,
+        sectionId: true,
+        projectId: true,
+        parentId: true
+      }
+    });
+
+    if (!originalTask) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    if (req.user.role !== 'CEO' && originalTask.creatorId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the creator or CEO can repeat this task' });
+    }
+
+    const repeatedTask = await prisma.task.create({
+      data: {
+        title: originalTask.title,
+        description: originalTask.description,
+        prCompanyName: originalTask.prCompanyName,
+        prGovernmentEntity: originalTask.prGovernmentEntity,
+        prTransactionType: originalTask.prTransactionType,
+        prGovernmentEmployee: originalTask.prGovernmentEmployee,
+        prApplicationNumber: originalTask.prApplicationNumber,
+        prTaxIdNumber: originalTask.prTaxIdNumber,
+        prNationalIdNumber: originalTask.prNationalIdNumber,
+        prNotes: originalTask.prNotes,
+        prUpdates: originalTask.prUpdates,
+        priority: originalTask.priority,
+        deadline: parsedDeadline,
+        creatorId: req.user.id,
+        assigneeId: originalTask.assigneeId,
+        sectionId: originalTask.sectionId,
+        projectId: originalTask.projectId,
+        parentId: originalTask.parentId,
+        repeatType: 'NONE',
+        repeatEvery: 1,
+        repeatUntil: null,
+        recurrenceGroupId: null,
+        recurrenceIndex: 0
+      }
+    });
+
+    await createNotification({
+      userId: originalTask.assigneeId,
+      type: 'task_assigned',
+      message: `Task repeated with a new deadline: "${originalTask.title}"`,
+      taskId: repeatedTask.id
+    });
+
+    res.status(201).json(repeatedTask);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.patch('/:id', requireRole('CEO', 'MANAGER'), async (req, res) => {
   const taskId = parseInt(req.params.id);
   const { title, description, deadline, priority, status } = req.body;

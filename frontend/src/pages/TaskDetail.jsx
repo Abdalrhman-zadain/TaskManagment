@@ -12,6 +12,13 @@ function statusBadge(status) {
   return "bg-slate-100 text-slate-600";
 }
 
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function TaskDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -23,6 +30,9 @@ export default function TaskDetail() {
   const [customScore, setCustomScore] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [repeatDeadlineDate, setRepeatDeadlineDate] = useState("");
+  const [repeatingTask, setRepeatingTask] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [selectedLinks, setSelectedLinks] = useState([]);
   const [linkInput, setLinkInput] = useState("");
@@ -33,6 +43,7 @@ export default function TaskDetail() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isArabic = i18n.language?.startsWith("ar");
   const tx = (ar, en) => (isArabic ? ar : en);
+  const todayInputValue = formatDateInputValue(new Date());
 
   useEffect(() => {
     loadTask();
@@ -349,6 +360,47 @@ export default function TaskDetail() {
     }
   }
 
+  async function repeatTask() {
+    if (!repeatDeadlineDate) {
+      alert(tx("يرجى اختيار موعد نهائي جديد.", "Please choose a new deadline."));
+      return;
+    }
+
+    const [year, month, day] = repeatDeadlineDate.split("-").map(Number);
+    const deadlineDateObj = new Date(
+      year,
+      (month || 1) - 1,
+      day || 1,
+      23,
+      59,
+      59,
+      0,
+    );
+
+    if (
+      Number.isNaN(deadlineDateObj.getTime()) ||
+      deadlineDateObj < new Date()
+    ) {
+      alert(tx("لا يمكن أن يكون الموعد النهائي في الماضي.", "New deadline cannot be in the past."));
+      return;
+    }
+
+    setRepeatingTask(true);
+    try {
+      const res = await api.post(`/tasks/${id}/repeat`, {
+        deadline: deadlineDateObj.toISOString(),
+      });
+      alert(tx("تم تكرار المهمة بنجاح.", "Task repeated successfully."));
+      setShowRepeatModal(false);
+      setRepeatDeadlineDate("");
+      navigate(`/tasks/${res.data.id}`);
+    } catch (err) {
+      alert(err.response?.data?.error || tx("حدث خطأ أثناء تكرار المهمة", "Error repeating task"));
+    } finally {
+      setRepeatingTask(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center text-slate-500">
@@ -407,6 +459,9 @@ export default function TaskDetail() {
   const isCreator = user.id === task.creatorId;
   const canDeleteTask =
     (user.role === "CEO" || user.role === "MANAGER") && isCreator;
+  const canRepeatTask =
+    (user.role === "CEO" || user.role === "MANAGER") &&
+    (isCreator || user.role === "CEO");
   const isPendingApproval = task.status === "PENDING_APPROVAL";
   const evidenceFiles = task.evidenceUrls?.length
     ? task.evidenceUrls.map((url) => ({
@@ -479,6 +534,15 @@ export default function TaskDetail() {
                   {task.title}
                 </h1>
                 <div className="flex flex-shrink-0 items-center gap-2">
+                  {canRepeatTask && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRepeatModal(true)}
+                      className="rounded bg-[#1275e2] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#0f63c0]"
+                    >
+                      {tx("تكرار المهمة", "Repeat Task")}
+                    </button>
+                  )}
                   {canDeleteTask && (
                     <button
                       type="button"
@@ -1167,6 +1231,68 @@ export default function TaskDetail() {
             </div>
           </div>
         </div>
+
+        {showRepeatModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => {
+              if (!repeatingTask) setShowRepeatModal(false);
+            }}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4">
+                <div className="text-lg font-bold text-slate-900">
+                  {tx("تكرار المهمة", "Repeat Task")}
+                </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  {tx(
+                    "سيتم إنشاء نسخة جديدة من هذه المهمة بموعد نهائي جديد فقط.",
+                    "A new copy of this task will be created with only a new deadline.",
+                  )}
+                </p>
+              </div>
+
+              <label className="app-label">
+                {tx("الموعد النهائي الجديد", "New Deadline")}
+              </label>
+              <input
+                type="date"
+                min={todayInputValue}
+                value={repeatDeadlineDate}
+                onChange={(e) => setRepeatDeadlineDate(e.target.value)}
+                className="app-input"
+                required
+              />
+
+              <div className="mt-5 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRepeatModal(false);
+                    setRepeatDeadlineDate("");
+                  }}
+                  disabled={repeatingTask}
+                  className="text-sm text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
+                >
+                  {tx("إلغاء", "Cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={repeatTask}
+                  disabled={repeatingTask}
+                  className="btn-primary px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {repeatingTask
+                    ? tx("جارٍ التكرار...", "Repeating...")
+                    : tx("تكرار المهمة", "Repeat Task")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showEvidenceModal && activeEvidenceFile && (
           <div
