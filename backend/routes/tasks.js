@@ -211,11 +211,13 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       return res.status(404).json({ error: 'Assignee not found' });
     }
 
-    // Managers can only assign to employees
-    if (req.user.role === 'MANAGER' && assignee.role !== 'EMPLOYEE') {
-      return res.status(400).json({ error: 'Managers can only assign tasks to employees' });
+    const isAssigningToSelf = parsedAssigneeId === req.user.id;
+
+    // Managers can assign to employees or to themselves
+    if (req.user.role === 'MANAGER' && assignee.role !== 'EMPLOYEE' && !isAssigningToSelf) {
+      return res.status(400).json({ error: 'Managers can only assign tasks to employees or themselves' });
     }
-    if (assignee.role === 'CEO') {
+    if (assignee.role === 'CEO' && !isAssigningToSelf) {
       return res.status(400).json({ error: 'Cannot assign tasks to the CEO' });
     }
 
@@ -248,8 +250,8 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         return res.status(400).json({ error: 'CEO must create a main task (without parent task)' });
       }
 
-      if (!['MANAGER', 'EMPLOYEE'].includes(assignee.role)) {
-        return res.status(400).json({ error: 'CEO can only assign main tasks to a section manager or employee' });
+      if (!['MANAGER', 'EMPLOYEE'].includes(assignee.role) && !isAssigningToSelf) {
+        return res.status(400).json({ error: 'CEO can only assign main tasks to a section manager, employee, or themselves' });
       }
 
       if (assignee.role === 'MANAGER') {
@@ -262,7 +264,7 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       }
     }
 
-    if (assignee.sectionId !== parsedSectionId) {
+    if (assignee.sectionId !== parsedSectionId && !isAssigningToSelf) {
       return res.status(400).json({ error: 'Assignee must belong to the selected section' });
     }
 
@@ -358,7 +360,11 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       userId: parsedAssigneeId,
       type: 'task_assigned',
       message:
-        createdTasks.length > 1
+        isAssigningToSelf && createdTasks.length > 1
+          ? `You created ${createdTasks.length} recurring tasks for yourself: "${title}"`
+          : isAssigningToSelf
+            ? `You created a task for yourself: "${title}"`
+            : createdTasks.length > 1
           ? `You have been assigned ${createdTasks.length} recurring tasks: "${title}"`
           : `You have been assigned a new task: "${title}"`,
       taskId: firstTask.id

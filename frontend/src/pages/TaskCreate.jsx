@@ -14,6 +14,16 @@ function roleLabel(user) {
   return "Employee";
 }
 
+function assigneeLabel(option, currentUser) {
+  const suffixes = [];
+
+  if (option.id === currentUser.id) suffixes.push("You");
+  if (option.role === "MANAGER") suffixes.push("Manager");
+  if (option.role === "CEO") suffixes.push("CEO");
+
+  return suffixes.length ? `${option.name} (${suffixes.join(", ")})` : option.name;
+}
+
 function formatDateInputValue(date) {
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
@@ -172,14 +182,19 @@ export default function TaskCreate() {
       if (!sectionId) return [];
       return users.filter(
         (u) =>
-          u.section?.id === Number(sectionId) &&
-          (u.role === "MANAGER" || u.role === "EMPLOYEE"),
+          u.id === user.id ||
+          (u.section?.id === Number(sectionId) &&
+            (u.role === "MANAGER" || u.role === "EMPLOYEE")),
       );
     }
 
-    const eligible = users.filter((u) => u.role === "EMPLOYEE");
+    const eligible = users.filter(
+      (u) => u.role === "EMPLOYEE" || u.id === user.id,
+    );
     if (!sectionId) return eligible;
-    return eligible.filter((u) => u.section?.id === Number(sectionId));
+    return eligible.filter(
+      (u) => u.id === user.id || u.section?.id === Number(sectionId),
+    );
   }, [users, sections, sectionId, user.role]);
 
   const projectOptions = useMemo(() => {
@@ -359,6 +374,13 @@ export default function TaskCreate() {
       return;
     }
 
+    if (
+      Number(assigneeId) === user.id &&
+      !window.confirm("Are you sure you want to create this task for yourself?")
+    ) {
+      return;
+    }
+
     setSaving(true);
     try {
       await api.post("/tasks", {
@@ -527,13 +549,12 @@ export default function TaskCreate() {
               >
                 <option value="">
                   {user.role === "CEO"
-                    ? "Select manager or employee"
-                    : "Select employee"}
+                    ? "Select yourself, manager, or employee"
+                    : "Select yourself or employee"}
                 </option>
                 {assigneeOptions.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.name}
-                    {u.role === "MANAGER" ? " (Manager)" : ""}
+                    {assigneeLabel(u, user)}
                   </option>
                 ))}
               </select>

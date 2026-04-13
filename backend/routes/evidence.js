@@ -8,6 +8,8 @@ const { createNotification } = require('../utils/notify');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const MAX_UPLOAD_SIZE_MB = 500;
+const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
 
 // ── Configure multer for file uploads ──────────────────
 const storage = multer.diskStorage({
@@ -23,7 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
-    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+    limits: { fileSize: MAX_UPLOAD_SIZE_BYTES },
     fileFilter: (req, file, cb) => {
         // Allow supported image, video, and document formats
         const allowed = /\.(jpg|jpeg|png|mp4|mov|ppt|pptx|xls|xlsx|pdf)$/i;
@@ -34,12 +36,21 @@ const upload = multer({
         }
     }
 });
+const uploadEvidenceFiles = upload.array('files', 10);
 
 router.use(authMiddleware);
 
 // ── POST /api/evidence/upload ──────────────────────────
 // Manager uploads evidence (photo/video) for a task
-router.post('/upload', upload.array('files', 10), async (req, res) => {
+router.post('/upload', (req, res, next) => {
+    uploadEvidenceFiles(req, res, (err) => {
+        if (!err) return next();
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: `File is too large. Maximum size is ${MAX_UPLOAD_SIZE_MB}MB per file` });
+        }
+        return res.status(400).json({ error: err.message });
+    });
+}, async (req, res) => {
     const { taskId } = req.body;
     const taskIdNum = parseInt(taskId);
     const evidenceNote = String(req.body.note || '').trim();
@@ -96,6 +107,10 @@ router.post('/upload', upload.array('files', 10), async (req, res) => {
             task: updatedTask
         });
     } catch (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: `File is too large. Maximum size is ${MAX_UPLOAD_SIZE_MB}MB per file` });
+        }
+
         res.status(500).json({ error: err.message });
     }
 });

@@ -951,8 +951,8 @@ export default function TaskDetail() {
                   />
                   <div className="mt-2 text-xs text-slate-500">
                     {tx(
-                      "JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (حد أقصى 100MB لكل ملف)",
-                      "JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 100MB per file)",
+                      "JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (حد أقصى 500MB لكل ملف)",
+                      "JPG, PNG, MP4, MOV, PPT, PPTX, XLS, XLSX, PDF (max 500MB per file)",
                     )}
                   </div>
                   <div className="mt-2 text-xs text-slate-500">

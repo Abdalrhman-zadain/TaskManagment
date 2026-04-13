@@ -11,6 +11,9 @@ export default function Sidebar({ role }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [isCollapsed, setIsCollapsed] = useState(
+    () => localStorage.getItem("sidebarCollapsed") === "true",
+  );
   const isArabic = currentLang?.startsWith("ar");
   const rolePortalLabelMap = {
     CEO: isArabic ? "بوابة المدير التنفيذي" : "CEO Portal",
@@ -26,7 +29,6 @@ export default function Sidebar({ role }) {
   };
 
   useEffect(() => {
-    // Sync language state with i18n
     setCurrentLang(i18n.language);
 
     async function fetchUnread() {
@@ -44,7 +46,6 @@ export default function Sidebar({ role }) {
       setUnreadCount((prev) => prev + 1);
     });
 
-    // Listen to language changes
     const handleLanguageChanged = (lang) => {
       setCurrentLang(lang);
     };
@@ -67,16 +68,10 @@ export default function Sidebar({ role }) {
   }
 
   function changeLanguage(lang) {
-    // Change language in i18n
     i18n.changeLanguage(lang);
-
-    // Save to localStorage
     localStorage.setItem("language", lang);
-
-    // Update current language state
     setCurrentLang(lang);
 
-    // Update document direction and language attribute
     if (lang === "ar") {
       document.documentElement.dir = "rtl";
       document.documentElement.lang = "ar";
@@ -86,39 +81,83 @@ export default function Sidebar({ role }) {
     }
   }
 
+  function toggleSidebar() {
+    setIsCollapsed((current) => {
+      const next = !current;
+      localStorage.setItem("sidebarCollapsed", String(next));
+      return next;
+    });
+  }
+
   const navItem = (label, path, dot = "bg-slate-400") => {
     const active = location.pathname === path;
     return (
       <div
         onClick={() => navigate(path)}
-        className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+        title={isCollapsed ? label : undefined}
+        className={`flex cursor-pointer items-center gap-2.5 rounded-xl py-2.5 text-sm font-medium transition ${
           active
             ? "bg-[#1275e2] text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-        }`}
+        } ${isCollapsed ? "justify-center px-2" : "px-4"}`}
       >
         <div className={`h-2 w-2 rounded-full ${active ? "bg-white" : dot}`} />
-        {label}
+        {!isCollapsed && label}
       </div>
     );
   };
 
   return (
-    <aside className="sticky top-0 flex h-screen w-56 flex-shrink-0 flex-col border-r border-slate-200 bg-[#fbfdff] pt-6 pb-4">
-      <div className="mb-5 shrink-0 border-b border-slate-200 px-5 pb-6">
-        <div className="text-xl font-bold tracking-tight text-slate-900">
-          Team<span className="text-[#1275e2]">Task</span>
+    <aside
+      className={`sticky top-0 flex h-screen flex-shrink-0 flex-col border-r border-slate-200 bg-[#fbfdff] pb-4 pt-6 transition-all duration-200 ${
+        isCollapsed ? "w-20" : "w-56"
+      }`}
+    >
+      <div
+        className={`mb-5 shrink-0 border-b border-slate-200 pb-6 ${
+          isCollapsed ? "px-3" : "px-5"
+        }`}
+      >
+        <div
+          className={`flex items-center ${
+            isCollapsed ? "justify-center" : "justify-between gap-3"
+          }`}
+        >
+          <div className="text-xl font-bold tracking-tight text-slate-900">
+            {isCollapsed ? (
+              <>
+                T<span className="text-[#1275e2]">T</span>
+              </>
+            ) : (
+              <>
+                Team<span className="text-[#1275e2]">Task</span>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            title={isCollapsed ? "Open sidebar" : "Close sidebar"}
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+          >
+            {isCollapsed ? ">" : "<"}
+          </button>
         </div>
-        <div className="mt-0.5 text-xs text-slate-500">
-          {rolePortalLabelMap[role] || (isArabic ? "بوابة المستخدم" : `${role} Portal`)}
-        </div>
+        {!isCollapsed && (
+          <div className="mt-0.5 text-xs text-slate-500">
+            {rolePortalLabelMap[role] ||
+              (isArabic ? "بوابة المستخدم" : `${role} Portal`)}
+          </div>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="pb-4">
-          <div className="mb-1.5 px-5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            {t("sidebar.overview")}
-          </div>
+          {!isCollapsed && (
+            <div className="mb-1.5 px-5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              {t("sidebar.overview")}
+            </div>
+          )}
           {role === "CEO" && navItem(t("sidebar.dashboard"), "/ceo")}
           {role === "CEO" && navItem(t("sidebar.projects"), "/projects")}
           {role === "CEO" && navItem(t("sidebar.tasks"), "/tasks")}
@@ -130,7 +169,8 @@ export default function Sidebar({ role }) {
           {role === "Manager" && navItem(t("sidebar.projects"), "/projects")}
           {role === "Manager" && navItem(t("sidebar.tasks"), "/tasks")}
           {role === "Manager" && navItem(t("sidebar.calendar"), "/calendar")}
-          {role === "Manager" && navItem(t("sidebar.assignTask"), "/tasks/new")}
+          {role === "Manager" &&
+            navItem(t("sidebar.assignTask"), "/tasks/new")}
           {role === "Manager" && navItem(t("sidebar.team"), "/users")}
 
           {role === "Employee" && navItem(t("sidebar.myTasks"), "/employee")}
@@ -139,30 +179,37 @@ export default function Sidebar({ role }) {
 
           {role === "Client" && navItem(t("sidebar.dashboard"), "/client")}
 
-          <div className="mt-4 mb-1.5 px-5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            {t("sidebar.account")}
-          </div>
+          {!isCollapsed && (
+            <div className="mb-1.5 mt-4 px-5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              {t("sidebar.account")}
+            </div>
+          )}
           {navItem(t("sidebar.myProfile"), "/profile")}
 
           <div
             onClick={() => navigate("/notifications")}
-            className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+            title={isCollapsed ? t("sidebar.notifications") : undefined}
+            className={`relative flex cursor-pointer items-center gap-2.5 rounded-xl py-2.5 text-sm font-medium transition ${
               location.pathname === "/notifications"
                 ? "bg-[#1275e2] text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            }`}
+            } ${isCollapsed ? "justify-center px-2" : "px-4"}`}
           >
             <div
-              className={`h-2 w-2 rounded-full ${location.pathname === "/notifications" ? "bg-white" : "bg-slate-400"}`}
+              className={`h-2 w-2 rounded-full ${
+                location.pathname === "/notifications"
+                  ? "bg-white"
+                  : "bg-slate-400"
+              }`}
             />
-            {t("sidebar.notifications")}
+            {!isCollapsed && t("sidebar.notifications")}
             {unreadCount > 0 && (
               <span
-                className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                   location.pathname === "/notifications"
                     ? "bg-white text-[#1275e2]"
                     : "bg-[#1275e2] text-white"
-                }`}
+                } ${isCollapsed ? "absolute right-4 top-1" : "ml-auto"}`}
               >
                 {unreadCount}
               </span>
@@ -171,11 +218,21 @@ export default function Sidebar({ role }) {
         </div>
       </div>
 
-      <div className="mt-auto shrink-0 border-t border-slate-200 px-4 pt-4">
-        <div className="mb-3 flex items-center gap-2">
+      <div
+        className={`mt-auto shrink-0 border-t border-slate-200 pt-4 ${
+          isCollapsed ? "px-3" : "px-4"
+        }`}
+      >
+        <div
+          className={`mb-3 flex items-center gap-2 ${
+            isCollapsed ? "flex-col" : ""
+          }`}
+        >
           <button
             onClick={() => changeLanguage("en")}
-            className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition ${
+            className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
+              isCollapsed ? "w-full" : "flex-1"
+            } ${
               currentLang === "en"
                 ? "bg-[#1275e2] text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -185,7 +242,9 @@ export default function Sidebar({ role }) {
           </button>
           <button
             onClick={() => changeLanguage("ar")}
-            className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition ${
+            className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
+              isCollapsed ? "w-full" : "flex-1"
+            } ${
               currentLang === "ar"
                 ? "bg-[#1275e2] text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -194,7 +253,12 @@ export default function Sidebar({ role }) {
             AR
           </button>
         </div>
-        <div className="app-panel mb-3 flex items-center gap-2.5 px-3 py-3 shadow-none">
+        <div
+          title={isCollapsed ? user.name : undefined}
+          className={`app-panel mb-3 flex items-center px-3 py-3 shadow-none ${
+            isCollapsed ? "justify-center" : "gap-2.5"
+          }`}
+        >
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1275e2] to-[#5f78a3] text-xs font-bold text-white">
             {user.name
               ?.split(" ")
@@ -203,20 +267,25 @@ export default function Sidebar({ role }) {
               .slice(0, 2)
               .toUpperCase()}
           </div>
-          <div>
-            <div className="text-sm font-medium text-slate-900">
-              {user.name}
+          {!isCollapsed && (
+            <div>
+              <div className="text-sm font-medium text-slate-900">
+                {user.name}
+              </div>
+              <div className="text-xs text-slate-500">
+                {userRoleLabelMap[user.role] || user.role}
+              </div>
             </div>
-            <div className="text-xs text-slate-500">
-              {userRoleLabelMap[user.role] || user.role}
-            </div>
-          </div>
+          )}
         </div>
         <button
           onClick={logout}
-          className="w-full py-1 text-left text-xs text-slate-500 transition hover:text-[#c55b00]"
+          title={isCollapsed ? t("sidebar.signOut") : undefined}
+          className={`w-full py-1 text-xs text-slate-500 transition hover:text-[#c55b00] ${
+            isCollapsed ? "text-center" : "text-left"
+          }`}
         >
-          {t("sidebar.signOut")}
+          {isCollapsed ? "Exit" : t("sidebar.signOut")}
         </button>
       </div>
     </aside>
