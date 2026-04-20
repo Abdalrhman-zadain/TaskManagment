@@ -6,6 +6,8 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+const { authMiddleware, requireRole } = require('./middleware/auth');
+const { buildCeoReportPdf } = require('./utils/ceoReportPdf');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -69,6 +71,63 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(uploadsDir));
+
+app.get('/api/reports/ceo', authMiddleware, requireRole('CEO'), async (req, res) => {
+  try {
+    const [tasks, projects, sections, users] = await Promise.all([
+      prisma.task.findMany({
+        include: {
+          assignee: { select: { id: true, name: true, role: true } },
+          section: { select: { id: true, name: true } },
+          score: true
+        },
+        orderBy: { deadline: 'asc' }
+      }),
+      prisma.project.findMany({
+        include: {
+          client: { select: { id: true, name: true } },
+          manager: { select: { id: true, name: true } },
+          section: { select: { id: true, name: true } },
+          tasks: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              deadline: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.section.findMany({
+        include: {
+          manager: { select: { id: true, name: true } },
+          members: { select: { id: true, name: true, role: true } }
+        },
+        orderBy: { name: 'asc' }
+      }),
+      prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          stars: true,
+          level: true,
+          onTimeCount: true,
+          section: { select: { id: true, name: true } }
+        },
+        orderBy: { name: 'asc' }
+      })
+    ]);
+
+    const pdfBuffer = buildCeoReportPdf({ tasks, projects, sections, users });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="TeamTask-CEO-Report.pdf"');
+    res.send(pdfBuffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── Routes ─────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

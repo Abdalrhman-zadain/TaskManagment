@@ -16,6 +16,7 @@ export default function CEODashboard() {
   const [filter, setFilter] = useState("ALL");
   const [projectFilter, setProjectFilter] = useState("ALL");
   const [projectClientFilter, setProjectClientFilter] = useState("ALL");
+  const [exportingReport, setExportingReport] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +72,29 @@ export default function CEODashboard() {
     } catch (err) {
       console.error("Failed to delete project:", err);
       alert("Failed to delete project");
+    }
+  }
+
+  async function exportReport() {
+    try {
+      setExportingReport(true);
+      const response = await api.get("/reports/ceo", {
+        responseType: "blob",
+      });
+
+      const fileUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = "TeamTask-CEO-Report.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(fileUrl);
+    } catch (err) {
+      console.error("Failed to export CEO report:", err);
+      alert("Failed to export the CEO report PDF.");
+    } finally {
+      setExportingReport(false);
     }
   }
 
@@ -147,12 +171,21 @@ export default function CEODashboard() {
             <h1 className="page-title">{t("dashboard.title")}</h1>
             <p className="page-subtitle">{new Date().toDateString()}</p>
           </div>
-          <button
-            onClick={() => navigate("/tasks/new")}
-            className="btn-primary px-4 py-2 text-sm font-medium"
-          >
-            + {t("tasks.createNew")}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={exportReport}
+              disabled={exportingReport}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-[#1275e2] hover:text-[#1275e2] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exportingReport ? "Exporting..." : "Export Dashboard Report"}
+            </button>
+            <button
+              onClick={() => navigate("/tasks/new")}
+              className="btn-primary px-4 py-2 text-sm font-medium"
+            >
+              + {t("tasks.createNew")}
+            </button>
+          </div>
         </div>
 
         <div className="mb-7 grid grid-cols-4 gap-4">
