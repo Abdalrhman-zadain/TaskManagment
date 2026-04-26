@@ -17,6 +17,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import ClientDashboard from "./pages/ClientDashboard";
 import ProjectsPage from "./pages/ProjectsPage";
 import CalendarPage from "./pages/CalendarPage";
+import CEOReportsPage from "./pages/CEOReportsPage";
 
 import { useEffect } from "react";
 import { connectSocket, disconnectSocket } from "./socket";
@@ -79,6 +80,15 @@ export default function App() {
               element={
                 <Protected roles={["CEO"]}>
                   <CEODashboard />
+                </Protected>
+              }
+            />
+
+            <Route
+              path="/ceo/reports"
+              element={
+                <Protected roles={["CEO"]}>
+                  <CEOReportsPage />
                 </Protected>
               }
             />

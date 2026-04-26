@@ -1,6 +1,7 @@
 {
   "common": {
     "dashboard": "Dashboard",
+    "reporting": "Reporting",
     "projects": "Projects",
     "tasks": "Tasks",
     "calendar": "Calendar",

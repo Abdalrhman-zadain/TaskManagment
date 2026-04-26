@@ -159,6 +159,11 @@ export default function Sidebar({ role }) {
             </div>
           )}
           {role === "CEO" && navItem(t("sidebar.dashboard"), "/ceo")}
+          {role === "CEO" &&
+            navItem(
+              t("sidebar.reporting", { defaultValue: "Reporting" }),
+              "/ceo/reports",
+            )}
           {role === "CEO" && navItem(t("sidebar.projects"), "/projects")}
           {role === "CEO" && navItem(t("sidebar.tasks"), "/tasks")}
           {role === "CEO" && navItem(t("sidebar.calendar"), "/calendar")}

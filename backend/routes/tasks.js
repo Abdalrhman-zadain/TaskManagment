@@ -38,6 +38,15 @@ function sanitizePrGovernmentData(input) {
 }
 
 const REPEAT_TYPES = new Set(['NONE', 'DAILY', 'WEEKLY', 'MONTHLY']);
+const REPEAT_WEEKDAYS = new Set([
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY'
+]);
 const MAX_RECURRING_TASKS = 120;
 const REPEAT_LIMITS = {
   DAILY: 31,
@@ -59,11 +68,88 @@ function addRepeatInterval(date, repeatType, repeatEvery) {
   return next;
 }
 
-function buildRecurringDeadlines(startDeadline, repeatType, repeatEvery, repeatUntil) {
-  if (repeatType === 'NONE') return [startDeadline];
+function getWeekdayIndex(repeatDayOfWeek) {
+  return ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].indexOf(repeatDayOfWeek);
+}
 
-  const deadlines = [];
-  let nextDeadline = new Date(startDeadline);
+function normalizeRepeatDaysOfWeek(repeatDaysOfWeek) {
+  if (!Array.isArray(repeatDaysOfWeek)) return [];
+
+  const normalized = repeatDaysOfWeek
+    .map((day) => String(day || '').trim().toUpperCase())
+    .filter((day) => REPEAT_WEEKDAYS.has(day));
+
+  return Array.from(new Set(normalized));
+}
+
+function getWeekStart(date) {
+  const weekStart = new Date(date);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  return weekStart;
+}
+
+function getWeeklyOccurrencesForWeek(weekStart, anchorDate, repeatDaysOfWeek) {
+  const anchorHours = anchorDate.getHours();
+  const anchorMinutes = anchorDate.getMinutes();
+  const anchorSeconds = anchorDate.getSeconds();
+  const anchorMs = anchorDate.getMilliseconds();
+
+  return repeatDaysOfWeek
+    .map((day) => {
+      const dayIndex = getWeekdayIndex(day);
+      const occurrence = new Date(weekStart);
+      occurrence.setDate(weekStart.getDate() + dayIndex);
+      occurrence.setHours(anchorHours, anchorMinutes, anchorSeconds, anchorMs);
+      return occurrence;
+    })
+    .sort((a, b) => a - b);
+}
+
+function buildWeeklyRecurringDeadlines(startDeadline, repeatEvery, repeatUntil, repeatDaysOfWeek) {
+  const deadlines = [new Date(startDeadline)];
+  const startWeek = getWeekStart(startDeadline);
+  let weekOffset = 0;
+
+  while (deadlines.length <= MAX_RECURRING_TASKS) {
+    const targetWeekStart = new Date(startWeek);
+    targetWeekStart.setDate(startWeek.getDate() + weekOffset * 7);
+
+    const occurrences = getWeeklyOccurrencesForWeek(targetWeekStart, startDeadline, repeatDaysOfWeek);
+
+    let addedInThisCycle = false;
+    for (const occurrence of occurrences) {
+      if (occurrence <= startDeadline) continue;
+      if (occurrence > repeatUntil) return deadlines;
+
+      deadlines.push(new Date(occurrence));
+      addedInThisCycle = true;
+
+      if (deadlines.length > MAX_RECURRING_TASKS) {
+        const err = new Error(`Recurring tasks are limited to ${MAX_RECURRING_TASKS} occurrences`);
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
+    if (!addedInThisCycle && targetWeekStart > repeatUntil) {
+      return deadlines;
+    }
+
+    weekOffset += repeatEvery;
+  }
+
+  return deadlines;
+}
+
+function buildRecurringDeadlines(startDeadline, repeatType, repeatEvery, repeatUntil, repeatDaysOfWeek) {
+  if (repeatType === 'NONE') return [startDeadline];
+  if (repeatType === 'WEEKLY') {
+    return buildWeeklyRecurringDeadlines(startDeadline, repeatEvery, repeatUntil, repeatDaysOfWeek);
+  }
+
+  const deadlines = [new Date(startDeadline)];
+  let nextDeadline = addRepeatInterval(startDeadline, repeatType, repeatEvery);
 
   while (nextDeadline <= repeatUntil) {
     deadlines.push(new Date(nextDeadline));
@@ -102,7 +188,7 @@ router.get('/', requireRole('CEO', 'MANAGER', 'EMPLOYEE'), async (req, res) => {
     const tasks = await prisma.task.findMany({
       where,
       include: {
-        assignee: { select: { id: true, name: true, role: true } },
+        assignee: { select: { id: true, name: true, role: true, level: true, stars: true, onTimeCount: true } },
         creator: { select: { id: true, name: true, role: true } },
         section: { select: { id: true, name: true } },
         project: { select: { id: true, name: true, status: true } },
@@ -156,7 +242,8 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
     prGovernmentData,
     repeatType = 'NONE',
     repeatEvery = 1,
-    repeatUntil
+    repeatUntil,
+    repeatDaysOfWeek
   } = req.body;
   const parsedAssigneeId = parseInt(assigneeId);
   const parsedSectionId = parseInt(sectionId);
@@ -164,6 +251,7 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
   const parsedProjectId = parseInt(projectId);
   const normalizedRepeatType = String(repeatType || 'NONE').toUpperCase();
   const parsedRepeatEvery = parseInt(repeatEvery, 10);
+  const normalizedRepeatDaysOfWeek = normalizeRepeatDaysOfWeek(repeatDaysOfWeek);
   const parsedDeadline = new Date(deadline);
   const parsedRepeatUntil = repeatUntil ? new Date(repeatUntil) : null;
   const sanitizedPrGovernmentData = sanitizePrGovernmentData(prGovernmentData);
@@ -194,7 +282,24 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
         return res.status(400).json({ error: 'Repeat until date must be after the first deadline' });
       }
 
-      const nextOccurrence = addRepeatInterval(parsedDeadline, normalizedRepeatType, parsedRepeatEvery);
+      if (normalizedRepeatType === 'WEEKLY' && normalizedRepeatDaysOfWeek.length === 0) {
+        return res.status(400).json({ error: 'At least one repeat day of week is required for weekly tasks' });
+      }
+
+      const nextOccurrence =
+        normalizedRepeatType === 'WEEKLY'
+          ? buildWeeklyRecurringDeadlines(
+              parsedDeadline,
+              parsedRepeatEvery,
+              parsedRepeatUntil,
+              normalizedRepeatDaysOfWeek
+            )[1]
+          : addRepeatInterval(parsedDeadline, normalizedRepeatType, parsedRepeatEvery);
+      if (!nextOccurrence) {
+        return res.status(400).json({
+          error: 'Repeat until must include at least one future matching weekday'
+        });
+      }
       if (parsedRepeatUntil < nextOccurrence) {
         return res.status(400).json({
           error: `Repeat until must be on or after ${formatDateForMessage(nextOccurrence)} to create at least one repeated task`
@@ -316,7 +421,8 @@ router.post('/', requireRole('CEO', 'MANAGER'), async (req, res) => {
       parsedDeadline,
       normalizedRepeatType,
       parsedRepeatEvery,
-      parsedRepeatUntil
+      parsedRepeatUntil,
+      normalizedRepeatDaysOfWeek
     );
     const recurrenceGroupId = recurrenceDeadlines.length > 1 ? randomUUID() : null;
     const baseTaskData = {

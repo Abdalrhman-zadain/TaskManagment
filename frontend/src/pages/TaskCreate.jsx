@@ -31,31 +31,92 @@ function formatDateInputValue(date) {
   return `${year}-${month}-${day}`;
 }
 
-const repeatLimits = {
-  DAILY: { max: 31, singular: "day", plural: "days" },
-  WEEKLY: { max: 52, singular: "week", plural: "weeks" },
-  MONTHLY: { max: 12, singular: "month", plural: "months" },
-};
+const weekdayOptions = [
+  { value: "SUNDAY", label: "Sunday" },
+  { value: "MONDAY", label: "Monday" },
+  { value: "TUESDAY", label: "Tuesday" },
+  { value: "WEDNESDAY", label: "Wednesday" },
+  { value: "THURSDAY", label: "Thursday" },
+  { value: "FRIDAY", label: "Friday" },
+  { value: "SATURDAY", label: "Saturday" },
+];
 
 const maxRecurringTasks = 120;
 
 function addRepeatInterval(date, repeatType, repeatEvery) {
   const next = new Date(date);
 
-  if (repeatType === "DAILY") {
-    next.setDate(next.getDate() + repeatEvery);
-  } else if (repeatType === "WEEKLY") {
+  if (repeatType === "WEEKLY") {
     next.setDate(next.getDate() + repeatEvery * 7);
-  } else if (repeatType === "MONTHLY") {
-    next.setMonth(next.getMonth() + repeatEvery);
   }
 
   return next;
 }
 
-function countRecurringOccurrences(startDate, repeatType, repeatEvery, repeatUntil) {
-  let count = 0;
-  let nextDate = new Date(startDate);
+function getWeekdayValueFromDate(date) {
+  return weekdayOptions[date.getDay()]?.value || "MONDAY";
+}
+
+function getWeekStart(date) {
+  const weekStart = new Date(date);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  return weekStart;
+}
+
+function buildWeeklyOccurrencesForWeek(weekStart, anchorDate, repeatDaysOfWeek) {
+  return repeatDaysOfWeek
+    .map((day) => {
+      const targetWeekday = weekdayOptions.findIndex(
+        (option) => option.value === day,
+      );
+      const occurrence = new Date(weekStart);
+      occurrence.setDate(weekStart.getDate() + targetWeekday);
+      occurrence.setHours(
+        anchorDate.getHours(),
+        anchorDate.getMinutes(),
+        anchorDate.getSeconds(),
+        anchorDate.getMilliseconds(),
+      );
+      return occurrence;
+    })
+    .sort((a, b) => a - b);
+}
+
+function getNextWeeklyOccurrence(startDate, repeatEvery, repeatDaysOfWeek) {
+  const startWeek = getWeekStart(startDate);
+  let weekOffset = 0;
+
+  while (weekOffset <= maxRecurringTasks) {
+    const targetWeekStart = new Date(startWeek);
+    targetWeekStart.setDate(startWeek.getDate() + weekOffset * 7);
+
+    const occurrences = buildWeeklyOccurrencesForWeek(
+      targetWeekStart,
+      startDate,
+      repeatDaysOfWeek,
+    );
+    const nextOccurrence = occurrences.find((occurrence) => occurrence > startDate);
+    if (nextOccurrence) return nextOccurrence;
+
+    weekOffset += repeatEvery;
+  }
+
+  return null;
+}
+
+function countRecurringOccurrences(
+  startDate,
+  repeatType,
+  repeatEvery,
+  repeatUntil,
+  repeatDayOfWeek,
+) {
+  let count = 1;
+  let nextDate =
+    repeatType === "WEEKLY"
+      ? getNextWeeklyOccurrence(startDate, repeatEvery, repeatDayOfWeek)
+      : addRepeatInterval(startDate, repeatType, repeatEvery);
 
   while (nextDate <= repeatUntil) {
     count += 1;
@@ -74,6 +135,25 @@ function formatDisplayDate(date) {
   });
 }
 
+function to24HourValue(hours12, period) {
+  const parsed = Number(hours12);
+  if (Number.isNaN(parsed) || parsed < 1 || parsed > 12) return 0;
+  if (period === "AM") return parsed === 12 ? 0 : parsed;
+  return parsed === 12 ? 12 : parsed + 12;
+}
+
+function byName(a, b) {
+  return String(a?.name || "").localeCompare(String(b?.name || ""), undefined, {
+    sensitivity: "base",
+  });
+}
+
+function byTitle(a, b) {
+  return String(a?.title || "").localeCompare(String(b?.title || ""), undefined, {
+    sensitivity: "base",
+  });
+}
+
 export default function TaskCreate() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -88,12 +168,11 @@ export default function TaskCreate() {
   const [parentId, setParentId] = useState("");
   const [deadlineDate, setDeadlineDate] = useState("");
   const [deadlineTimeEnabled, setDeadlineTimeEnabled] = useState(false);
-  const [deadlineHours, setDeadlineHours] = useState("00");
+  const [deadlineHours, setDeadlineHours] = useState("12");
   const [deadlineMinutes, setDeadlineMinutes] = useState("00");
-  const [deadlineSeconds, setDeadlineSeconds] = useState("00");
+  const [deadlinePeriod, setDeadlinePeriod] = useState("AM");
   const [repeatEnabled, setRepeatEnabled] = useState(false);
-  const [repeatType, setRepeatType] = useState("NONE");
-  const [repeatEvery, setRepeatEvery] = useState("1");
+  const [repeatDaysOfWeek, setRepeatDaysOfWeek] = useState([]);
   const [repeatUntilDate, setRepeatUntilDate] = useState("");
   const [priority, setPriority] = useState("medium");
   const [prTransactionType, setPrTransactionType] = useState("");
@@ -142,8 +221,8 @@ export default function TaskCreate() {
 
   const allowedSections = useMemo(() => {
     if (user.role === "MANAGER")
-      return sections.filter((s) => s.id === user.sectionId);
-    return sections;
+      return sections.filter((s) => s.id === user.sectionId).sort(byName);
+    return [...sections].sort(byName);
   }, [sections, user.role, user.sectionId]);
 
   const clientOptions = useMemo(
@@ -154,7 +233,7 @@ export default function TaskCreate() {
             .filter((project) => project.client?.id && project.client?.name)
             .map((project) => [project.client.id, project.client]),
         ).values(),
-      ),
+      ).sort(byName),
     [projects],
   );
 
@@ -180,58 +259,88 @@ export default function TaskCreate() {
   const assigneeOptions = useMemo(() => {
     if (user.role === "CEO") {
       if (!sectionId) return [];
-      return users.filter(
-        (u) =>
-          u.id === user.id ||
-          (u.section?.id === Number(sectionId) &&
-            (u.role === "MANAGER" || u.role === "EMPLOYEE")),
-      );
+      return users
+        .filter(
+          (u) =>
+            u.id === user.id ||
+            (u.section?.id === Number(sectionId) &&
+              (u.role === "MANAGER" || u.role === "EMPLOYEE")),
+        )
+        .sort((a, b) =>
+          assigneeLabel(a, user).localeCompare(assigneeLabel(b, user), undefined, {
+            sensitivity: "base",
+          }),
+        );
     }
 
     const eligible = users.filter(
       (u) => u.role === "EMPLOYEE" || u.id === user.id,
     );
-    if (!sectionId) return eligible;
-    return eligible.filter(
-      (u) => u.id === user.id || u.section?.id === Number(sectionId),
-    );
-  }, [users, sections, sectionId, user.role]);
+    if (!sectionId) return eligible.sort((a, b) => byName(a, b));
+    return eligible
+      .filter((u) => u.id === user.id || u.section?.id === Number(sectionId))
+      .sort((a, b) =>
+        assigneeLabel(a, user).localeCompare(assigneeLabel(b, user), undefined, {
+          sensitivity: "base",
+        }),
+      );
+  }, [users, sectionId, user.role, user]);
 
   const projectOptions = useMemo(() => {
     if (!clientId) return [];
-    return projects.filter((project) => {
-      const matchesClient = project.client?.id === Number(clientId);
-      const matchesSection =
-        !sectionId || project.sectionId === Number(sectionId);
-      return matchesClient && matchesSection;
-    });
+    return projects
+      .filter((project) => {
+        const matchesClient = project.client?.id === Number(clientId);
+        const matchesSection =
+          !sectionId || project.sectionId === Number(sectionId);
+        return matchesClient && matchesSection;
+      })
+      .sort(byName);
   }, [projects, clientId, sectionId]);
 
   const sectionOptions = useMemo(() => {
     if (!selectedProject) return allowedSections;
-    return allowedSections.filter(
-      (section) => section.id === selectedProject.sectionId,
-    );
+    return allowedSections
+      .filter((section) => section.id === selectedProject.sectionId)
+      .sort(byName);
   }, [allowedSections, selectedProject]);
 
   const parentTaskOptions = useMemo(() => {
     if (user.role !== "MANAGER" || !sectionId || !projectId) return [];
-    return tasks.filter(
-      (t) =>
-        t.sectionId === Number(sectionId) &&
-        t.project?.id === Number(projectId) &&
-        !t.parentId &&
-        t.assigneeId === user.id &&
-        t.creator?.role === "CEO",
-    );
+    return tasks
+      .filter(
+        (t) =>
+          t.sectionId === Number(sectionId) &&
+          t.project?.id === Number(projectId) &&
+          !t.parentId &&
+          t.assigneeId === user.id &&
+          t.creator?.role === "CEO",
+      )
+      .sort(byTitle);
   }, [tasks, sectionId, projectId, user.role, user.id]);
 
-  const repeatLimit = repeatLimits[repeatType];
-  const repeatUnitLabel = repeatLimit
-    ? Number(repeatEvery) === 1
-      ? repeatLimit.singular
-      : repeatLimit.plural
-    : "";
+  const repeatType = repeatEnabled ? "WEEKLY" : "NONE";
+
+  useEffect(() => {
+    if (!deadlineDate || !repeatEnabled) return;
+
+    const [year, month, day] = deadlineDate.split("-").map(Number);
+    const parsedDate = new Date(year, (month || 1) - 1, day || 1);
+    if (Number.isNaN(parsedDate.getTime())) return;
+
+    setRepeatDaysOfWeek((current) =>
+      current.length > 0 ? current : [getWeekdayValueFromDate(parsedDate)],
+    );
+  }, [deadlineDate, repeatEnabled]);
+
+  function toggleRepeatDay(dayValue) {
+    setRepeatDaysOfWeek((current) => {
+      if (current.includes(dayValue)) {
+        return current.filter((day) => day !== dayValue);
+      }
+      return [...current, dayValue];
+    });
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -250,20 +359,18 @@ export default function TaskCreate() {
       return;
     }
 
-    const hours = deadlineTimeEnabled ? Number(deadlineHours) : 0;
+    const hours = deadlineTimeEnabled
+      ? to24HourValue(deadlineHours, deadlinePeriod)
+      : 0;
     const minutes = deadlineTimeEnabled ? Number(deadlineMinutes) : 0;
-    const seconds = deadlineTimeEnabled ? Number(deadlineSeconds) : 0;
 
     if (
       Number.isNaN(hours) ||
       Number.isNaN(minutes) ||
-      Number.isNaN(seconds) ||
       hours < 0 ||
       hours > 23 ||
       minutes < 0 ||
-      minutes > 59 ||
-      seconds < 0 ||
-      seconds > 59
+      minutes > 59
     ) {
       setError("Invalid deadline time");
       return;
@@ -276,7 +383,7 @@ export default function TaskCreate() {
       day || 1,
       hours,
       minutes,
-      seconds,
+      0,
       0,
     );
 
@@ -290,25 +397,18 @@ export default function TaskCreate() {
     }
 
     const deadline = deadlineDateObj.toISOString();
-    const selectedRepeatType = repeatEnabled ? repeatType : "NONE";
-    const repeatEveryValue = Number(repeatEvery);
+    const selectedRepeatType = repeatEnabled ? "WEEKLY" : "NONE";
+    const repeatEveryValue = 1;
     let repeatUntil = null;
 
     if (selectedRepeatType !== "NONE") {
-      const selectedRepeatLimit = repeatLimits[selectedRepeatType];
+      if (!repeatUntilDate) {
+        setError("Repeat until date is required");
+        return;
+      }
 
-      if (
-        !selectedRepeatLimit ||
-        !repeatUntilDate ||
-        !Number.isInteger(repeatEveryValue) ||
-        repeatEveryValue < 1 ||
-        repeatEveryValue > selectedRepeatLimit.max
-      ) {
-        setError(
-          `Every must be between 1 and ${selectedRepeatLimit?.max || 1} ${
-            selectedRepeatLimit?.plural || "periods"
-          }`,
-        );
+      if (repeatDaysOfWeek.length === 0) {
+        setError("Please select at least one day");
         return;
       }
 
@@ -321,7 +421,7 @@ export default function TaskCreate() {
         untilDay || 1,
         hours,
         minutes,
-        seconds,
+        0,
         0,
       );
 
@@ -333,11 +433,16 @@ export default function TaskCreate() {
         return;
       }
 
-      const nextOccurrenceDate = addRepeatInterval(
+      const nextOccurrenceDate = getNextWeeklyOccurrence(
         deadlineDateObj,
-        selectedRepeatType,
         repeatEveryValue,
+        repeatDaysOfWeek,
       );
+
+      if (!nextOccurrenceDate) {
+        setError("Please select at least one future repeat day");
+        return;
+      }
 
       if (repeatUntilDateObj < nextOccurrenceDate) {
         setError(
@@ -353,6 +458,7 @@ export default function TaskCreate() {
         selectedRepeatType,
         repeatEveryValue,
         repeatUntilDateObj,
+        repeatDaysOfWeek,
       );
 
       if (recurrenceCount > maxRecurringTasks) {
@@ -392,7 +498,9 @@ export default function TaskCreate() {
         deadline,
         priority,
         repeatType: selectedRepeatType,
-        repeatEvery: selectedRepeatType === "NONE" ? 1 : repeatEveryValue,
+        repeatEvery: 1,
+        repeatDaysOfWeek:
+          selectedRepeatType === "WEEKLY" ? repeatDaysOfWeek : [],
         repeatUntil,
         parentId: user.role === "MANAGER" ? parentId || null : null,
         prGovernmentData: shouldShowGovernmentFields
@@ -709,9 +817,9 @@ export default function TaskCreate() {
                 onChange={(e) => setPriority(e.target.value)}
                 className="app-input"
               >
+                <option value="high">High</option>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
-                <option value="high">High</option>
               </select>
             </div>
           </div>
@@ -725,9 +833,9 @@ export default function TaskCreate() {
                   const checked = e.target.checked;
                   setDeadlineTimeEnabled(checked);
                   if (!checked) {
-                    setDeadlineHours("00");
+                    setDeadlineHours("12");
                     setDeadlineMinutes("00");
-                    setDeadlineSeconds("00");
+                    setDeadlinePeriod("AM");
                   }
                 }}
                 className="h-4 w-4 rounded border-slate-300 text-[#1275e2]"
@@ -738,57 +846,51 @@ export default function TaskCreate() {
             {deadlineTimeEnabled && (
               <div className="mt-4 grid grid-cols-3 gap-4">
                 <div>
-                  <label className="app-label">Hours</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
+                  <label className="app-label">Hour</label>
+                  <select
                     value={deadlineHours}
-                    onChange={(e) => {
-                      const val = Math.max(
-                        0,
-                        Math.min(23, Number(e.target.value) || 0),
-                      );
-                      setDeadlineHours(String(val));
-                    }}
+                    onChange={(e) => setDeadlineHours(e.target.value)}
                     className="app-input"
-                  />
+                  >
+                    {Array.from({ length: 12 }, (_, index) => {
+                      const value = String(index + 1).padStart(2, "0");
+                      return (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 <div>
-                  <label className="app-label">Minutes</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
+                  <label className="app-label">Minute</label>
+                  <select
                     value={deadlineMinutes}
-                    onChange={(e) => {
-                      const val = Math.max(
-                        0,
-                        Math.min(59, Number(e.target.value) || 0),
-                      );
-                      setDeadlineMinutes(String(val));
-                    }}
+                    onChange={(e) => setDeadlineMinutes(e.target.value)}
                     className="app-input"
-                  />
+                  >
+                    {Array.from({ length: 60 }, (_, index) => {
+                      const value = String(index).padStart(2, "0");
+                      return (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 <div>
-                  <label className="app-label">Seconds</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={deadlineSeconds}
-                    onChange={(e) => {
-                      const val = Math.max(
-                        0,
-                        Math.min(59, Number(e.target.value) || 0),
-                      );
-                      setDeadlineSeconds(String(val));
-                    }}
+                  <label className="app-label">AM / PM</label>
+                  <select
+                    value={deadlinePeriod}
+                    onChange={(e) => setDeadlinePeriod(e.target.value)}
                     className="app-input"
-                  />
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
                 </div>
               </div>
             )}
@@ -802,11 +904,8 @@ export default function TaskCreate() {
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setRepeatEnabled(checked);
-                  if (checked) {
-                    setRepeatType("DAILY");
-                  } else {
-                    setRepeatType("NONE");
-                    setRepeatEvery("1");
+                  if (!checked) {
+                    setRepeatDaysOfWeek([]);
                     setRepeatUntilDate("");
                   }
                 }}
@@ -817,48 +916,7 @@ export default function TaskCreate() {
 
             {repeatEnabled && (
               <>
-                <div className="mt-4 grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="app-label">Repeat task</label>
-                    <select
-                      value={repeatType}
-                      onChange={(e) => {
-                        const nextRepeatType = e.target.value;
-                        const nextLimit = repeatLimits[nextRepeatType];
-
-                        setRepeatType(nextRepeatType);
-                        if (nextLimit && Number(repeatEvery) > nextLimit.max) {
-                          setRepeatEvery(String(nextLimit.max));
-                        }
-                      }}
-                      className="app-input"
-                    >
-                      <option value="DAILY">Daily</option>
-                      <option value="WEEKLY">Weekly</option>
-                      <option value="MONTHLY">Monthly</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="app-label">Every</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max={repeatLimit?.max || 1}
-                      value={repeatEvery}
-                      onChange={(e) => {
-                        const maxValue = repeatLimit?.max || 1;
-                        const val = Math.max(
-                          1,
-                          Math.min(maxValue, Number(e.target.value) || 1),
-                        );
-                        setRepeatEvery(String(val));
-                      }}
-                      className="app-input"
-                      required
-                    />
-                  </div>
-
+                <div className="mt-4">
                   <div>
                     <label className="app-label">Repeats until</label>
                     <input
@@ -872,10 +930,46 @@ export default function TaskCreate() {
                   </div>
                 </div>
 
+                <div className="mt-4">
+                  <label className="app-label">Select days</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {weekdayOptions.map((option) => {
+                      const active = repeatDaysOfWeek.includes(option.value);
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => toggleRepeatDay(option.value)}
+                          className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                            active
+                              ? "border-[#1275e2] bg-[#1275e2] text-white"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-[#1275e2] hover:text-[#1275e2]"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <p className="mt-3 text-xs text-slate-500">
-                  Repeats every {repeatEvery} {repeatUnitLabel}. This creates
-                  separate tasks for each occurrence, so scoring and completion
-                  stay independent.
+                  Repeats on{" "}
+                  {repeatDaysOfWeek.length
+                    ? repeatDaysOfWeek
+                        .map(
+                          (day) =>
+                            weekdayOptions.find((option) => option.value === day)
+                              ?.label,
+                        )
+                        .filter(Boolean)
+                        .join(", ")
+                    : "no days selected"}
+                  {deadlineTimeEnabled
+                    ? ` at ${deadlineHours}:${deadlineMinutes} ${deadlinePeriod}`
+                    : ""}
+                  . This creates separate tasks for each occurrence, so scoring
+                  and completion stay independent.
                 </p>
               </>
             )}
